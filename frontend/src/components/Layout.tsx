@@ -3,14 +3,22 @@ import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { api, ensureCsrf, errorMessage } from '../api'
 import { useAuth } from '../auth'
 
-const linksBeforeSettings = [{ to: '/businesses', label: 'Businesses' }]
+type MenuIcon = 'businesses' | 'accounts' | 'entry' | 'journals' | 'balance'
 
-const settingsLinks = [{ to: '/accounts', label: 'Chart of accounts' }]
+type MenuItem = {
+  to: string
+  label: string
+  icon: MenuIcon
+}
 
-const linksAfterSettings = [
-  { to: '/chart-account-entries', label: 'Chart account entry' },
-  { to: '/journals', label: 'Journals' },
-  { to: '/trial-balance', label: 'Trial balance' },
+const linksBeforeSettings: MenuItem[] = [{ to: '/businesses', label: 'Businesses', icon: 'businesses' }]
+
+const settingsLinks: MenuItem[] = [{ to: '/accounts', label: 'Chart Of Accounts', icon: 'accounts' }]
+
+const linksAfterSettings: MenuItem[] = [
+  { to: '/chart-account-entries', label: 'Chart Account Entry', icon: 'entry' },
+  { to: '/journals', label: 'Journals', icon: 'journals' },
+  { to: '/trial-balance', label: 'Trial Balance', icon: 'balance' },
 ]
 
 function settingsRouteActive(pathname: string): boolean {
@@ -37,19 +45,90 @@ function SettingsMenu() {
         aria-controls="settings-menu"
         onClick={() => setOpen((current) => !current)}
       >
-        Settings
+        <span className="nav-label">
+          <NavIcon name="settings" />
+          Settings
+        </span>
         <Chevron />
       </button>
       {open && (
         <div className="nav-sub" id="settings-menu">
           {settingsLinks.map((link) => (
-            <NavLink key={link.to} to={link.to}>
-              {link.label}
-            </NavLink>
+            <MenuLink key={link.to} item={link} />
           ))}
         </div>
       )}
     </div>
+  )
+}
+
+function MenuLink({ item }: { item: MenuItem }) {
+  return (
+    <NavLink to={item.to}>
+      <NavIcon name={item.icon} />
+      {item.label}
+    </NavLink>
+  )
+}
+
+function NavIcon({ name }: { name: MenuIcon | 'settings' }) {
+  return (
+    <svg
+      className="nav-icon"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      {name === 'businesses' && (
+        <>
+          <rect x="3" y="7" width="18" height="13" rx="2" />
+          <path d="M8 7V5a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2" />
+          <path d="M3 12h18" />
+        </>
+      )}
+      {name === 'settings' && (
+        <>
+          <path d="M4 7h3.5M14 7h6" />
+          <circle cx="10" cy="7" r="2.25" />
+          <path d="M4 12h8M18.5 12H20" />
+          <circle cx="15" cy="12" r="2.25" />
+          <path d="M4 17h6M14.5 17H20" />
+          <circle cx="11" cy="17" r="2.25" />
+        </>
+      )}
+      {name === 'accounts' && (
+        <>
+          <rect x="3" y="4" width="18" height="16" rx="2" />
+          <path d="M3 9h18M3 14h18M9 9v11" />
+        </>
+      )}
+      {name === 'entry' && (
+        <>
+          <path d="M14 3H6v18h12V9" />
+          <path d="M14 3v6h6" />
+          <path d="M12 12v6M9 15h6" />
+        </>
+      )}
+      {name === 'journals' && (
+        <>
+          <path d="M12 6C10 4.4 7.8 4 5 4v15c2.8 0 5 .4 7 2 2-1.6 4.2-2 7-2V4c-2.8 0-5 .4-7 2z" />
+          <path d="M12 6v15" />
+        </>
+      )}
+      {name === 'balance' && (
+        <>
+          <path d="M12 3v2M12 7v13" />
+          <path d="M7 20h10" />
+          <path d="M4 7h16" />
+          <path d="M7 7 4 14h6z" />
+          <path d="M17 7 14 14h6z" />
+        </>
+      )}
+    </svg>
   )
 }
 
@@ -104,15 +183,11 @@ export function Layout() {
         </div>
         <nav>
           {linksBeforeSettings.map((link) => (
-            <NavLink key={link.to} to={link.to}>
-              {link.label}
-            </NavLink>
+            <MenuLink key={link.to} item={link} />
           ))}
           <SettingsMenu />
           {linksAfterSettings.map((link) => (
-            <NavLink key={link.to} to={link.to}>
-              {link.label}
-            </NavLink>
+            <MenuLink key={link.to} item={link} />
           ))}
         </nav>
         {user && (

@@ -71,7 +71,7 @@ a { color: var(--green-dark); }
 
 .shell {
   display: grid;
-  grid-template-columns: 240px minmax(0, 1fr);
+  grid-template-columns: 260px minmax(0, 1fr);
   min-height: 100vh;
 }
 
@@ -100,10 +100,24 @@ a { color: var(--green-dark); }
 .sidebar nav { display: grid; gap: 0.25rem; align-content: start; }
 .sidebar nav a,
 .sidebar nav button {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
   color: #d7dee4;
   text-decoration: none;
   padding: 0.55rem 0.7rem;
   border-radius: 8px;
+}
+.nav-label {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-width: 0;
+}
+.nav-icon {
+  width: 1.05rem;
+  height: 1.05rem;
+  flex: none;
 }
 .sidebar nav button {
   display: flex;
