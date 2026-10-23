@@ -1,0 +1,60 @@
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { createContext, useContext, useMemo, type ReactNode } from 'react'
+import { api } from './api'
+import type { Session } from './types'
+import { readResource } from './types'
+
+type AuthContextValue = {
+  user: Session | null
+  isLoading: boolean
+  refresh: () => Promise<void>
+  clear: () => void
+}
+
+const AuthContext = createContext<AuthContextValue | null>(null)
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const queryClient = useQueryClient()
+  const query = useQuery({
+    queryKey: ['user'],
+    retry: false,
+    queryFn: async () => {
+      const response = await api.get('/api/v1/user')
+      const resource = response.data.data
+      const attributes = readResource<{
+        name: string
+        email: string
+        role: string
+        company: Session['company']
+        companies: Session['companies']
+      }>(resource)
+
+      return { ...attributes, id: resource.id }
+    },
+  })
+
+  const value = useMemo<AuthContextValue>(
+    () => ({
+      user: query.data ?? null,
+      isLoading: query.isLoading,
+      refresh: async () => {
+        await queryClient.invalidateQueries({ queryKey: ['user'] })
+      },
+      clear: () => {
+        queryClient.clear()
+      },
+    }),
+    [query.data, query.isLoading, queryClient],
+  )
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
+}
+
+export function useAuth(): AuthContextValue {
+  const value = useContext(AuthContext)
+  if (!value) {
+    throw new Error('useAuth must be used inside AuthProvider')
+  }
+
+  return value
+}

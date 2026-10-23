@@ -1,0 +1,54 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
+import { AuthProvider, useAuth } from './auth'
+import { Layout } from './components/Layout'
+import { AccountsPage } from './pages/AccountsPage'
+import { JournalFormPage } from './pages/JournalFormPage'
+import { JournalsPage } from './pages/JournalsPage'
+import { LoginPage } from './pages/LoginPage'
+import { TrialBalancePage } from './pages/TrialBalancePage'
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      retry: false,
+    },
+  },
+})
+
+function RequireAuth() {
+  const { user, isLoading } = useAuth()
+
+  if (isLoading) {
+    return <p className="boot">Opening the books…</p>
+  }
+
+  if (!user) {
+    return <Navigate to="/login" replace />
+  }
+
+  return <Layout />
+}
+
+export default function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/login" element={<LoginPage />} />
+            <Route element={<RequireAuth />}>
+              <Route index element={<Navigate to="/accounts" replace />} />
+              <Route path="/accounts" element={<AccountsPage />} />
+              <Route path="/journals" element={<JournalsPage />} />
+              <Route path="/journals/new" element={<JournalFormPage />} />
+              <Route path="/journals/:id" element={<JournalFormPage />} />
+              <Route path="/trial-balance" element={<TrialBalancePage />} />
+            </Route>
+          </Routes>
+        </BrowserRouter>
+      </AuthProvider>
+    </QueryClientProvider>
+  )
+}
