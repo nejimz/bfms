@@ -19,6 +19,7 @@ class CurrentUserController extends Controller
             ->map(fn ($membership) => [
                 'id' => (string) $membership->id,
                 'name' => $membership->name,
+                'description' => $membership->description,
                 'currency' => $membership->currency,
                 'role' => $membership->pivot->role,
             ])
@@ -35,6 +36,7 @@ class CurrentUserController extends Controller
                     'company' => [
                         'id' => (string) $company->id,
                         'name' => $company->name,
+                        'description' => $company->description,
                         'currency' => $company->currency,
                     ],
                     'companies' => $companies,

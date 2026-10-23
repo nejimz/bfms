@@ -18,6 +18,7 @@ class DatabaseSeeder extends Seeder
     {
         $company = Company::query()->create([
             'name' => 'Harbor Goods',
+            'description' => 'Retail goods and supplies.',
             'currency' => 'PHP',
         ]);
 

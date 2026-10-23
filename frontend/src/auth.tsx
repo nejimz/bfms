@@ -8,6 +8,7 @@ type AuthContextValue = {
   user: Session | null
   isLoading: boolean
   refresh: () => Promise<void>
+  selectCompany: (companyId: string) => Promise<void>
   clear: () => void
 }
 
@@ -39,6 +40,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isLoading: query.isLoading,
       refresh: async () => {
         await queryClient.invalidateQueries({ queryKey: ['user'] })
+      },
+      selectCompany: async (companyId: string) => {
+        await api.post('/api/v1/current-company', { company_id: companyId })
+        await queryClient.invalidateQueries({ queryKey: ['user'] })
+        await queryClient.invalidateQueries({
+          predicate: (query) => query.queryKey[0] !== 'user',
+        })
       },
       clear: () => {
         queryClient.clear()

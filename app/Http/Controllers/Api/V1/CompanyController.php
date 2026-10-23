@@ -6,6 +6,7 @@ use App\Domain\Ledger\DefaultChart;
 use App\Enums\CompanyRole;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreCompanyRequest;
+use App\Http\Requests\UpdateCompanyRequest;
 use App\Models\Company;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -13,6 +14,35 @@ use Illuminate\Support\Facades\DB;
 
 class CompanyController extends Controller
 {
+    public function index(Request $request): JsonResponse
+    {
+        $this->authorize('viewAny', Company::class);
+
+        $companies = $request->user()
+            ->companies()
+            ->withCount([
+                'accounts' => fn ($query) => $query->withoutGlobalScope('company'),
+                'journals' => fn ($query) => $query->withoutGlobalScope('company'),
+            ])
+            ->orderBy('companies.name')
+            ->get();
+
+        return response()->json([
+            'data' => $companies->map(fn (Company $company) => [
+                'id' => (string) $company->id,
+                'type' => 'companies',
+                'attributes' => [
+                    'name' => $company->name,
+                    'description' => $company->description,
+                    'currency' => $company->currency,
+                    'role' => $company->pivot->role,
+                    'accounts_count' => $company->accounts_count,
+                    'journals_count' => $company->journals_count,
+                ],
+            ])->values(),
+        ]);
+    }
+
     public function store(StoreCompanyRequest $request): JsonResponse
     {
         $company = DB::transaction(function () use ($request) {
@@ -28,6 +58,13 @@ class CompanyController extends Controller
         $this->rememberCompany($request, $company);
 
         return response()->json($this->companyPayload($company), 201);
+    }
+
+    public function update(UpdateCompanyRequest $request, Company $company): JsonResponse
+    {
+        $company->update($request->validated());
+
+        return response()->json($this->companyPayload($company));
     }
 
     public function switch(Request $request): JsonResponse
@@ -68,6 +105,7 @@ class CompanyController extends Controller
                 'type' => 'companies',
                 'attributes' => [
                     'name' => $company->name,
+                    'description' => $company->description,
                     'currency' => $company->currency,
                 ],
             ],

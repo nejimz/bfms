@@ -14,15 +14,29 @@ export async function ensureCsrf(): Promise<void> {
   await api.get('/sanctum/csrf-cookie')
 }
 
-export function errorMessage(error: unknown): string {
+type ErrorBody = { message?: string; errors?: Record<string, string[]> }
+
+function errorBody(error: unknown): ErrorBody | undefined {
   if (!axios.isAxiosError(error)) {
-    return 'Something went wrong. Try again.'
+    return undefined
   }
 
-  const data = error.response?.data as
-    | { message?: string; errors?: Record<string, string[]> }
-    | undefined
+  return error.response?.data as ErrorBody | undefined
+}
 
+export function fieldErrors(error: unknown): Record<string, string> {
+  const errors = errorBody(error)?.errors
+  if (!errors) {
+    return {}
+  }
+
+  return Object.fromEntries(
+    Object.entries(errors).map(([key, messages]) => [key, messages[0] ?? 'This value is invalid.']),
+  )
+}
+
+export function errorMessage(error: unknown): string {
+  const data = errorBody(error)
   const first = data?.errors ? Object.values(data.errors)[0]?.[0] : undefined
 
   return first || data?.message || 'Something went wrong. Try again.'

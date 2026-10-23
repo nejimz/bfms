@@ -3,8 +3,10 @@
 use App\Domain\Ledger\DefaultChart;
 use App\Enums\AccountType;
 use App\Enums\CompanyRole;
+use App\Enums\JournalStatus;
 use App\Models\Account;
 use App\Models\Company;
+use App\Models\Journal;
 use App\Models\User;
 use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 use Illuminate\Testing\TestResponse;
@@ -50,12 +52,14 @@ it('lets an owner open another business and keeps the books there', function () 
     openBooks();
 
     $created = $this->actingAs($owner)->postJson('/api/v1/companies', [
-        'name' => 'Northwind',
+        'name' => '  Northwind  ',
         'currency' => 'usd',
+        'description' => '  Wholesale imports.  ',
     ]);
 
     $created->assertCreated()
         ->assertJsonPath('data.attributes.name', 'Northwind')
+        ->assertJsonPath('data.attributes.description', 'Wholesale imports.')
         ->assertJsonPath('data.attributes.currency', 'USD');
 
     $newId = (int) $created->json('data.id');
@@ -65,6 +69,7 @@ it('lets an owner open another business and keeps the books there', function () 
     $this->assertDatabaseHas('companies', [
         'id' => $newId,
         'name' => 'Northwind',
+        'description' => 'Wholesale imports.',
         'currency' => 'USD',
     ]);
     $this->assertDatabaseHas('company_user', [
@@ -87,6 +92,25 @@ it('lets an owner open another business and keeps the books there', function () 
         ->assertJsonPath('data.attributes.role', CompanyRole::Owner->value)
         ->assertJsonPath('data.attributes.companies.0.name', 'Harbor Goods')
         ->assertJsonPath('data.attributes.companies.1.name', 'Northwind');
+});
+
+it('rejects a business without a name, description, or 3-letter currency', function () {
+    $company = Company::factory()->create();
+    $owner = companyMember($company);
+
+    $this->actingAs($owner)->postJson('/api/v1/companies', [
+        'name' => '   ',
+        'currency' => 'peso',
+        'description' => '   ',
+    ])->assertUnprocessable()
+        ->assertJsonValidationErrors(['name', 'currency', 'description']);
+
+    $this->actingAs($owner)->postJson('/api/v1/companies', [
+        'name' => 'Northwind',
+        'currency' => 'PHP',
+        'description' => str_repeat('a', 1001),
+    ])->assertUnprocessable()
+        ->assertJsonValidationErrors(['description']);
 });
 
 it('refuses a new business from someone who is not the owner', function (string $role) {
@@ -144,6 +168,103 @@ it('switches the ledger to another business the user belongs to', function () {
         ->assertJsonPath('data.attributes.company.name', 'Beta')
         ->assertJsonPath('data.attributes.role', CompanyRole::Accountant->value);
 });
+
+it('lists each business with its own chart and journals', function () {
+    $alpha = Company::factory()->create(['name' => 'Alpha']);
+    $beta = Company::factory()->create(['name' => 'Beta']);
+    $hidden = Company::factory()->create(['name' => 'Hidden']);
+    $user = companyMember($alpha);
+    $beta->users()->attach($user->id, ['role' => CompanyRole::Owner->value]);
+
+    Account::factory()->create(['company_id' => $alpha->id, 'code' => '1000']);
+    Account::factory()->count(2)->create(['company_id' => $beta->id]);
+    Account::factory()->create(['company_id' => $hidden->id, 'code' => '1000']);
+
+    Journal::query()->create([
+        'company_id' => $beta->id,
+        'date' => '2026-10-01',
+        'currency' => 'PHP',
+        'status' => JournalStatus::Draft,
+        'created_by' => $user->id,
+    ]);
+
+    $listed = $this->actingAs($user)->getJson('/api/v1/companies')->assertOk();
+    $rows = collect($listed->json('data'))->keyBy('attributes.name');
+
+    expect($rows->keys()->all())->toBe(['Alpha', 'Beta'])
+        ->and($rows['Alpha']['attributes']['accounts_count'])->toBe(1)
+        ->and($rows['Alpha']['attributes']['journals_count'])->toBe(0)
+        ->and($rows['Beta']['attributes']['accounts_count'])->toBe(2)
+        ->and($rows['Beta']['attributes']['journals_count'])->toBe(1)
+        ->and($rows['Beta']['attributes']['role'])->toBe(CompanyRole::Owner->value);
+});
+
+it('lets an owner edit a business', function () {
+    $company = Company::factory()->create([
+        'name' => 'Harbor Goods',
+        'description' => 'Old note',
+        'currency' => 'PHP',
+    ]);
+    $owner = companyMember($company);
+
+    $this->actingAs($owner)->patchJson("/api/v1/companies/{$company->id}", [
+        'name' => '  Harbor Goods Co  ',
+        'description' => '  Retail goods and supplies.  ',
+        'currency' => 'usd',
+    ])->assertOk()
+        ->assertJsonPath('data.attributes.name', 'Harbor Goods Co')
+        ->assertJsonPath('data.attributes.description', 'Retail goods and supplies.')
+        ->assertJsonPath('data.attributes.currency', 'USD');
+
+    $this->assertDatabaseHas('companies', [
+        'id' => $company->id,
+        'name' => 'Harbor Goods Co',
+        'description' => 'Retail goods and supplies.',
+        'currency' => 'USD',
+    ]);
+});
+
+it('keeps the currency once a journal exists', function () {
+    $company = Company::factory()->create(['currency' => 'PHP']);
+    $owner = companyMember($company);
+    Journal::query()->create([
+        'company_id' => $company->id,
+        'date' => '2026-10-01',
+        'currency' => 'PHP',
+        'status' => JournalStatus::Draft,
+        'created_by' => $owner->id,
+    ]);
+
+    $this->actingAs($owner)->patchJson("/api/v1/companies/{$company->id}", [
+        'name' => 'Harbor Goods',
+        'description' => 'Retail goods and supplies.',
+        'currency' => 'USD',
+    ])->assertUnprocessable()
+        ->assertJsonValidationErrors(['currency']);
+
+    expect($company->fresh()->currency)->toBe('PHP');
+
+    $this->actingAs($owner)->patchJson("/api/v1/companies/{$company->id}", [
+        'name' => 'Harbor Market',
+        'description' => 'Retail goods and supplies.',
+        'currency' => 'PHP',
+    ])->assertOk()
+        ->assertJsonPath('data.attributes.name', 'Harbor Market');
+});
+
+it('refuses an edit from someone who does not own that business', function (string $role) {
+    $company = Company::factory()->create();
+    $user = companyMember($company, $role);
+
+    $this->actingAs($user)->patchJson("/api/v1/companies/{$company->id}", [
+        'name' => 'Renamed',
+        'description' => 'A different note.',
+        'currency' => 'PHP',
+    ])->assertForbidden();
+})->with([
+    CompanyRole::Accountant->value,
+    CompanyRole::Staff->value,
+]);
 
 it('refuses to switch into a business the user does not belong to', function () {
     $company = Company::factory()->create();

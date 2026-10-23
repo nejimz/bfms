@@ -10,7 +10,9 @@ use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth:sanctum', SetCurrentCompany::class])->prefix('v1')->group(function () {
     Route::get('/user', [CurrentUserController::class, 'show']);
+    Route::get('/companies', [CompanyController::class, 'index']);
     Route::post('/companies', [CompanyController::class, 'store']);
+    Route::patch('/companies/{company}', [CompanyController::class, 'update']);
     Route::post('/current-company', [CompanyController::class, 'switch']);
 
     Route::get('/accounts', [AccountController::class, 'index']);

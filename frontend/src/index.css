@@ -21,7 +21,7 @@ body {
   min-height: 100vh;
 }
 
-button, input, select {
+button, input, select, textarea {
   font: inherit;
   color: inherit;
 }
@@ -43,13 +43,14 @@ button.primary, .button-link.primary {
 
 button:disabled { opacity: 0.55; cursor: not-allowed; }
 
-input, select {
+input, select, textarea {
   width: 100%;
   border: 1px solid var(--line);
   background: white;
   border-radius: 8px;
   padding: 0.55rem 0.7rem;
 }
+textarea { min-height: 6.5rem; resize: vertical; }
 
 label {
   display: grid;
@@ -101,11 +102,10 @@ a { color: var(--green-dark); }
 
 .session { margin-top: auto; display: grid; gap: 0.2rem; font-size: 0.92rem; }
 .session span { color: #b7c0c7; }
-.session form { display: grid; gap: 0.55rem; margin-top: 0.75rem; }
 .session label { color: #d7dee4; }
 .session input, .session select { color: var(--ink); background: white; }
-.session button, .session .logout {
-  margin-top: 0.35rem;
+.session .logout {
+  margin-top: 0.6rem;
   background: transparent;
   color: white;
   border-color: #3d4b59;
@@ -115,6 +115,7 @@ a { color: var(--green-dark); }
 .content { min-width: 0; padding: 2rem 2.25rem 3rem; }
 .page { display: grid; gap: 1rem; align-content: start; min-width: 0; }
 .page-header { display: flex; justify-content: space-between; gap: 1rem; align-items: end; flex-wrap: wrap; }
+.page-header .hint { margin: 0.35rem 0 0; }
 .eyebrow { margin: 0 0 0.25rem; letter-spacing: 0.08em; text-transform: uppercase; font-size: 0.75rem; color: var(--muted); }
 
 .panel {
@@ -130,6 +131,8 @@ a { color: var(--green-dark); }
   align-items: end;
 }
 .inline-form { grid-template-columns: minmax(7rem, 9rem) minmax(0, 1fr) minmax(8rem, 11rem) auto; }
+.stack-form { display: grid; gap: 0.9rem; max-width: 28rem; }
+td .status { margin-left: 0.55rem; vertical-align: middle; }
 .journal-head { grid-template-columns: minmax(9rem, 11rem) minmax(8rem, 12rem) minmax(0, 1fr); }
 .grow { flex: 1; min-width: 12rem; }
 
@@ -161,6 +164,7 @@ tfoot td { font-weight: 650; }
 .balanced { color: var(--green-dark); }
 .unbalanced { color: var(--danger); }
 .form-error { color: var(--danger); margin: 0; }
+label .form-error { font-size: 0.85rem; }
 .hint, .posted-note, .boot { color: var(--muted); }
 .posted-note {
   margin: 0;

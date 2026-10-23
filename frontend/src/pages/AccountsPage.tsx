@@ -60,7 +60,9 @@ export function AccountsPage() {
     <div className="page">
       <header className="page-header">
         <div>
-          <p className="eyebrow">Ledger</p>
+          <p className="eyebrow">
+            {user?.company.name} · {user?.company.currency}
+          </p>
           <h1>Chart of accounts</h1>
         </div>
       </header>

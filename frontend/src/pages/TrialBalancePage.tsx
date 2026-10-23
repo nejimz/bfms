@@ -40,7 +40,9 @@ export function TrialBalancePage() {
     <div className="page">
       <header className="page-header">
         <div>
-          <p className="eyebrow">Report · {report.data?.meta.currency ?? 'PHP'}</p>
+          <p className="eyebrow">
+            {user?.company.name} · {report.data?.meta.currency ?? user?.company.currency}
+          </p>
           <h1>Trial balance</h1>
         </div>
       </header>

@@ -3,6 +3,8 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { AuthProvider, useAuth } from './auth'
 import { Layout } from './components/Layout'
 import { AccountsPage } from './pages/AccountsPage'
+import { BusinessFormPage } from './pages/BusinessFormPage'
+import { BusinessesPage } from './pages/BusinessesPage'
 import { JournalFormPage } from './pages/JournalFormPage'
 import { JournalsPage } from './pages/JournalsPage'
 import { LoginPage } from './pages/LoginPage'
@@ -39,7 +41,10 @@ export default function App() {
           <Routes>
             <Route path="/login" element={<LoginPage />} />
             <Route element={<RequireAuth />}>
-              <Route index element={<Navigate to="/accounts" replace />} />
+              <Route index element={<Navigate to="/businesses" replace />} />
+              <Route path="/businesses" element={<BusinessesPage />} />
+              <Route path="/businesses/new" element={<BusinessFormPage />} />
+              <Route path="/businesses/:id/edit" element={<BusinessFormPage />} />
               <Route path="/accounts" element={<AccountsPage />} />
               <Route path="/journals" element={<JournalsPage />} />
               <Route path="/journals/new" element={<JournalFormPage />} />

@@ -173,7 +173,7 @@ export function JournalFormPage() {
     <form className="page" onSubmit={(event) => submit(event, false)}>
       <header className="page-header">
         <div>
-          <p className="eyebrow">Journal</p>
+          <p className="eyebrow">{user?.company.name} · Journal</p>
           <h1>{id ? 'Edit draft' : 'New journal'}</h1>
         </div>
         <Link to="/journals">Back to journals</Link>
@@ -290,6 +290,7 @@ export function JournalFormPage() {
 }
 
 function PostedJournal({ journal, accounts }: { journal: Journal; accounts: Account[] }) {
+  const { user } = useAuth()
   const accountName = (accountId: string) => {
     const account = accounts.find((item) => item.id === accountId)
     return account ? `${account.code} ${account.name}` : accountId
@@ -302,7 +303,9 @@ function PostedJournal({ journal, accounts }: { journal: Journal; accounts: Acco
     <div className="page">
       <header className="page-header">
         <div>
-          <p className="eyebrow">Posted journal · {journal.currency}</p>
+          <p className="eyebrow">
+            {user?.company.name} · Posted journal · {journal.currency}
+          </p>
           <h1>{journal.reference || journal.date}</h1>
         </div>
         <Link to="/journals">Back to journals</Link>

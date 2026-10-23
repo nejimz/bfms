@@ -1,34 +1,23 @@
-import { useQueryClient } from '@tanstack/react-query'
-import { useState, type FormEvent } from 'react'
+import { useState } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
 import { api, ensureCsrf, errorMessage } from '../api'
 import { useAuth } from '../auth'
 
 const links = [
+  { to: '/businesses', label: 'Businesses' },
   { to: '/accounts', label: 'Chart of accounts' },
   { to: '/journals', label: 'Journals' },
   { to: '/trial-balance', label: 'Trial balance' },
 ]
 
 export function Layout() {
-  const { user, clear, refresh } = useAuth()
-  const queryClient = useQueryClient()
-  const [name, setName] = useState('')
-  const [currency, setCurrency] = useState('PHP')
+  const { user, clear, selectCompany } = useAuth()
   const [error, setError] = useState<string | null>(null)
-  const [pending, setPending] = useState(false)
 
   async function logout() {
     await ensureCsrf()
     await api.post('/session/logout')
     clear()
-  }
-
-  async function reloadBooks() {
-    await refresh()
-    await queryClient.invalidateQueries({
-      predicate: (query) => query.queryKey[0] !== 'user',
-    })
   }
 
   async function switchBusiness(companyId: string) {
@@ -39,27 +28,9 @@ export function Layout() {
     setError(null)
 
     try {
-      await api.post('/api/v1/current-company', { company_id: companyId })
-      await reloadBooks()
+      await selectCompany(companyId)
     } catch (caught) {
       setError(errorMessage(caught))
-    }
-  }
-
-  async function addBusiness(event: FormEvent) {
-    event.preventDefault()
-    setPending(true)
-    setError(null)
-
-    try {
-      await api.post('/api/v1/companies', { name, currency })
-      setName('')
-      setCurrency('PHP')
-      await reloadBooks()
-    } catch (caught) {
-      setError(errorMessage(caught))
-    } finally {
-      setPending(false)
     }
   }
 
@@ -103,33 +74,6 @@ export function Layout() {
               {user.company.currency} · {user.role}
             </span>
             <span>{user.name}</span>
-            {user.role === 'owner' && (
-              <form onSubmit={(event) => void addBusiness(event)}>
-                <label>
-                  New business
-                  <input
-                    value={name}
-                    onChange={(event) => setName(event.target.value)}
-                    required
-                    maxLength={255}
-                  />
-                </label>
-                <label>
-                  Currency
-                  <input
-                    value={currency}
-                    onChange={(event) => setCurrency(event.target.value.toUpperCase())}
-                    required
-                    minLength={3}
-                    maxLength={3}
-                    pattern="[A-Za-z]{3}"
-                  />
-                </label>
-                <button type="submit" disabled={pending}>
-                  Add business
-                </button>
-              </form>
-            )}
             {error && <p className="form-error">{error}</p>}
             <button type="button" className="logout" onClick={() => void logout()}>
               Log out

@@ -30,8 +30,14 @@ export type Journal = {
 export type Membership = {
   id: string
   name: string
+  description: string | null
   currency: string
   role: string
+}
+
+export type Business = Membership & {
+  accounts_count: number
+  journals_count: number
 }
 
 export type Session = {
@@ -42,6 +48,7 @@ export type Session = {
   company: {
     id: string
     name: string
+    description: string | null
     currency: string
   }
   companies: Membership[]
