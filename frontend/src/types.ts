@@ -39,6 +39,33 @@ export type ChartAccountEntry = {
   account: Pick<Account, 'id' | 'code' | 'name'> | null
 }
 
+export type ChartAccountColumn = {
+  id: string
+  code: string
+  name: string
+}
+
+export type ChartAccountColumnRow = {
+  id: string
+  date: string
+  particulars: string
+  status: 'draft' | 'posted'
+  account_id: string
+  amount: string
+}
+
+export type ChartAccountColumnReport = {
+  data: ChartAccountColumnRow[]
+  meta: {
+    year: number
+    month: number
+    sort: 'asc' | 'desc'
+    currency: string
+    years: number[]
+    columns: ChartAccountColumn[]
+  }
+}
+
 export type Membership = {
   id: string
   name: string

@@ -17,6 +17,7 @@ const settingsLinks: MenuItem[] = [{ to: '/accounts', label: 'Chart Of Accounts'
 
 const linksAfterSettings: MenuItem[] = [
   { to: '/chart-account-entries', label: 'Chart Account Entry', icon: 'entry' },
+  { to: '/chart-account-columns', label: 'Account columns', icon: 'entry' },
   { to: '/journals', label: 'Journals', icon: 'journals' },
   { to: '/trial-balance', label: 'Trial Balance', icon: 'balance' },
 ]

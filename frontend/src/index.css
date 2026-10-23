@@ -299,6 +299,34 @@ table { width: 100%; border-collapse: collapse; }
 th, td { padding: 0.75rem 0.9rem; text-align: left; border-bottom: 1px solid var(--line); vertical-align: middle; }
 th { font-size: 0.78rem; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
 th.amount, td.num { text-align: right; font-variant-numeric: tabular-nums; }
+.column-filters { grid-template-columns: 8.5rem 13rem; justify-content: start; }
+th .sort-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  border-radius: 0;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  color: inherit;
+}
+.account-heading {
+  display: grid;
+  justify-items: end;
+  gap: 0.15rem;
+  min-width: 6.75rem;
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 0.78rem;
+}
+.account-heading span:last-child { font-weight: 500; color: var(--ink); }
+tr.column-row { cursor: pointer; }
+tr.column-row:hover { background: #f7f1e6; }
+td.particulars { min-width: 12rem; }
 td.num, input.num { font-family: ui-monospace, "SF Mono", Menlo, monospace; }
 .type { text-transform: capitalize; }
 tfoot td { font-weight: 650; }
@@ -348,7 +376,7 @@ label .form-error { font-size: 0.85rem; }
   .session { margin-top: 0; }
   .content, .login { padding: 1.25rem; }
   .login { grid-template-columns: 1fr; gap: 1.5rem; }
-  .inline-form, .journal-head, .entry-fields, .entry-composer { grid-template-columns: 1fr; }
+  .inline-form, .journal-head, .entry-fields, .entry-composer, .column-filters { grid-template-columns: 1fr; }
   .entry-sheet-head { display: none; }
   .entry-row {
     grid-template-columns: 1fr auto;

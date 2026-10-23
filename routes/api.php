@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\V1\AccountController;
+use App\Http\Controllers\Api\V1\ChartAccountColumnReportController;
 use App\Http\Controllers\Api\V1\ChartAccountEntryController;
 use App\Http\Controllers\Api\V1\CompanyController;
 use App\Http\Controllers\Api\V1\CurrentUserController;
@@ -34,4 +35,5 @@ Route::middleware(['auth:sanctum', SetCurrentCompany::class])->prefix('v1')->gro
     Route::post('/journals/{journal}/post', [JournalController::class, 'post']);
 
     Route::get('/reports/trial-balance', [TrialBalanceController::class, 'show']);
+    Route::get('/reports/chart-account-columns', [ChartAccountColumnReportController::class, 'show']);
 });
