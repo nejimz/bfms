@@ -3,6 +3,8 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { AuthProvider, useAuth } from './auth'
 import { Layout } from './components/Layout'
 import { AccountsPage } from './pages/AccountsPage'
+import { ChartAccountEntriesPage } from './pages/ChartAccountEntriesPage'
+import { ChartAccountEntryFormPage } from './pages/ChartAccountEntryFormPage'
 import { BusinessFormPage } from './pages/BusinessFormPage'
 import { BusinessesPage } from './pages/BusinessesPage'
 import { JournalFormPage } from './pages/JournalFormPage'
@@ -46,6 +48,9 @@ export default function App() {
               <Route path="/businesses/new" element={<BusinessFormPage />} />
               <Route path="/businesses/:id/edit" element={<BusinessFormPage />} />
               <Route path="/accounts" element={<AccountsPage />} />
+              <Route path="/chart-account-entries" element={<ChartAccountEntriesPage />} />
+              <Route path="/chart-account-entries/new" element={<ChartAccountEntryFormPage />} />
+              <Route path="/chart-account-entries/:id" element={<ChartAccountEntryFormPage />} />
               <Route path="/journals" element={<JournalsPage />} />
               <Route path="/journals/new" element={<JournalFormPage />} />
               <Route path="/journals/:id" element={<JournalFormPage />} />

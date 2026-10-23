@@ -50,6 +50,12 @@ input, select, textarea {
   border-radius: 8px;
   padding: 0.55rem 0.7rem;
 }
+
+input:not([type="checkbox"]):not([type="radio"]):not(.entry-amount-input),
+select {
+  /* Text line box plus the shared vertical padding and border. */
+  height: calc(1.45em + 1.1rem + 2px);
+}
 textarea { min-height: 6.5rem; resize: vertical; }
 
 label {
@@ -91,14 +97,41 @@ a { color: var(--green-dark); }
   font-family: Palatino, Georgia, serif;
 }
 
-.sidebar nav { display: grid; gap: 0.25rem; }
-.sidebar nav a {
+.sidebar nav { display: grid; gap: 0.25rem; align-content: start; }
+.sidebar nav a,
+.sidebar nav button {
   color: #d7dee4;
   text-decoration: none;
   padding: 0.55rem 0.7rem;
   border-radius: 8px;
 }
-.sidebar nav a.active, .sidebar nav a:hover { background: #243140; color: white; }
+.sidebar nav button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  text-align: left;
+}
+.sidebar nav a.active,
+.sidebar nav a:hover,
+.sidebar nav button.active,
+.sidebar nav button:hover { background: #243140; color: white; }
+.nav-sub {
+  display: grid;
+  gap: 0.15rem;
+  margin: 0.15rem 0 0.2rem 0.85rem;
+  padding-left: 0.55rem;
+  border-left: 1px solid #3d4b59;
+}
+.nav-chevron {
+  width: 0.7rem;
+  height: 0.7rem;
+  flex: none;
+  transition: transform 0.15s ease;
+}
+.sidebar nav button[aria-expanded='true'] .nav-chevron { transform: rotate(90deg); }
 
 .session { margin-top: auto; display: grid; gap: 0.2rem; font-size: 0.92rem; }
 .session span { color: #b7c0c7; }
@@ -133,7 +166,112 @@ a { color: var(--green-dark); }
 .inline-form { grid-template-columns: minmax(7rem, 9rem) minmax(0, 1fr) minmax(8rem, 11rem) auto; }
 .stack-form { display: grid; gap: 0.9rem; max-width: 28rem; }
 td .status { margin-left: 0.55rem; vertical-align: middle; }
-.journal-head { grid-template-columns: minmax(9rem, 11rem) minmax(8rem, 12rem) minmax(0, 1fr); }
+.journal-head { grid-template-columns: minmax(12rem, 16rem) minmax(9rem, 11rem) minmax(8rem, 12rem) minmax(0, 1fr); }
+
+.entry-page { gap: 1.35rem; }
+.entry-hero { display: flex; justify-content: space-between; align-items: flex-end; gap: 1.25rem; flex-wrap: wrap; }
+.entry-lede { margin: 0.45rem 0 0; max-width: 36rem; color: var(--muted); }
+.entry-hero-actions { display: flex; align-items: flex-end; gap: 0.85rem; flex-wrap: wrap; }
+.entry-count { margin: 0 0 0.45rem; color: var(--muted); font-size: 0.85rem; }
+.entry-back { align-self: center; text-decoration: none; font-size: 0.92rem; }
+
+.entry-sheet {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  overflow: hidden;
+}
+.entry-sheet-head, .entry-row {
+  display: grid;
+  grid-template-columns: 8.2rem minmax(9.5rem, 13rem) minmax(0, 1fr) 8.2rem 5.4rem;
+  gap: 0.85rem;
+  align-items: center;
+  padding: 0.9rem 1.15rem;
+}
+.entry-sheet-head {
+  color: var(--muted);
+  font-size: 0.72rem;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--line);
+}
+.entry-sheet-head span:nth-child(4),
+.entry-sheet-head span:nth-child(5) { text-align: right; }
+.entry-row {
+  color: inherit;
+  text-decoration: none;
+  border-top: 1px solid transparent;
+  border-bottom: 1px solid var(--line);
+  transition: background 0.15s ease;
+}
+.entry-row:last-child { border-bottom: 0; }
+.entry-row:hover { background: #faf6ef; }
+.entry-account { display: grid; gap: 0.05rem; min-width: 0; }
+.entry-code {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+}
+.entry-account-name { font-weight: 600; }
+.entry-narrative {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.entry-amount, .entry-figure {
+  font-variant-numeric: tabular-nums;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+}
+.entry-amount { text-align: right; font-weight: 600; }
+.entry-row .status { justify-self: end; }
+.entry-empty {
+  display: grid;
+  gap: 0.25rem;
+  padding: 2.4rem 1.4rem;
+  color: var(--muted);
+  text-align: center;
+}
+.entry-empty strong { color: var(--ink); font-weight: 600; }
+
+.entry-composer {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(16rem, 0.72fr);
+  gap: 1rem;
+  align-items: start;
+}
+.entry-fields, .entry-aside { display: grid; gap: 0.95rem; padding: 1.2rem 1.25rem; }
+.entry-fields { grid-template-columns: minmax(11rem, 14rem) minmax(9rem, 11rem); }
+.entry-account-field, .entry-particulars { grid-column: 1 / -1; }
+.entry-particulars textarea { min-height: 8.5rem; }
+.entry-aside { position: sticky; top: 1.25rem; }
+.entry-amount-input {
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+  background: transparent;
+  padding: 0.2rem 0 0.45rem;
+  font-size: 2rem;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.03em;
+}
+.entry-amount-input:focus { outline: none; border-bottom-color: var(--green); }
+.entry-aside-note { margin: 0; color: var(--muted); font-size: 0.85rem; }
+.entry-actions { display: grid; gap: 0.55rem; }
+.entry-actions button { width: 100%; }
+.entry-delete {
+  background: transparent;
+  border-color: transparent;
+  color: var(--danger);
+}
+
+.entry-receipt { display: grid; gap: 0.35rem; max-width: 38rem; padding: 1.6rem 1.7rem 1.45rem; }
+.entry-figure { margin: 0; font-size: 2.4rem; letter-spacing: -0.03em; }
+.entry-receipt-account { display: flex; gap: 0.55rem; align-items: baseline; margin: 0.35rem 0 0; font-size: 1.15rem; }
+.entry-quote { margin: 0.8rem 0 0.2rem; font-size: 1.05rem; line-height: 1.5; }
+.business-select { min-width: 12rem; }
 .grow { flex: 1; min-width: 12rem; }
 
 .table-wrap {
@@ -196,6 +334,20 @@ label .form-error { font-size: 0.85rem; }
   .session { margin-top: 0; }
   .content, .login { padding: 1.25rem; }
   .login { grid-template-columns: 1fr; gap: 1.5rem; }
-  .inline-form, .journal-head { grid-template-columns: 1fr; }
+  .inline-form, .journal-head, .entry-fields, .entry-composer { grid-template-columns: 1fr; }
+  .entry-sheet-head { display: none; }
+  .entry-row {
+    grid-template-columns: 1fr auto;
+    grid-template-areas:
+      "account amount"
+      "narrative narrative"
+      "date status";
+  }
+  .entry-account { grid-area: account; }
+  .entry-amount { grid-area: amount; }
+  .entry-narrative { grid-area: narrative; white-space: normal; }
+  .entry-row time { grid-area: date; color: var(--muted); font-size: 0.85rem; }
+  .entry-row .status { grid-area: status; }
+  .entry-aside { position: static; }
   h1 { font-size: 1.7rem; }
 }

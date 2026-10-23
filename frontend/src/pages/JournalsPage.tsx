@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { api } from '../api'
 import { useAuth } from '../auth'
+import { BusinessSelect } from '../components/BusinessSelect'
 import type { Journal } from '../types'
 import { readResource } from '../types'
 
@@ -23,11 +24,10 @@ export function JournalsPage() {
     <div className="page">
       <header className="page-header">
         <div>
-          <p className="eyebrow">
-            {user?.company.name} · {user?.company.currency}
-          </p>
+          <p className="eyebrow">{user?.company.currency}</p>
           <h1>Journals</h1>
         </div>
+        <BusinessSelect />
         <Link className="primary button-link" to="/journals/new">
           New journal
         </Link>

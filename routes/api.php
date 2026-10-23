@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\V1\AccountController;
+use App\Http\Controllers\Api\V1\ChartAccountEntryController;
 use App\Http\Controllers\Api\V1\CompanyController;
 use App\Http\Controllers\Api\V1\CurrentUserController;
 use App\Http\Controllers\Api\V1\JournalController;
@@ -18,6 +19,13 @@ Route::middleware(['auth:sanctum', SetCurrentCompany::class])->prefix('v1')->gro
     Route::get('/accounts', [AccountController::class, 'index']);
     Route::post('/accounts', [AccountController::class, 'store']);
     Route::patch('/accounts/{account}', [AccountController::class, 'update']);
+
+    Route::get('/chart-account-entries', [ChartAccountEntryController::class, 'index']);
+    Route::post('/chart-account-entries', [ChartAccountEntryController::class, 'store']);
+    Route::get('/chart-account-entries/{entry}', [ChartAccountEntryController::class, 'show']);
+    Route::put('/chart-account-entries/{entry}', [ChartAccountEntryController::class, 'update']);
+    Route::delete('/chart-account-entries/{entry}', [ChartAccountEntryController::class, 'destroy']);
+    Route::post('/chart-account-entries/{entry}/post', [ChartAccountEntryController::class, 'post']);
 
     Route::get('/journals', [JournalController::class, 'index']);
     Route::post('/journals', [JournalController::class, 'store']);

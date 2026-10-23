@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { api, errorMessage } from '../api'
 import { useAuth } from '../auth'
+import { BusinessSelect } from '../components/BusinessSelect'
 import { formatDecimal, formatMinor, normalizeDecimal, toMinor } from '../money'
 import type { Account, Journal, JournalLine } from '../types'
 import { readJournal, readResource } from '../types'
@@ -173,13 +174,19 @@ export function JournalFormPage() {
     <form className="page" onSubmit={(event) => submit(event, false)}>
       <header className="page-header">
         <div>
-          <p className="eyebrow">{user?.company.name} · Journal</p>
+          <p className="eyebrow">{user?.company.currency} · Journal</p>
           <h1>{id ? 'Edit draft' : 'New journal'}</h1>
         </div>
         <Link to="/journals">Back to journals</Link>
       </header>
 
       <div className="panel journal-head">
+        <BusinessSelect
+          disabled={Boolean(id)}
+          onSwitched={() =>
+            setLines((current) => current.map((line) => ({ ...line, account_id: '' })))
+          }
+        />
         <label>
           Date
           <input type="date" value={date} onChange={(event) => setDate(event.target.value)} required />
@@ -290,7 +297,6 @@ export function JournalFormPage() {
 }
 
 function PostedJournal({ journal, accounts }: { journal: Journal; accounts: Account[] }) {
-  const { user } = useAuth()
   const accountName = (accountId: string) => {
     const account = accounts.find((item) => item.id === accountId)
     return account ? `${account.code} ${account.name}` : accountId
@@ -303,11 +309,10 @@ function PostedJournal({ journal, accounts }: { journal: Journal; accounts: Acco
     <div className="page">
       <header className="page-header">
         <div>
-          <p className="eyebrow">
-            {user?.company.name} · Posted journal · {journal.currency}
-          </p>
+          <p className="eyebrow">Posted journal · {journal.currency}</p>
           <h1>{journal.reference || journal.date}</h1>
         </div>
+        <BusinessSelect disabled />
         <Link to="/journals">Back to journals</Link>
       </header>
       <p className="posted-note">This journal is posted. A correction is a new reversing entry.</p>

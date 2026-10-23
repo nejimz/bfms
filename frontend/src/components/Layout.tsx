@@ -1,14 +1,72 @@
-import { useState } from 'react'
-import { NavLink, Outlet } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { api, ensureCsrf, errorMessage } from '../api'
 import { useAuth } from '../auth'
 
-const links = [
-  { to: '/businesses', label: 'Businesses' },
-  { to: '/accounts', label: 'Chart of accounts' },
+const linksBeforeSettings = [{ to: '/businesses', label: 'Businesses' }]
+
+const settingsLinks = [{ to: '/accounts', label: 'Chart of accounts' }]
+
+const linksAfterSettings = [
+  { to: '/chart-account-entries', label: 'Chart account entry' },
   { to: '/journals', label: 'Journals' },
   { to: '/trial-balance', label: 'Trial balance' },
 ]
+
+function settingsRouteActive(pathname: string): boolean {
+  return settingsLinks.some((link) => pathname === link.to || pathname.startsWith(`${link.to}/`))
+}
+
+function SettingsMenu() {
+  const location = useLocation()
+  const active = settingsRouteActive(location.pathname)
+  const [open, setOpen] = useState(true)
+
+  useEffect(() => {
+    if (active) {
+      setOpen(true)
+    }
+  }, [active])
+
+  return (
+    <div className="nav-group">
+      <button
+        type="button"
+        className={active && !open ? 'active' : undefined}
+        aria-expanded={open}
+        aria-controls="settings-menu"
+        onClick={() => setOpen((current) => !current)}
+      >
+        Settings
+        <Chevron />
+      </button>
+      {open && (
+        <div className="nav-sub" id="settings-menu">
+          {settingsLinks.map((link) => (
+            <NavLink key={link.to} to={link.to}>
+              {link.label}
+            </NavLink>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function Chevron() {
+  return (
+    <svg className="nav-chevron" viewBox="0 0 12 12" aria-hidden="true">
+      <path
+        d="M4.5 2.5 8 6 4.5 9.5"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
+}
 
 export function Layout() {
   const { user, clear, selectCompany } = useAuth()
@@ -45,7 +103,13 @@ export function Layout() {
           </div>
         </div>
         <nav>
-          {links.map((link) => (
+          {linksBeforeSettings.map((link) => (
+            <NavLink key={link.to} to={link.to}>
+              {link.label}
+            </NavLink>
+          ))}
+          <SettingsMenu />
+          {linksAfterSettings.map((link) => (
             <NavLink key={link.to} to={link.to}>
               {link.label}
             </NavLink>

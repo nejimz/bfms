@@ -31,10 +31,19 @@ class UpdateCompanyRequest extends StoreCompanyRequest
                 ->withoutGlobalScope('company')
                 ->exists();
 
+            $hasChartAccountEntries = $company->chartAccountEntries()
+                ->withoutGlobalScope('company')
+                ->exists();
+
             if ($hasJournals) {
                 $validator->errors()->add(
                     'currency',
                     'Currency stays fixed once a journal exists.',
+                );
+            } elseif ($hasChartAccountEntries) {
+                $validator->errors()->add(
+                    'currency',
+                    'Currency stays fixed once a chart account entry exists.',
                 );
             }
         });

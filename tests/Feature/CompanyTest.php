@@ -5,6 +5,7 @@ use App\Enums\AccountType;
 use App\Enums\CompanyRole;
 use App\Enums\JournalStatus;
 use App\Models\Account;
+use App\Models\ChartAccountEntry;
 use App\Models\Company;
 use App\Models\Journal;
 use App\Models\User;
@@ -250,6 +251,26 @@ it('keeps the currency once a journal exists', function () {
         'currency' => 'PHP',
     ])->assertOk()
         ->assertJsonPath('data.attributes.name', 'Harbor Market');
+});
+
+it('keeps the currency once a chart account entry exists', function () {
+    $company = Company::factory()->create(['currency' => 'PHP']);
+    $owner = companyMember($company);
+    ChartAccountEntry::factory()->create([
+        'company_id' => $company->id,
+        'currency' => 'PHP',
+        'created_by' => $owner->id,
+    ]);
+
+    $this->actingAs($owner)->patchJson("/api/v1/companies/{$company->id}", [
+        'name' => 'Harbor Goods',
+        'description' => 'Retail goods and supplies.',
+        'currency' => 'USD',
+    ])->assertUnprocessable()
+        ->assertJsonValidationErrors(['currency'])
+        ->assertJsonPath('errors.currency.0', 'Currency stays fixed once a chart account entry exists.');
+
+    expect($company->fresh()->currency)->toBe('PHP');
 });
 
 it('refuses an edit from someone who does not own that business', function (string $role) {

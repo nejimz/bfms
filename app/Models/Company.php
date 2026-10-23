@@ -29,4 +29,9 @@ class Company extends Model
     {
         return $this->hasMany(Journal::class);
     }
+
+    public function chartAccountEntries(): HasMany
+    {
+        return $this->hasMany(ChartAccountEntry::class);
+    }
 }
