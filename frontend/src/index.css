@@ -299,7 +299,23 @@ table { width: 100%; border-collapse: collapse; }
 th, td { padding: 0.75rem 0.9rem; text-align: left; border-bottom: 1px solid var(--line); vertical-align: middle; }
 th { font-size: 0.78rem; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
 th.amount, td.num { text-align: right; font-variant-numeric: tabular-nums; }
-.column-filters { grid-template-columns: 8.5rem 13rem; justify-content: start; }
+.column-filters { grid-template-columns: minmax(12rem, 18rem) 8.5rem; justify-content: start; }
+.account-checklist {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  max-height: 22rem;
+  overflow: auto;
+}
+.account-checklist label {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  color: var(--ink);
+}
+.account-checklist input { width: auto; }
 th .sort-button {
   display: inline-flex;
   align-items: center;

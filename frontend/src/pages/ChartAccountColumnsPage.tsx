@@ -1,25 +1,11 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import { api } from '../api'
 import { useAuth } from '../auth'
+import { BusinessSelect } from '../components/BusinessSelect'
 import { formatDecimal, toMinor } from '../money'
-import type { ChartAccountColumnReport, ChartAccountColumnRow } from '../types'
-
-const monthNames = [
-  'January',
-  'February',
-  'March',
-  'April',
-  'May',
-  'June',
-  'July',
-  'August',
-  'September',
-  'October',
-  'November',
-  'December',
-]
+import { canWriteReport, readResource, type AccountColumnReport, type ChartAccountColumnReport, type ChartAccountColumnRow } from '../types'
 
 function formatEntryDate(iso: string): string {
   const [year, month, day] = iso.split('-').map(Number)
@@ -54,21 +40,30 @@ function totalFor(rows: ChartAccountColumnRow[], accountId: string): string {
 }
 
 export function ChartAccountColumnsPage() {
+  const { id } = useParams()
   const { user } = useAuth()
   const navigate = useNavigate()
   const companyId = user?.company.id
   const today = new Date()
   const [year, setYear] = useState(today.getFullYear())
-  const [month, setMonth] = useState(today.getMonth() + 1)
   const [sort, setSort] = useState<'asc' | 'desc'>('asc')
 
+  const definition = useQuery({
+    queryKey: ['account-column-report', companyId, id],
+    enabled: Boolean(companyId && id),
+    queryFn: async () => {
+      const response = await api.get(`/api/v1/account-column-reports/${id}`)
+      return readResource<Omit<AccountColumnReport, 'id'>>(response.data.data)
+    },
+  })
+
   const report = useQuery({
-    queryKey: ['chart-account-columns', companyId, year, month, sort],
-    enabled: Boolean(companyId),
+    queryKey: ['chart-account-columns', companyId, id, year, sort],
+    enabled: Boolean(companyId && id),
     placeholderData: keepPreviousData,
     queryFn: async () => {
       const response = await api.get<ChartAccountColumnReport>('/api/v1/reports/chart-account-columns', {
-        params: { year, month, sort },
+        params: { report: id, year, sort },
       })
 
       return response.data
@@ -87,12 +82,23 @@ export function ChartAccountColumnsPage() {
           <p className="eyebrow">
             {user?.company.name} · {report.data?.meta.currency ?? user?.company.currency}
           </p>
-          <h1>Account columns</h1>
-          <p className="hint">One row per chart account entry. Each amount sits under its account.</p>
+          <h1>{definition.data?.name ?? 'Account columns'}</h1>
+          <p className="hint">One row per chart account entry. Each amount sits under an account chosen for this report.</p>
+        </div>
+        <div className="actions">
+          <Link className="button-link" to="/chart-account-columns">
+            All reports
+          </Link>
+          {canWriteReport(user?.role) && id && (
+            <Link className="button-link" to={`/chart-account-columns/${id}/edit`}>
+              Edit report
+            </Link>
+          )}
         </div>
       </header>
 
       <div className="panel inline-form column-filters">
+        <BusinessSelect />
         <label>
           Year
           <select value={year} onChange={(event) => setYear(Number(event.target.value))}>
@@ -103,25 +109,17 @@ export function ChartAccountColumnsPage() {
             ))}
           </select>
         </label>
-        <label>
-          Month
-          <select value={month} onChange={(event) => setMonth(Number(event.target.value))}>
-            {monthNames.map((name, index) => (
-              <option key={name} value={index + 1}>
-                {name}
-              </option>
-            ))}
-          </select>
-        </label>
       </div>
 
       {report.isLoading && <p className="hint">Opening entries…</p>}
-      {report.isError && <p className="hint">The account columns could not be opened.</p>}
+      {(report.isError || definition.isError) && (
+        <p className="hint">The account columns could not be opened.</p>
+      )}
       {!report.isLoading && !report.isError && report.isFetched && rows.length === 0 && (
-        <p className="hint">No entries in this month.</p>
+        <p className="hint">No entries in this year.</p>
       )}
 
-      {rows.length > 0 && (
+      {!report.isError && columns.length > 0 && (
         <div className="table-wrap">
           <table>
             <thead>

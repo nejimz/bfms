@@ -58,12 +58,21 @@ export type ChartAccountColumnReport = {
   data: ChartAccountColumnRow[]
   meta: {
     year: number
-    month: number
     sort: 'asc' | 'desc'
     currency: string
     years: number[]
     columns: ChartAccountColumn[]
   }
+}
+
+export type AccountColumnReport = {
+  id: string
+  name: string
+  accounts: Array<Pick<Account, 'id' | 'code' | 'name'>>
+}
+
+export function canWriteReport(role: string | undefined): boolean {
+  return role === 'owner' || role === 'accountant'
 }
 
 export type Membership = {

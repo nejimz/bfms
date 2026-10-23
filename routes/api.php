@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\V1\AccountColumnReportController;
 use App\Http\Controllers\Api\V1\AccountController;
 use App\Http\Controllers\Api\V1\ChartAccountColumnReportController;
 use App\Http\Controllers\Api\V1\ChartAccountEntryController;
@@ -33,6 +34,12 @@ Route::middleware(['auth:sanctum', SetCurrentCompany::class])->prefix('v1')->gro
     Route::get('/journals/{journal}', [JournalController::class, 'show']);
     Route::put('/journals/{journal}', [JournalController::class, 'update']);
     Route::post('/journals/{journal}/post', [JournalController::class, 'post']);
+
+    Route::get('/account-column-reports', [AccountColumnReportController::class, 'index']);
+    Route::post('/account-column-reports', [AccountColumnReportController::class, 'store']);
+    Route::get('/account-column-reports/{accountColumnReport}', [AccountColumnReportController::class, 'show']);
+    Route::put('/account-column-reports/{accountColumnReport}', [AccountColumnReportController::class, 'update']);
+    Route::delete('/account-column-reports/{accountColumnReport}', [AccountColumnReportController::class, 'destroy']);
 
     Route::get('/reports/trial-balance', [TrialBalanceController::class, 'show']);
     Route::get('/reports/chart-account-columns', [ChartAccountColumnReportController::class, 'show']);

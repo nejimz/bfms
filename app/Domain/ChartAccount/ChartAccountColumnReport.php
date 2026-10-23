@@ -4,6 +4,7 @@ namespace App\Domain\ChartAccount;
 
 use App\Domain\Ledger\Money;
 use App\Models\Account;
+use App\Models\AccountColumnReport;
 use App\Models\ChartAccountEntry;
 use App\Support\CurrentCompany;
 use Illuminate\Support\Carbon;
@@ -15,7 +16,6 @@ class ChartAccountColumnReport
      *     data: list<array{id: string, date: string, particulars: string, status: string, account_id: string, amount: string}>,
      *     meta: array{
      *         year: int,
-     *         month: int,
      *         sort: string,
      *         currency: string,
      *         years: list<int>,
@@ -23,26 +23,24 @@ class ChartAccountColumnReport
      *     }
      * }
      */
-    public function build(int $year, int $month, string $sort): array
+    public function build(AccountColumnReport $report, int $year, string $sort): array
     {
         $company = app(CurrentCompany::class)->company();
         $direction = $sort === 'desc' ? 'desc' : 'asc';
-        $start = Carbon::createFromDate($year, $month, 1)->startOfMonth()->toDateString();
-        $end = Carbon::createFromDate($year, $month, 1)->endOfMonth()->toDateString();
+        $start = Carbon::createFromDate($year, 1, 1)->toDateString();
+        $end = Carbon::createFromDate($year, 12, 31)->toDateString();
+        $report->loadMissing('accounts');
+        $accounts = $report->accounts;
 
         $entries = ChartAccountEntry::query()
             ->with('account')
+            ->whereIn('account_id', $accounts->modelKeys())
             ->whereBetween('date', [$start, $end])
             ->orderBy('date', $direction)
             ->orderBy('id', $direction)
             ->get();
 
-        $columns = $entries
-            ->map(fn (ChartAccountEntry $entry) => $entry->account)
-            ->filter()
-            ->unique(fn (Account $account): int => $account->id)
-            ->sortBy('code')
-            ->values()
+        $columns = $accounts
             ->map(fn (Account $account): array => [
                 'id' => (string) $account->id,
                 'code' => $account->code,
@@ -63,7 +61,6 @@ class ChartAccountColumnReport
             'data' => $data,
             'meta' => [
                 'year' => $year,
-                'month' => $month,
                 'sort' => $direction,
                 'currency' => $company->currency,
                 'years' => $this->years(),
