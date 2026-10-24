@@ -12,6 +12,7 @@ import { ChartAccountEntryFormPage } from './pages/ChartAccountEntryFormPage'
 import { BusinessFormPage } from './pages/BusinessFormPage'
 import { BusinessesPage } from './pages/BusinessesPage'
 import { DashboardPage } from './pages/DashboardPage'
+import { IncomeExpensePage } from './pages/IncomeExpensePage'
 import { CategoriesPage } from './pages/CategoriesPage'
 import { CategoryFormPage } from './pages/CategoryFormPage'
 import { JournalFormPage } from './pages/JournalFormPage'
@@ -84,6 +85,7 @@ export default function App() {
               <Route path="/password" element={<PasswordPage />} />
               <Route element={<RequireDashboard />}>
                 <Route path="/dashboard" element={<DashboardPage />} />
+                <Route path="/income-expense" element={<IncomeExpensePage />} />
               </Route>
               <Route element={<RequireAdmin />}>
                 <Route path="/businesses" element={<BusinessesPage />} />

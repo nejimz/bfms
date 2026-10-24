@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\V1\ChartAccountColumnReportController;
 use App\Http\Controllers\Api\V1\ChartAccountEntryController;
 use App\Http\Controllers\Api\V1\CompanyController;
 use App\Http\Controllers\Api\V1\CurrentUserController;
+use App\Http\Controllers\Api\V1\IncomeExpenseChartController;
 use App\Http\Controllers\Api\V1\JournalController;
 use App\Http\Controllers\Api\V1\TrialBalanceController;
 use App\Http\Controllers\Api\V1\UserController;
@@ -59,6 +60,7 @@ Route::middleware(['auth:sanctum', SetCurrentCompany::class])->prefix('v1')->gro
     Route::delete('/account-column-reports/{accountColumnReport}', [AccountColumnReportController::class, 'destroy']);
 
     Route::get('/reports/business-summary', [BusinessSummaryController::class, 'show']);
+    Route::get('/reports/income-expense', [IncomeExpenseChartController::class, 'show']);
     Route::get('/reports/trial-balance', [TrialBalanceController::class, 'show']);
     Route::get('/reports/chart-account-columns', [ChartAccountColumnReportController::class, 'show']);
 });

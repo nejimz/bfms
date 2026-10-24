@@ -438,6 +438,35 @@ th.center, td.center { text-align: center; }
   gap: 0.75rem;
 }
 .dashboard-filters label { width: 9.5rem; }
+.chart-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.25rem;
+  margin: 0 0 0 auto;
+  padding: 0;
+  list-style: none;
+}
+.chart-legend li {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+.chart-swatch {
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 2px;
+}
+.chart-panel { display: grid; gap: 0.35rem; }
+.chart-scroll { overflow-x: auto; }
+.chart-scroll svg {
+  display: block;
+  width: 100%;
+  min-width: 42rem;
+  height: auto;
+}
+.chart-scroll text { font-family: "Avenir Next", "Segoe UI", sans-serif; }
 .period-actions { display: flex; gap: 0.5rem; }
 .dashboard-groups { display: grid; gap: 1.75rem; }
 .dashboard-group { display: grid; gap: 0.85rem; }
@@ -592,6 +621,7 @@ label .form-error { font-size: 0.85rem; }
   .login { grid-template-columns: 1fr; gap: 1.5rem; }
   .inline-form, .journal-head, .entry-fields, .entry-composer, .column-filters { grid-template-columns: 1fr; }
   .dashboard-filters label { width: 100%; }
+  .chart-legend { margin-left: 0; }
   .dashboard-totals { align-items: flex-start; }
   .entry-sheet-head { display: none; }
   .entry-row {

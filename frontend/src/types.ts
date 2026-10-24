@@ -120,6 +120,32 @@ export type BusinessSummary = {
   accounts: BusinessSummaryAccount[]
 }
 
+export type IncomeExpensePoint = {
+  key: string
+  sales: string
+  operation_expense: string
+  purchase_expense: string
+}
+
+export type IncomeExpenseChart = {
+  id: string
+  name: string
+  currency: string
+  category_name: string | null
+  business_count: number
+  months: IncomeExpensePoint[]
+}
+
+export type IncomeExpenseChartReport = {
+  data: IncomeExpenseChart[]
+  meta: {
+    group: 'business' | 'category'
+    from: string
+    to: string
+    months: Array<{ key: string; year: number; month: number }>
+  }
+}
+
 export type BusinessSummaryReport = {
   data: BusinessSummary[]
   meta: {

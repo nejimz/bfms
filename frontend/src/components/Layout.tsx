@@ -5,7 +5,7 @@ import { useAuth } from '../auth'
 import { chartAccountModuleList } from '../chartAccountModules'
 import { canViewDashboard } from '../types'
 
-type MenuIcon = 'dashboard' | 'businesses' | 'categories' | 'accounts' | 'entry' | 'journals' | 'balance' | 'users'
+type MenuIcon = 'dashboard' | 'chart' | 'businesses' | 'categories' | 'accounts' | 'entry' | 'journals' | 'balance' | 'users'
 
 type MenuItem = {
   to: string
@@ -29,6 +29,7 @@ const moduleLinks: MenuItem[] = chartAccountModuleList.map((module) => ({
 }))
 
 const dashboardLink: MenuItem = { to: '/dashboard', label: 'Dashboard', icon: 'dashboard' }
+const incomeExpenseLink: MenuItem = { to: '/income-expense', label: 'Income & Expenses', icon: 'chart' }
 
 const linksAfterSettings: MenuItem[] = [
   { to: '/journals', label: 'Journals', icon: 'journals' },
@@ -103,6 +104,15 @@ function NavIcon({ name }: { name: MenuIcon | 'settings' }) {
           <path d="M10 19V5" />
           <path d="M16 19v-7" />
           <path d="M20 19H4" />
+        </>
+      )}
+      {name === 'chart' && (
+        <>
+          <path d="M4 19V10" />
+          <path d="M4 19h16" />
+          <rect x="7" y="12" width="3" height="7" />
+          <rect x="12" y="7" width="3" height="12" />
+          <rect x="17" y="14" width="3" height="5" />
         </>
       )}
       {name === 'businesses' && (
@@ -216,7 +226,12 @@ export function Layout() {
           </div>
         </div>
         <nav>
-          {user && canViewDashboard(user.role) && <MenuLink item={dashboardLink} />}
+          {user && canViewDashboard(user.role) && (
+            <>
+              <MenuLink item={dashboardLink} />
+              <MenuLink item={incomeExpenseLink} />
+            </>
+          )}
           {user?.role === 'admin' && (
             <>
               <SettingsMenu />
