@@ -36,6 +36,7 @@ class ChartAccountEntryResource extends JsonApiResource
     {
         return [
             'account' => AccountResource::class,
+            'lines' => ChartAccountEntryLineResource::class,
         ];
     }
 }

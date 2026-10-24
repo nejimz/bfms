@@ -27,6 +27,13 @@ export type Journal = {
   lines: JournalLine[]
 }
 
+export type ChartAccountEntryLine = {
+  id: string
+  name: string
+  quantity: string
+  amount: string
+}
+
 export type ChartAccountEntry = {
   id: string
   date: string
@@ -37,6 +44,7 @@ export type ChartAccountEntry = {
   status: 'draft' | 'posted'
   posted_at: string | null
   account: Pick<Account, 'id' | 'code' | 'name'> | null
+  lines: ChartAccountEntryLine[]
 }
 
 export type ChartAccountColumn = {
@@ -135,6 +143,7 @@ type Resource<T> = {
   attributes: T
   relationships?: {
     account?: { data?: { id: string; type?: string } | null }
+    lines?: { data?: Array<{ id: string; type?: string }> | null }
   }
 }
 
@@ -153,19 +162,36 @@ export function readJournal(payload: {
   return { ...readResource(payload.data), lines }
 }
 
-function includedAccounts(
-  included: Array<Resource<Omit<Account, 'id'>>> | undefined,
-): Map<string, Account> {
+function includedAccounts(included: IncludedRecord[] | undefined): Map<string, Account> {
   return new Map(
     (included ?? [])
       .filter((item) => item.type === 'accounts')
-      .map((item) => [item.id, readResource(item)]),
+      .map((item) => [item.id, readResource(item as Resource<Omit<Account, 'id'>>)]),
   )
 }
 
+type IncludedRecord = Resource<Omit<Account, 'id'> | Omit<ChartAccountEntryLine, 'id'>>
+
+function includedLines(included: IncludedRecord[] | undefined): Map<string, ChartAccountEntryLine> {
+  return new Map(
+    (included ?? [])
+      .filter((item) => item.type === 'chart-account-entry-lines')
+      .map((item) => [item.id, readResource(item as Resource<Omit<ChartAccountEntryLine, 'id'>>)]),
+  )
+}
+
+function entryLines(
+  resource: Resource<Omit<ChartAccountEntry, 'id' | 'account' | 'lines'>>,
+  lines: Map<string, ChartAccountEntryLine>,
+): ChartAccountEntryLine[] {
+  return (resource.relationships?.lines?.data ?? [])
+    .map((line) => lines.get(line.id))
+    .filter((line): line is ChartAccountEntryLine => line !== undefined)
+}
+
 export function readChartAccountEntry(payload: {
-  data: Resource<Omit<ChartAccountEntry, 'id' | 'account'>>
-  included?: Array<Resource<Omit<Account, 'id'>>>
+  data: Resource<Omit<ChartAccountEntry, 'id' | 'account' | 'lines'>>
+  included?: IncludedRecord[]
 }): ChartAccountEntry {
   const accounts = includedAccounts(payload.included)
   const accountId = payload.data.relationships?.account?.data?.id ?? payload.data.attributes.account_id
@@ -173,14 +199,16 @@ export function readChartAccountEntry(payload: {
   return {
     ...readResource(payload.data),
     account: accounts.get(accountId) ?? null,
+    lines: entryLines(payload.data, includedLines(payload.included)),
   }
 }
 
 export function readChartAccountEntries(payload: {
-  data: Array<Resource<Omit<ChartAccountEntry, 'id' | 'account'>>>
-  included?: Array<Resource<Omit<Account, 'id'>>>
+  data: Array<Resource<Omit<ChartAccountEntry, 'id' | 'account' | 'lines'>>>
+  included?: IncludedRecord[]
 }): ChartAccountEntry[] {
   const accounts = includedAccounts(payload.included)
+  const lines = includedLines(payload.included)
 
   return payload.data.map((resource) => {
     const accountId = resource.relationships?.account?.data?.id ?? resource.attributes.account_id
@@ -188,6 +216,7 @@ export function readChartAccountEntries(payload: {
     return {
       ...readResource(resource),
       account: accounts.get(accountId) ?? null,
+      lines: entryLines(resource, lines),
     }
   })
 }

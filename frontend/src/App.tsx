@@ -6,6 +6,7 @@ import { AccountsPage } from './pages/AccountsPage'
 import { AccountColumnReportFormPage } from './pages/AccountColumnReportFormPage'
 import { AccountColumnReportsPage } from './pages/AccountColumnReportsPage'
 import { ChartAccountColumnsPage } from './pages/ChartAccountColumnsPage'
+import { chartAccountModuleList } from './chartAccountModules'
 import { ChartAccountEntriesPage } from './pages/ChartAccountEntriesPage'
 import { ChartAccountEntryFormPage } from './pages/ChartAccountEntryFormPage'
 import { BusinessFormPage } from './pages/BusinessFormPage'
@@ -63,6 +64,23 @@ export default function App() {
               <Route path="/chart-account-columns/:id" element={<ChartAccountColumnsPage />} />
               <Route path="/chart-account-entries/new" element={<ChartAccountEntryFormPage />} />
               <Route path="/chart-account-entries/:id" element={<ChartAccountEntryFormPage />} />
+              {chartAccountModuleList.map((module) => (
+                <Route key={`${module.key}-list`} path={module.path} element={<ChartAccountEntriesPage moduleKey={module.key} />} />
+              ))}
+              {chartAccountModuleList.map((module) => (
+                <Route
+                  key={`${module.key}-new`}
+                  path={`${module.path}/new`}
+                  element={<ChartAccountEntryFormPage moduleKey={module.key} />}
+                />
+              ))}
+              {chartAccountModuleList.map((module) => (
+                <Route
+                  key={`${module.key}-edit`}
+                  path={`${module.path}/:id`}
+                  element={<ChartAccountEntryFormPage moduleKey={module.key} />}
+                />
+              ))}
               <Route path="/journals" element={<JournalsPage />} />
               <Route path="/journals/new" element={<JournalFormPage />} />
               <Route path="/journals/:id" element={<JournalFormPage />} />

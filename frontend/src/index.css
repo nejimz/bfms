@@ -229,8 +229,13 @@ td .status { margin-left: 0.55rem; vertical-align: middle; }
 }
 .entry-account-name { font-weight: 600; }
 .entry-narrative {
+  display: grid;
   min-width: 0;
+}
+.entry-items-summary {
   overflow: hidden;
+  color: var(--muted);
+  font-size: 0.85rem;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -258,6 +263,53 @@ td .status { margin-left: 0.55rem; vertical-align: middle; }
 .entry-fields, .entry-aside { display: grid; gap: 0.95rem; padding: 1.2rem 1.25rem; }
 .entry-fields { grid-template-columns: minmax(11rem, 14rem) minmax(9rem, 11rem); }
 .entry-account-field, .entry-particulars { grid-column: 1 / -1; }
+.entry-locked-account {
+  margin: 0;
+  border: 1px solid var(--line);
+  background: white;
+  border-radius: 8px;
+  padding: 0.55rem 0.7rem;
+  min-height: calc(1.45em + 1.1rem + 2px);
+  color: var(--ink);
+  font-size: 1rem;
+}
+.entry-party-label {
+  margin: 0.8rem 0 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+.entry-party-label + .entry-quote { margin-top: 0.15rem; }
+.entry-items { grid-column: 1 / -1; display: grid; gap: 0.55rem; }
+.entry-item-head, .entry-item-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 5.5rem 7.5rem auto;
+  gap: 0.5rem;
+  align-items: center;
+}
+.entry-item-head {
+  color: var(--muted);
+  font-size: 0.72rem;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+.entry-remove-item {
+  background: transparent;
+  border-color: transparent;
+  color: var(--danger);
+  padding-inline: 0.35rem;
+}
+.entry-item-list {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0.85rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+.entry-item-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+}
 .entry-particulars textarea { min-height: 8.5rem; }
 .entry-aside { position: sticky; top: 1.25rem; }
 .entry-amount-input {
@@ -408,5 +460,6 @@ label .form-error { font-size: 0.85rem; }
   .entry-row time { grid-area: date; color: var(--muted); font-size: 0.85rem; }
   .entry-row .status { grid-area: status; }
   .entry-aside { position: static; }
+  .entry-item-head, .entry-item-row { grid-template-columns: minmax(0, 1fr) 4.2rem 5.6rem auto; }
   h1 { font-size: 1.7rem; }
 }

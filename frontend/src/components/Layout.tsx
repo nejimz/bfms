@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { api, ensureCsrf, errorMessage } from '../api'
 import { useAuth } from '../auth'
+import { chartAccountModuleList } from '../chartAccountModules'
 
 type MenuIcon = 'businesses' | 'categories' | 'accounts' | 'entry' | 'journals' | 'balance'
 
@@ -18,6 +19,12 @@ const settingsLinks: MenuItem[] = [
   { to: '/chart-account-entries', label: 'Chart Account Entry', icon: 'entry' },
   { to: '/accounts', label: 'Chart Of Accounts', icon: 'accounts' },
 ]
+
+const moduleLinks: MenuItem[] = chartAccountModuleList.map((module) => ({
+  to: module.path,
+  label: module.title,
+  icon: 'entry',
+}))
 
 const linksAfterSettings: MenuItem[] = [
   { to: '/journals', label: 'Journals', icon: 'journals' },
@@ -192,6 +199,9 @@ export function Layout() {
         </div>
         <nav>
           <SettingsMenu />
+          {moduleLinks.map((link) => (
+            <MenuLink key={link.to} item={link} />
+          ))}
           {linksAfterSettings.map((link) => (
             <MenuLink key={link.to} item={link} />
           ))}

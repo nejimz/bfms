@@ -23,7 +23,7 @@ class ChartAccountEntryController extends Controller
         $this->authorize('viewAny', ChartAccountEntry::class);
 
         $entries = ChartAccountEntry::query()
-            ->with('account')
+            ->with(['account', 'lines'])
             ->orderByDesc('date')
             ->orderByDesc('id')
             ->limit(100)
@@ -40,16 +40,24 @@ class ChartAccountEntryController extends Controller
         $company = app(CurrentCompany::class)->company();
         $data = $request->validated();
 
-        $entry = ChartAccountEntry::query()->create([
-            'company_id' => $company->id,
-            'account_id' => $data['account_id'],
-            'date' => $data['date'],
-            'particulars' => $data['particulars'],
-            'amount_cents' => Money::fromDecimal($data['amount'])->minor,
-            'currency' => $company->currency,
-            'status' => ChartAccountEntryStatus::Draft,
-            'created_by' => $request->user()->id,
-        ]);
+        $entry = DB::transaction(function () use ($company, $data, $request) {
+            $entry = ChartAccountEntry::query()->create([
+                'company_id' => $company->id,
+                'account_id' => $data['account_id'],
+                'date' => $data['date'],
+                'particulars' => $data['particulars'],
+                'amount_cents' => $this->amountMinor($data),
+                'currency' => $company->currency,
+                'status' => ChartAccountEntryStatus::Draft,
+                'created_by' => $request->user()->id,
+            ]);
+
+            if (array_key_exists('lines', $data)) {
+                $entry->replaceLines($data['lines']);
+            }
+
+            return $entry;
+        });
 
         return $this->entryResponse($entry, 201);
     }
@@ -69,12 +77,18 @@ class ChartAccountEntryController extends Controller
 
         $data = $request->validated();
 
-        $entry->update([
-            'account_id' => $data['account_id'],
-            'date' => $data['date'],
-            'particulars' => $data['particulars'],
-            'amount_cents' => Money::fromDecimal($data['amount'])->minor,
-        ]);
+        DB::transaction(function () use ($data, $entry) {
+            $entry->update([
+                'account_id' => $data['account_id'],
+                'date' => $data['date'],
+                'particulars' => $data['particulars'],
+                'amount_cents' => $this->amountMinor($data),
+            ]);
+
+            if (array_key_exists('lines', $data)) {
+                $entry->replaceLines($data['lines']);
+            }
+        });
 
         return $this->entryResponse($entry);
     }
@@ -120,9 +134,29 @@ class ChartAccountEntryController extends Controller
         return $this->entryResponse($entry);
     }
 
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    private function amountMinor(array $data): int
+    {
+        if (! array_key_exists('lines', $data)) {
+            return Money::fromDecimal((string) $data['amount'])->minor;
+        }
+
+        /** @var list<array{amount: string}> $lines */
+        $lines = $data['lines'];
+        $total = Money::zero();
+
+        foreach ($lines as $line) {
+            $total = $total->plus(Money::fromDecimal($line['amount']));
+        }
+
+        return $total->minor;
+    }
+
     private function entryResponse(ChartAccountEntry $entry, int $status = 200): JsonResponse
     {
-        $entry->load('account');
+        $entry->load(['account', 'lines']);
 
         return (new ChartAccountEntryResource($entry))
             ->includePreviouslyLoadedRelationships()
