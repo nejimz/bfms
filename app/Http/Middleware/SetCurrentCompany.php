@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\Company;
 use App\Support\CurrentCompany;
 use Closure;
 use Illuminate\Http\Request;
@@ -17,6 +18,10 @@ class SetCurrentCompany
             return $next($request);
         }
 
+        if (! $user->is_active) {
+            abort(403, 'This account is inactive.');
+        }
+
         $selectedId = $request->hasSession()
             ? $request->session()->get('current_company_id')
             : null;
@@ -24,16 +29,16 @@ class SetCurrentCompany
         $company = null;
 
         if ($selectedId !== null) {
-            $company = $user->companies()->where('companies.id', $selectedId)->first();
+            $company = $user->accessibleCompanies()->where('companies.id', $selectedId)->first();
         }
 
-        $company ??= $user->companies()->orderBy('companies.id')->first();
+        $company ??= $user->accessibleCompanies()->orderBy('companies.id')->first();
 
-        if ($company === null) {
+        if (! $company instanceof Company) {
             abort(403, 'You do not belong to a company.');
         }
 
-        app(CurrentCompany::class)->set($company, (string) $company->pivot->role);
+        app(CurrentCompany::class)->set($company, $user->role->value);
 
         app()->terminating(function () {
             app(CurrentCompany::class)->forget();

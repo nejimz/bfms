@@ -51,7 +51,7 @@ export function CategoryFormPage() {
     setFilled(true)
   }, [category, filled])
 
-  if (user && user.role !== 'owner') {
+  if (user && user.role !== 'admin') {
     return <Navigate to="/categories" replace />
   }
 

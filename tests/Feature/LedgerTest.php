@@ -10,10 +10,7 @@ use App\Models\User;
 
 function memberOf(Company $company, string $role = CompanyRole::Owner->value): User
 {
-    $user = User::factory()->create();
-    $company->users()->attach($user->id, ['role' => $role]);
-
-    return $user;
+    return memberWithRole($company, $role);
 }
 
 function ledgerLines(Account $debit, Account $credit, string $debitAmount = '100.00', string $creditAmount = '100.00'): array
@@ -99,7 +96,6 @@ it('hides another company ledger from the current user', function () {
     $user = memberOf($company);
 
     $other = Company::factory()->create();
-    $otherUser = memberOf($other);
     $secret = Account::factory()->create([
         'company_id' => $other->id,
         'code' => '9999',
@@ -111,9 +107,13 @@ it('hides another company ledger from the current user', function () {
         'code' => '3999',
         'type' => AccountType::Equity,
     ]);
-
-    $created = $this->actingAs($otherUser)->postJson('/api/v1/journals', ledgerLines($secret, $offset));
-    $journalId = $created->json('data.id');
+    $journal = Journal::query()->create([
+        'company_id' => $other->id,
+        'date' => '2026-10-01',
+        'currency' => $other->currency,
+        'status' => JournalStatus::Draft,
+        'created_by' => $user->id,
+    ]);
 
     $this->actingAs($user)
         ->getJson('/api/v1/accounts')
@@ -121,17 +121,46 @@ it('hides another company ledger from the current user', function () {
         ->assertJsonMissing(['code' => '9999']);
 
     $this->actingAs($user)
-        ->getJson("/api/v1/journals/{$journalId}")
+        ->getJson("/api/v1/journals/{$journal->id}")
         ->assertNotFound();
 });
 
-it('blocks staff from posting journals', function () {
+it('returns 403 when staff post a journal', function (string $role) {
     $company = Company::factory()->create();
-    $staff = memberOf($company, CompanyRole::Staff->value);
+    $staff = memberOf($company, $role);
     $cash = Account::factory()->create(['company_id' => $company->id, 'code' => '1000', 'type' => AccountType::Asset]);
     $sales = Account::factory()->create(['company_id' => $company->id, 'code' => '4000', 'type' => AccountType::Income]);
 
     $this->actingAs($staff)
         ->postJson('/api/v1/journals', ledgerLines($cash, $sales))
         ->assertForbidden();
-});
+})->with([
+    CompanyRole::Accountant->value,
+    CompanyRole::Staff->value,
+]);
+
+it('returns 403 when a manager or staff member creates an account', function (string $role) {
+    $company = Company::factory()->create();
+    $user = memberOf($company, $role);
+
+    $this->actingAs($user)->postJson('/api/v1/accounts', [
+        'code' => '1200',
+        'name' => 'Petty cash',
+        'type' => AccountType::Asset->value,
+    ])->assertForbidden();
+})->with([
+    CompanyRole::Accountant->value,
+    CompanyRole::Staff->value,
+]);
+
+it('returns 403 when a manager or staff member opens the trial balance', function (string $role) {
+    $company = Company::factory()->create();
+    $user = memberOf($company, $role);
+
+    $this->actingAs($user)
+        ->getJson('/api/v1/reports/trial-balance')
+        ->assertForbidden();
+})->with([
+    CompanyRole::Accountant->value,
+    CompanyRole::Staff->value,
+]);

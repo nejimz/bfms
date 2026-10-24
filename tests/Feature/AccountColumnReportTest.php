@@ -9,10 +9,7 @@ use App\Models\User;
 
 function reportMember(Company $company, string $role = CompanyRole::Owner->value): User
 {
-    $user = User::factory()->create();
-    $company->users()->attach($user->id, ['role' => $role]);
-
-    return $user;
+    return memberWithRole($company, $role);
 }
 
 function reportAccount(Company $company, string $code, string $name): Account
@@ -121,7 +118,7 @@ it('refuses staff who create a report', function () {
         ->assertForbidden();
 });
 
-it('lets staff open a report', function () {
+it('returns 403 when staff open a report', function () {
     $company = Company::factory()->create();
     $staff = reportMember($company, CompanyRole::Staff->value);
     $cash = reportAccount($company, '1000', 'Cash');
@@ -133,20 +130,16 @@ it('lets staff open a report', function () {
 
     $this->actingAs($staff)
         ->getJson('/api/v1/account-column-reports')
-        ->assertOk()
-        ->assertJsonCount(1, 'data')
-        ->assertJsonPath('data.0.attributes.name', 'Cash columns')
-        ->assertJsonPath('data.0.attributes.accounts.0.code', '1000');
+        ->assertForbidden();
 
     $this->actingAs($staff)
         ->getJson('/api/v1/account-column-reports/'.$saved->id)
-        ->assertOk()
-        ->assertJsonPath('data.attributes.name', 'Cash columns');
+        ->assertForbidden();
 });
 
 it('replaces the name and account order', function () {
     $company = Company::factory()->create();
-    $accountant = reportMember($company, CompanyRole::Accountant->value);
+    $accountant = reportMember($company);
     $cash = reportAccount($company, '1000', 'Cash');
     $sales = reportAccount($company, '4000', 'Sales');
     $saved = AccountColumnReport::factory()->create([

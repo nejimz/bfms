@@ -26,7 +26,7 @@ export function BusinessesPage() {
           <h1>Businesses</h1>
           <p className="hint">Each business keeps its own chart of accounts and journals.</p>
         </div>
-        {user?.role === 'owner' && (
+        {user?.role === 'admin' && (
           <Link className="primary button-link" to="/businesses/new">
             Add business
           </Link>
@@ -41,7 +41,6 @@ export function BusinessesPage() {
               <th>Description</th>
               <th className="center">Category</th>
               <th className="center">Currency</th>
-              <th className="center">Role</th>
               <th />
             </tr>
           </thead>
@@ -55,15 +54,12 @@ export function BusinessesPage() {
                 <td>{business.description || 'No description'}</td>
                 <td className="center">{business.category_name || 'No category'}</td>
                 <td className="num center">{business.currency}</td>
-                <td className="type center">{business.role}</td>
                 <td>
-                  {business.role === 'owner' && (
-                    <div className="actions">
-                      <Link className="button-link" to={`/businesses/${business.id}/edit`}>
-                        Edit
-                      </Link>
-                    </div>
-                  )}
+                  <div className="actions">
+                    <Link className="button-link" to={`/businesses/${business.id}/edit`}>
+                      Edit
+                    </Link>
+                  </div>
                 </td>
               </tr>
             ))}

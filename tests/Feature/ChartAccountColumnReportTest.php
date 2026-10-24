@@ -13,10 +13,7 @@ use Symfony\Component\HttpFoundation\Cookie;
 
 function columnMember(Company $company, string $role = CompanyRole::Owner->value): User
 {
-    $user = User::factory()->create();
-    $company->users()->attach($user->id, ['role' => $role]);
-
-    return $user;
+    return memberWithRole($company, $role);
 }
 
 /**
@@ -51,7 +48,7 @@ it('lists one row per entry for accounts used in the year', function () {
     $this->travelTo('2026-10-23');
 
     $company = Company::factory()->create(['currency' => 'PHP']);
-    $staff = columnMember($company, CompanyRole::Staff->value);
+    $user = columnMember($company);
     $cash = Account::factory()->create([
         'company_id' => $company->id,
         'code' => '1000',
@@ -77,24 +74,24 @@ it('lists one row per entry for accounts used in the year', function () {
         'name' => 'Float',
         'type' => AccountType::Asset,
     ]);
-    columnEntry($company, $cash, $staff, [
+    columnEntry($company, $cash, $user, [
         'date' => '2026-10-05',
         'particulars' => 'Drawer count',
         'amount_cents' => 2500,
         'status' => ChartAccountEntryStatus::Draft,
     ]);
-    columnEntry($company, $rent, $staff, [
+    columnEntry($company, $rent, $user, [
         'date' => '2026-10-20',
         'particulars' => 'October rent',
         'amount_cents' => 8000,
         'status' => ChartAccountEntryStatus::Posted,
     ]);
-    columnEntry($company, $float, $staff, [
+    columnEntry($company, $float, $user, [
         'date' => '2026-11-01',
         'particulars' => 'November float',
         'amount_cents' => 1000,
     ]);
-    columnEntry($company, $cash, $staff, [
+    columnEntry($company, $cash, $user, [
         'date' => '2025-12-31',
         'particulars' => 'Prior year',
         'amount_cents' => 100,
@@ -115,7 +112,7 @@ it('lists one row per entry for accounts used in the year', function () {
     ]);
     $saved = columnReport($company, [$cash, $rent, $float]);
 
-    $report = $this->actingAs($staff)->getJson('/api/v1/reports/chart-account-columns?year=2026&report='.$saved->id);
+    $report = $this->actingAs($user)->getJson('/api/v1/reports/chart-account-columns?year=2026&report='.$saved->id);
 
     $report->assertOk()
         ->assertJsonCount(3, 'data')
@@ -395,6 +392,23 @@ it('refuses a user who belongs to no business', function () {
         ->assertForbidden()
         ->assertJsonPath('message', 'You do not belong to a company.');
 });
+
+it('returns 403 when a manager or staff member opens column reports', function (string $role) {
+    $company = Company::factory()->create();
+    $user = columnMember($company, $role);
+    $cash = Account::factory()->create([
+        'company_id' => $company->id,
+        'type' => AccountType::Asset,
+    ]);
+    $saved = columnReport($company, [$cash]);
+
+    $this->actingAs($user)
+        ->getJson('/api/v1/reports/chart-account-columns?report='.$saved->id)
+        ->assertForbidden();
+})->with([
+    CompanyRole::Accountant->value,
+    CompanyRole::Staff->value,
+]);
 
 it('refuses a guest', function () {
     $this->getJson('/api/v1/reports/chart-account-columns')->assertUnauthorized();

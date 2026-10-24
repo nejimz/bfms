@@ -1,22 +1,34 @@
 <?php
 
+use App\Enums\CompanyRole;
+use App\Enums\UserRole;
+use App\Models\Company;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
-
-/*
-|--------------------------------------------------------------------------
-| Test Case
-|--------------------------------------------------------------------------
-|
-| The closure you provide to your test functions is always bound to a specific PHPUnit test
-| case class. By default, that class is "PHPUnit\Framework\TestCase". Of course, you may
-| need to change it using the "pest()" function to bind different classes or traits.
-|
-*/
 
 pest()->extend(TestCase::class)
     ->use(RefreshDatabase::class)
     ->in('Feature');
+
+function memberWithRole(Company $company, string $role = CompanyRole::Owner->value): User
+{
+    $platform = match ($role) {
+        CompanyRole::Owner->value => UserRole::Admin,
+        CompanyRole::Accountant->value => UserRole::Manager,
+        default => UserRole::Staff,
+    };
+
+    $user = User::factory()->create([
+        'role' => $platform,
+    ]);
+
+    if ($platform === UserRole::Staff) {
+        $company->users()->attach($user->id, ['role' => CompanyRole::Staff->value]);
+    }
+
+    return $user;
+}
 
 /*
 |--------------------------------------------------------------------------

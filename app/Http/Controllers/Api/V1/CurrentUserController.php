@@ -13,7 +13,7 @@ class CurrentUserController extends Controller
     {
         $user = $request->user();
         $company = app(CurrentCompany::class)->company();
-        $companies = $user->companies()
+        $companies = $user->accessibleCompanies()
             ->orderBy('companies.name')
             ->get()
             ->map(fn ($membership) => [
@@ -21,7 +21,6 @@ class CurrentUserController extends Controller
                 'name' => $membership->name,
                 'description' => $membership->description,
                 'currency' => $membership->currency,
-                'role' => $membership->pivot->role,
             ])
             ->values();
 
@@ -32,7 +31,7 @@ class CurrentUserController extends Controller
                 'attributes' => [
                     'name' => $user->name,
                     'email' => $user->email,
-                    'role' => app(CurrentCompany::class)->role(),
+                    'role' => $user->role?->value,
                     'company' => [
                         'id' => (string) $company->id,
                         'name' => $company->name,

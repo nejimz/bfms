@@ -4,7 +4,7 @@ import { api, ensureCsrf, errorMessage } from '../api'
 import { useAuth } from '../auth'
 import { chartAccountModuleList } from '../chartAccountModules'
 
-type MenuIcon = 'businesses' | 'categories' | 'accounts' | 'entry' | 'journals' | 'balance'
+type MenuIcon = 'businesses' | 'categories' | 'accounts' | 'entry' | 'journals' | 'balance' | 'users'
 
 type MenuItem = {
   to: string
@@ -14,6 +14,7 @@ type MenuItem = {
 
 const settingsLinks: MenuItem[] = [
   { to: '/businesses', label: 'Businesses', icon: 'businesses' },
+  { to: '/users', label: 'Users', icon: 'users' },
   { to: '/categories', label: 'Categories', icon: 'categories' },
   { to: '/chart-account-columns', label: 'Account Columns', icon: 'entry' },
   { to: '/chart-account-entries', label: 'Chart Account Entry', icon: 'entry' },
@@ -110,6 +111,12 @@ function NavIcon({ name }: { name: MenuIcon | 'settings' }) {
           <circle cx="11" cy="17" r="2.25" />
         </>
       )}
+      {name === 'users' && (
+        <>
+          <circle cx="12" cy="8" r="3" />
+          <path d="M5 19c1.2-3 3.6-4.5 7-4.5s5.8 1.5 7 4.5" />
+        </>
+      )}
       {name === 'categories' && (
         <>
           <path d="M4 10.5 10.5 4H20v9.5L13.5 20a2 2 0 0 1-2.8 0z" />
@@ -198,11 +205,15 @@ export function Layout() {
           </div>
         </div>
         <nav>
-          <SettingsMenu />
+          {user?.role === 'admin' && (
+            <>
+              <SettingsMenu />
+              {linksAfterSettings.map((link) => (
+                <MenuLink key={link.to} item={link} />
+              ))}
+            </>
+          )}
           {moduleLinks.map((link) => (
-            <MenuLink key={link.to} item={link} />
-          ))}
-          {linksAfterSettings.map((link) => (
             <MenuLink key={link.to} item={link} />
           ))}
         </nav>

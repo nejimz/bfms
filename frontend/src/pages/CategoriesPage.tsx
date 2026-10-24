@@ -27,7 +27,7 @@ export function CategoriesPage() {
           <h1>Categories</h1>
           <p className="hint">Group businesses, such as retail or wholesale.</p>
         </div>
-        {user?.role === 'owner' && (
+        {user?.role === 'admin' && (
           <Link className="primary button-link" to="/categories/new">
             Add category
           </Link>
@@ -54,7 +54,7 @@ export function CategoriesPage() {
                   <td>{category.name}</td>
                   <td className="num">{category.businesses_count}</td>
                   <td>
-                    {user?.role === 'owner' && (
+                    {user?.role === 'admin' && (
                       <div className="actions">
                         <Link className="button-link" to={`/categories/${category.id}/edit`}>
                           Edit

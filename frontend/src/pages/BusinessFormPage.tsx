@@ -78,11 +78,11 @@ export function BusinessFormPage() {
     setFilled(true)
   }, [business, filled])
 
-  if (!editing && user && user.role !== 'owner') {
+  if (user && user.role !== 'admin') {
     return <Navigate to="/businesses" replace />
   }
 
-  if (editing && businesses.isSuccess && (!business || business.role !== 'owner')) {
+  if (editing && businesses.isSuccess && !business) {
     return <Navigate to="/businesses" replace />
   }
 

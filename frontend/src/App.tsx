@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
+import { BrowserRouter, Navigate, Outlet, Route, Routes } from 'react-router-dom'
 import { AuthProvider, useAuth } from './auth'
 import { Layout } from './components/Layout'
 import { AccountsPage } from './pages/AccountsPage'
@@ -17,6 +17,9 @@ import { JournalFormPage } from './pages/JournalFormPage'
 import { JournalsPage } from './pages/JournalsPage'
 import { LoginPage } from './pages/LoginPage'
 import { TrialBalancePage } from './pages/TrialBalancePage'
+import { UserFormPage } from './pages/UserFormPage'
+import { UsersPage } from './pages/UsersPage'
+import { homePath } from './types'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -41,6 +44,22 @@ function RequireAuth() {
   return <Layout />
 }
 
+function HomeRedirect() {
+  const { user } = useAuth()
+
+  return <Navigate to={homePath(user?.role)} replace />
+}
+
+function RequireAdmin() {
+  const { user } = useAuth()
+
+  if (user && user.role !== 'admin') {
+    return <Navigate to={homePath(user.role)} replace />
+  }
+
+  return <Outlet />
+}
+
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
@@ -49,21 +68,30 @@ export default function App() {
           <Routes>
             <Route path="/login" element={<LoginPage />} />
             <Route element={<RequireAuth />}>
-              <Route index element={<Navigate to="/businesses" replace />} />
-              <Route path="/businesses" element={<BusinessesPage />} />
-              <Route path="/businesses/new" element={<BusinessFormPage />} />
-              <Route path="/businesses/:id/edit" element={<BusinessFormPage />} />
-              <Route path="/categories" element={<CategoriesPage />} />
-              <Route path="/categories/new" element={<CategoryFormPage />} />
-              <Route path="/categories/:id/edit" element={<CategoryFormPage />} />
-              <Route path="/accounts" element={<AccountsPage />} />
-              <Route path="/chart-account-entries" element={<ChartAccountEntriesPage />} />
-              <Route path="/chart-account-columns" element={<AccountColumnReportsPage />} />
-              <Route path="/chart-account-columns/new" element={<AccountColumnReportFormPage />} />
-              <Route path="/chart-account-columns/:id/edit" element={<AccountColumnReportFormPage />} />
-              <Route path="/chart-account-columns/:id" element={<ChartAccountColumnsPage />} />
-              <Route path="/chart-account-entries/new" element={<ChartAccountEntryFormPage />} />
-              <Route path="/chart-account-entries/:id" element={<ChartAccountEntryFormPage />} />
+              <Route index element={<HomeRedirect />} />
+              <Route element={<RequireAdmin />}>
+                <Route path="/businesses" element={<BusinessesPage />} />
+                <Route path="/businesses/new" element={<BusinessFormPage />} />
+                <Route path="/businesses/:id/edit" element={<BusinessFormPage />} />
+                <Route path="/categories" element={<CategoriesPage />} />
+                <Route path="/categories/new" element={<CategoryFormPage />} />
+                <Route path="/categories/:id/edit" element={<CategoryFormPage />} />
+                <Route path="/users" element={<UsersPage />} />
+                <Route path="/users/new" element={<UserFormPage />} />
+                <Route path="/users/:id" element={<UserFormPage />} />
+                <Route path="/accounts" element={<AccountsPage />} />
+                <Route path="/chart-account-entries" element={<ChartAccountEntriesPage />} />
+                <Route path="/chart-account-columns" element={<AccountColumnReportsPage />} />
+                <Route path="/chart-account-columns/new" element={<AccountColumnReportFormPage />} />
+                <Route path="/chart-account-columns/:id/edit" element={<AccountColumnReportFormPage />} />
+                <Route path="/chart-account-columns/:id" element={<ChartAccountColumnsPage />} />
+                <Route path="/chart-account-entries/new" element={<ChartAccountEntryFormPage />} />
+                <Route path="/chart-account-entries/:id" element={<ChartAccountEntryFormPage />} />
+                <Route path="/journals" element={<JournalsPage />} />
+                <Route path="/journals/new" element={<JournalFormPage />} />
+                <Route path="/journals/:id" element={<JournalFormPage />} />
+                <Route path="/trial-balance" element={<TrialBalancePage />} />
+              </Route>
               {chartAccountModuleList.map((module) => (
                 <Route key={`${module.key}-list`} path={module.path} element={<ChartAccountEntriesPage moduleKey={module.key} />} />
               ))}
@@ -81,10 +109,6 @@ export default function App() {
                   element={<ChartAccountEntryFormPage moduleKey={module.key} />}
                 />
               ))}
-              <Route path="/journals" element={<JournalsPage />} />
-              <Route path="/journals/new" element={<JournalFormPage />} />
-              <Route path="/journals/:id" element={<JournalFormPage />} />
-              <Route path="/trial-balance" element={<TrialBalancePage />} />
             </Route>
           </Routes>
         </BrowserRouter>

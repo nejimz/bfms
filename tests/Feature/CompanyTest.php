@@ -3,6 +3,7 @@
 use App\Enums\AccountType;
 use App\Enums\CompanyRole;
 use App\Enums\JournalStatus;
+use App\Enums\UserRole;
 use App\Models\Account;
 use App\Models\Category;
 use App\Models\ChartAccountEntry;
@@ -15,10 +16,7 @@ use Symfony\Component\HttpFoundation\Cookie;
 
 function companyMember(Company $company, string $role = CompanyRole::Owner->value): User
 {
-    $user = User::factory()->create();
-    $company->users()->attach($user->id, ['role' => $role]);
-
-    return $user;
+    return memberWithRole($company, $role);
 }
 
 function openBooks(): void
@@ -73,10 +71,9 @@ it('lets an owner open another business and keeps the books there', function () 
         'description' => 'Wholesale imports.',
         'currency' => 'USD',
     ]);
-    $this->assertDatabaseHas('company_user', [
+    $this->assertDatabaseMissing('company_user', [
         'company_id' => $newId,
         'user_id' => $owner->id,
-        'role' => CompanyRole::Owner->value,
     ]);
 
     $accounts = $this->actingAs($owner)->getJson('/api/v1/accounts')->assertOk();
@@ -94,7 +91,7 @@ it('lets an owner open another business and keeps the books there', function () 
     $this->actingAs($owner)->getJson('/api/v1/user')
         ->assertOk()
         ->assertJsonPath('data.attributes.company.name', 'Northwind')
-        ->assertJsonPath('data.attributes.role', CompanyRole::Owner->value)
+        ->assertJsonPath('data.attributes.role', UserRole::Admin->value)
         ->assertJsonPath('data.attributes.companies.0.name', 'Harbor Goods')
         ->assertJsonPath('data.attributes.companies.1.name', 'Northwind');
 });
@@ -131,11 +128,10 @@ it('refuses a new business from someone who is not the owner', function (string 
     CompanyRole::Staff->value,
 ]);
 
-it('switches the ledger to another business the user belongs to', function () {
+it('switches the ledger to another business', function () {
     $first = Company::factory()->create(['name' => 'Alpha']);
     $second = Company::factory()->create(['name' => 'Beta']);
-    $user = companyMember($first);
-    $second->users()->attach($user->id, ['role' => CompanyRole::Accountant->value]);
+    $user = User::factory()->manager()->create();
 
     Account::factory()->create([
         'company_id' => $first->id,
@@ -171,7 +167,7 @@ it('switches the ledger to another business the user belongs to', function () {
     $this->actingAs($user)->getJson('/api/v1/user')
         ->assertOk()
         ->assertJsonPath('data.attributes.company.name', 'Beta')
-        ->assertJsonPath('data.attributes.role', CompanyRole::Accountant->value);
+        ->assertJsonPath('data.attributes.role', UserRole::Manager->value);
 });
 
 it('lists each business with its own chart and journals', function () {
@@ -196,12 +192,13 @@ it('lists each business with its own chart and journals', function () {
     $listed = $this->actingAs($user)->getJson('/api/v1/companies')->assertOk();
     $rows = collect($listed->json('data'))->keyBy('attributes.name');
 
-    expect($rows->keys()->all())->toBe(['Alpha', 'Beta'])
+    expect($rows->keys()->all())->toBe(['Alpha', 'Beta', 'Hidden'])
         ->and($rows['Alpha']['attributes']['accounts_count'])->toBe(1)
         ->and($rows['Alpha']['attributes']['journals_count'])->toBe(0)
         ->and($rows['Beta']['attributes']['accounts_count'])->toBe(2)
         ->and($rows['Beta']['attributes']['journals_count'])->toBe(1)
-        ->and($rows['Beta']['attributes']['role'])->toBe(CompanyRole::Owner->value);
+        ->and($rows['Hidden']['attributes']['accounts_count'])->toBe(1)
+        ->and($rows['Hidden']['attributes']['journals_count'])->toBe(0);
 });
 
 it('lets an owner edit a business', function () {
@@ -401,7 +398,7 @@ it('rejects a business category that is not in the list', function () {
 
 it('refuses to switch into a business the user does not belong to', function () {
     $company = Company::factory()->create();
-    $user = companyMember($company);
+    $user = companyMember($company, CompanyRole::Staff->value);
     $other = Company::factory()->create();
 
     openBooks();

@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Domain\Ledger\DefaultChart;
-use App\Enums\CompanyRole;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreCompanyRequest;
 use App\Http\Requests\UpdateCompanyRequest;
@@ -19,7 +18,7 @@ class CompanyController extends Controller
         $this->authorize('viewAny', Company::class);
 
         $companies = $request->user()
-            ->companies()
+            ->accessibleCompanies()
             ->with('category')
             ->withCount([
                 'accounts' => fn ($query) => $query->withoutGlobalScope('company'),
@@ -38,7 +37,6 @@ class CompanyController extends Controller
                     'currency' => $company->currency,
                     'category_id' => $this->categoryId($company),
                     'category_name' => $company->category?->name,
-                    'role' => $company->pivot->role,
                     'accounts_count' => $company->accounts_count,
                     'journals_count' => $company->journals_count,
                 ],
@@ -50,9 +48,6 @@ class CompanyController extends Controller
     {
         $company = DB::transaction(function () use ($request) {
             $company = Company::query()->create($request->validated());
-            $company->users()->attach($request->user()->id, [
-                'role' => CompanyRole::Owner->value,
-            ]);
             DefaultChart::provision($company);
 
             return $company;
@@ -77,7 +72,7 @@ class CompanyController extends Controller
         ]);
 
         $company = $request->user()
-            ->companies()
+            ->accessibleCompanies()
             ->where('companies.id', $data['company_id'])
             ->first();
 

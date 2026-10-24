@@ -9,10 +9,7 @@ use App\Models\User;
 
 function chartMember(Company $company, string $role = CompanyRole::Owner->value): User
 {
-    $user = User::factory()->create();
-    $company->users()->attach($user->id, ['role' => $role]);
-
-    return $user;
+    return memberWithRole($company, $role);
 }
 
 /**
@@ -246,14 +243,33 @@ it('returns 422 when the account is inactive', function () {
         ->assertJsonPath('errors.account_id.0', 'That account is inactive.');
 });
 
-it('returns 403 when staff create an entry', function () {
+it('lets staff post an entry for an assigned business', function () {
     $company = Company::factory()->create();
     $staff = chartMember($company, CompanyRole::Staff->value);
     $cash = Account::factory()->create(['company_id' => $company->id, 'type' => AccountType::Asset]);
 
-    $this->actingAs($staff)
-        ->postJson('/api/v1/chart-account-entries', chartEntryPayload($cash))
-        ->assertForbidden();
+    $id = postChartEntry($staff, $cash);
+
+    $this->assertDatabaseHas('chart_account_entries', [
+        'id' => $id,
+        'status' => 'posted',
+        'created_by' => $staff->id,
+        'posted_by' => $staff->id,
+    ]);
+});
+
+it('lets a manager post an entry without a business assignment', function () {
+    $company = Company::factory()->create();
+    $manager = User::factory()->manager()->create();
+    $cash = Account::factory()->create(['company_id' => $company->id, 'type' => AccountType::Asset]);
+
+    $id = postChartEntry($manager, $cash);
+
+    $this->assertDatabaseHas('chart_account_entries', [
+        'id' => $id,
+        'status' => 'posted',
+        'posted_by' => $manager->id,
+    ]);
 });
 
 /**
@@ -375,9 +391,9 @@ it('rejects an item line that has no name or no positive quantity or amount', fu
 
 it('returns 404 for an entry from another company', function () {
     $company = Company::factory()->create();
-    $user = chartMember($company);
+    $user = chartMember($company, CompanyRole::Staff->value);
     $other = Company::factory()->create();
-    $otherUser = chartMember($other);
+    $otherUser = chartMember($other, CompanyRole::Staff->value);
     $secret = Account::factory()->create([
         'company_id' => $other->id,
         'code' => '9999',
@@ -386,6 +402,7 @@ it('returns 404 for an entry from another company', function () {
     ]);
 
     $created = $this->actingAs($otherUser)->postJson('/api/v1/chart-account-entries', chartEntryPayload($secret));
+    $created->assertCreated();
     $id = $created->json('data.id');
 
     $this->actingAs($user)

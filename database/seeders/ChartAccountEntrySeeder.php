@@ -25,7 +25,7 @@ class ChartAccountEntrySeeder extends Seeder
             return;
         }
 
-        $owner = $company->users()->first();
+        $owner = User::query()->where('email', 'owner@bfms.test')->first();
 
         if (! $owner instanceof User) {
             return;

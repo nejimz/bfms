@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { Navigate } from 'react-router-dom'
 import { api, ensureCsrf, errorMessage } from '../api'
 import { useAuth } from '../auth'
+import { homePath } from '../types'
 
 export function LoginPage() {
   const { user, isLoading, refresh } = useAuth()
@@ -11,7 +12,7 @@ export function LoginPage() {
   const [pending, setPending] = useState(false)
 
   if (!isLoading && user) {
-    return <Navigate to="/accounts" replace />
+    return <Navigate to={homePath(user.role)} replace />
   }
 
   async function submit(event: FormEvent) {
@@ -66,7 +67,7 @@ export function LoginPage() {
         <button type="submit" className="primary" disabled={pending}>
           {pending ? 'Signing in…' : 'Sign in'}
         </button>
-        <p className="hint">Demo owner: owner@bfms.test / password</p>
+        <p className="hint">Demo admin: owner@bfms.test / password</p>
       </form>
     </div>
   )

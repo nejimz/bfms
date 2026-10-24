@@ -7,10 +7,7 @@ use App\Models\User;
 
 function categoryMember(Company $company, string $role = CompanyRole::Owner->value): User
 {
-    $user = User::factory()->create();
-    $company->users()->attach($user->id, ['role' => $role]);
-
-    return $user;
+    return memberWithRole($company, $role);
 }
 
 it('creates a category and trims the name', function () {

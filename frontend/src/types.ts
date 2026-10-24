@@ -80,7 +80,11 @@ export type AccountColumnReport = {
 }
 
 export function canWriteReport(role: string | undefined): boolean {
-  return role === 'owner' || role === 'accountant'
+  return role === 'admin'
+}
+
+export function homePath(role: string | undefined): string {
+  return role === 'admin' ? '/businesses' : '/purchase-expense'
 }
 
 export type Membership = {
@@ -88,13 +92,21 @@ export type Membership = {
   name: string
   description: string | null
   currency: string
-  role: string
 }
 
 export type Category = {
   id: string
   name: string
   businesses_count: number
+}
+
+export type DirectoryUser = {
+  id: string
+  name: string
+  email: string
+  role: 'admin' | 'manager' | 'staff'
+  is_active: boolean
+  companies: Array<{ id: string; name: string }>
 }
 
 export type Business = Membership & {
