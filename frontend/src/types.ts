@@ -89,8 +89,53 @@ export function canWriteReport(role: string | undefined): boolean {
   return role === 'admin'
 }
 
+export function canViewDashboard(role: string | undefined): boolean {
+  return role === 'admin' || role === 'manager'
+}
+
 export function homePath(role: string | undefined): string {
-  return role === 'admin' ? '/businesses' : '/purchase-expense'
+  return canViewDashboard(role) ? '/dashboard' : '/purchase-expense'
+}
+
+export type BusinessSummaryAccount = {
+  id: string
+  code: string
+  name: string
+  type: AccountType
+  amount: string
+  cash: string
+  credit: string
+  entries: number
+}
+
+export type BusinessSummary = {
+  id: string
+  name: string
+  currency: string
+  category_name: string | null
+  income: string
+  expense: string
+  result: string
+  drafts: number
+  accounts: BusinessSummaryAccount[]
+}
+
+export type BusinessSummaryReport = {
+  data: BusinessSummary[]
+  meta: {
+    period: 'month' | 'year'
+    year: number
+    month: number | null
+    from: string
+    to: string
+    years: number[]
+    totals: {
+      currency: string
+      income: string
+      expense: string
+      result: string
+    } | null
+  }
 }
 
 export type Membership = {

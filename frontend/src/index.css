@@ -431,6 +431,59 @@ th { font-size: 0.78rem; letter-spacing: 0.04em; text-transform: uppercase; colo
 th.amount, td.num { text-align: right; font-variant-numeric: tabular-nums; }
 th.center, td.center { text-align: center; }
 .column-filters { grid-template-columns: minmax(12rem, 18rem) 8.5rem; justify-content: start; }
+.dashboard-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.75rem;
+}
+.dashboard-filters label { width: 9.5rem; }
+.period-actions { display: flex; gap: 0.5rem; }
+.dashboard-groups { display: grid; gap: 1.75rem; }
+.dashboard-group { display: grid; gap: 0.85rem; }
+.dashboard-category {
+  margin: 0;
+  font-family: "Avenir Next", "Segoe UI", sans-serif;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.dashboard-business { display: grid; gap: 0.55rem; }
+.dashboard-business h3 { margin: 0; font-size: 1.35rem; }
+button.account-link {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  border-radius: 0;
+  color: var(--green-dark);
+  font-weight: 600;
+  text-align: left;
+}
+button.account-link:hover { text-decoration: underline; }
+.share-track {
+  display: block;
+  width: 5.5rem;
+  height: 0.4rem;
+  border-radius: 999px;
+  background: #efe6d4;
+  overflow: hidden;
+}
+.share-track span {
+  display: block;
+  height: 100%;
+  background: var(--green);
+}
+.dashboard-totals {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: baseline;
+  flex-wrap: wrap;
+}
+.dashboard-totals h2 { font-size: 1.25rem; }
+.dashboard-totals p { margin: 0; font-variant-numeric: tabular-nums; }
 .account-checklist {
   display: grid;
   gap: 0.35rem;
@@ -538,6 +591,8 @@ label .form-error { font-size: 0.85rem; }
   .content, .login { padding: 1.25rem; }
   .login { grid-template-columns: 1fr; gap: 1.5rem; }
   .inline-form, .journal-head, .entry-fields, .entry-composer, .column-filters { grid-template-columns: 1fr; }
+  .dashboard-filters label { width: 100%; }
+  .dashboard-totals { align-items: flex-start; }
   .entry-sheet-head { display: none; }
   .entry-row {
     grid-template-columns: 1fr 1fr;

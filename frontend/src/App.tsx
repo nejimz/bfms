@@ -11,6 +11,7 @@ import { ChartAccountEntriesPage } from './pages/ChartAccountEntriesPage'
 import { ChartAccountEntryFormPage } from './pages/ChartAccountEntryFormPage'
 import { BusinessFormPage } from './pages/BusinessFormPage'
 import { BusinessesPage } from './pages/BusinessesPage'
+import { DashboardPage } from './pages/DashboardPage'
 import { CategoriesPage } from './pages/CategoriesPage'
 import { CategoryFormPage } from './pages/CategoryFormPage'
 import { JournalFormPage } from './pages/JournalFormPage'
@@ -20,7 +21,7 @@ import { PasswordPage } from './pages/PasswordPage'
 import { TrialBalancePage } from './pages/TrialBalancePage'
 import { UserFormPage } from './pages/UserFormPage'
 import { UsersPage } from './pages/UsersPage'
-import { homePath } from './types'
+import { canViewDashboard, homePath } from './types'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -61,6 +62,16 @@ function RequireAdmin() {
   return <Outlet />
 }
 
+function RequireDashboard() {
+  const { user } = useAuth()
+
+  if (user && !canViewDashboard(user.role)) {
+    return <Navigate to={homePath(user.role)} replace />
+  }
+
+  return <Outlet />
+}
+
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
@@ -71,6 +82,9 @@ export default function App() {
             <Route element={<RequireAuth />}>
               <Route index element={<HomeRedirect />} />
               <Route path="/password" element={<PasswordPage />} />
+              <Route element={<RequireDashboard />}>
+                <Route path="/dashboard" element={<DashboardPage />} />
+              </Route>
               <Route element={<RequireAdmin />}>
                 <Route path="/businesses" element={<BusinessesPage />} />
                 <Route path="/businesses/new" element={<BusinessFormPage />} />
@@ -82,18 +96,18 @@ export default function App() {
                 <Route path="/users/new" element={<UserFormPage />} />
                 <Route path="/users/:id" element={<UserFormPage />} />
                 <Route path="/accounts" element={<AccountsPage />} />
-                <Route path="/chart-account-entries" element={<ChartAccountEntriesPage />} />
                 <Route path="/chart-account-columns" element={<AccountColumnReportsPage />} />
                 <Route path="/chart-account-columns/new" element={<AccountColumnReportFormPage />} />
                 <Route path="/chart-account-columns/:id/edit" element={<AccountColumnReportFormPage />} />
                 <Route path="/chart-account-columns/:id" element={<ChartAccountColumnsPage />} />
-                <Route path="/chart-account-entries/new" element={<ChartAccountEntryFormPage />} />
-                <Route path="/chart-account-entries/:id" element={<ChartAccountEntryFormPage />} />
                 <Route path="/journals" element={<JournalsPage />} />
                 <Route path="/journals/new" element={<JournalFormPage />} />
                 <Route path="/journals/:id" element={<JournalFormPage />} />
                 <Route path="/trial-balance" element={<TrialBalancePage />} />
               </Route>
+              <Route path="/chart-account-entries" element={<ChartAccountEntriesPage />} />
+              <Route path="/chart-account-entries/new" element={<ChartAccountEntryFormPage />} />
+              <Route path="/chart-account-entries/:id" element={<ChartAccountEntryFormPage />} />
               {chartAccountModuleList.map((module) => (
                 <Route key={`${module.key}-list`} path={module.path} element={<ChartAccountEntriesPage moduleKey={module.key} />} />
               ))}

@@ -3,8 +3,9 @@ import { NavLink, Outlet, useLocation, Link } from 'react-router-dom'
 import { api, ensureCsrf, errorMessage } from '../api'
 import { useAuth } from '../auth'
 import { chartAccountModuleList } from '../chartAccountModules'
+import { canViewDashboard } from '../types'
 
-type MenuIcon = 'businesses' | 'categories' | 'accounts' | 'entry' | 'journals' | 'balance' | 'users'
+type MenuIcon = 'dashboard' | 'businesses' | 'categories' | 'accounts' | 'entry' | 'journals' | 'balance' | 'users'
 
 type MenuItem = {
   to: string
@@ -26,6 +27,8 @@ const moduleLinks: MenuItem[] = chartAccountModuleList.map((module) => ({
   label: module.title,
   icon: 'entry',
 }))
+
+const dashboardLink: MenuItem = { to: '/dashboard', label: 'Dashboard', icon: 'dashboard' }
 
 const linksAfterSettings: MenuItem[] = [
   { to: '/journals', label: 'Journals', icon: 'journals' },
@@ -94,6 +97,14 @@ function NavIcon({ name }: { name: MenuIcon | 'settings' }) {
       strokeLinejoin="round"
       aria-hidden="true"
     >
+      {name === 'dashboard' && (
+        <>
+          <path d="M4 19V10" />
+          <path d="M10 19V5" />
+          <path d="M16 19v-7" />
+          <path d="M20 19H4" />
+        </>
+      )}
       {name === 'businesses' && (
         <>
           <rect x="3" y="7" width="18" height="13" rx="2" />
@@ -205,6 +216,7 @@ export function Layout() {
           </div>
         </div>
         <nav>
+          {user && canViewDashboard(user.role) && <MenuLink item={dashboardLink} />}
           {user?.role === 'admin' && (
             <>
               <SettingsMenu />
