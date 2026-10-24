@@ -34,16 +34,27 @@ function decimalFromMinor(minor: number): string {
   return `${negative ? '-' : ''}${Math.floor(absolute / 100)}.${String(absolute % 100).padStart(2, '0')}`
 }
 
-function totalFor(rows: ChartAccountColumnRow[], accountId: string): string {
-  const minor = rows.reduce((sum, row) => {
-    if (row.account_id !== accountId) {
-      return sum
-    }
+function sumsFor(rows: ChartAccountColumnRow[], accountId: string): { total: string; cash: string; credit: string } {
+  const sums = rows.reduce(
+    (sum, row) => {
+      if (row.account_id !== accountId) {
+        return sum
+      }
 
-    return sum + (toMinor(row.amount) ?? 0)
-  }, 0)
+      return {
+        total: sum.total + (toMinor(row.amount) ?? 0),
+        cash: sum.cash + (toMinor(row.cash) ?? 0),
+        credit: sum.credit + (toMinor(row.credit) ?? 0),
+      }
+    },
+    { total: 0, cash: 0, credit: 0 },
+  )
 
-  return decimalFromMinor(minor)
+  return {
+    total: decimalFromMinor(sums.total),
+    cash: decimalFromMinor(sums.cash),
+    credit: decimalFromMinor(sums.credit),
+  }
 }
 
 function rowsForAccount(rows: ChartAccountColumnRow[], accountId: string): ChartAccountColumnRow[] {
@@ -94,7 +105,7 @@ export function ChartAccountColumnsPage() {
             {user?.company.name} · {report.data?.meta.currency ?? user?.company.currency}
           </p>
           <h1>{definition.data?.name ?? 'Account columns'}</h1>
-          <p className="hint">Each account lists its own date, particulars, and amount.</p>
+          <p className="hint">Each account lists its own date, particulars, reference, cash, and credit.</p>
         </div>
         <div className="actions">
           <Link className="button-link" to="/chart-account-columns">
@@ -137,7 +148,7 @@ export function ChartAccountColumnsPage() {
               key={column.id}
               column={column}
               rows={rowsForAccount(rows, column.id)}
-              total={formatDecimal(totalFor(rows, column.id))}
+              sums={sumsFor(rows, column.id)}
               sort={sort}
               onSort={() => setSort((current) => (current === 'asc' ? 'desc' : 'asc'))}
               onOpen={(entryId) => navigate(`/chart-account-entries/${entryId}`)}
@@ -152,14 +163,14 @@ export function ChartAccountColumnsPage() {
 function AccountSection({
   column,
   rows,
-  total,
+  sums,
   sort,
   onSort,
   onOpen,
 }: {
   column: ChartAccountColumn
   rows: ChartAccountColumnRow[]
-  total: string
+  sums: { total: string; cash: string; credit: string }
   sort: 'asc' | 'desc'
   onSort: () => void
   onOpen: (entryId: string) => void
@@ -174,7 +185,11 @@ function AccountSection({
           {' · '}
           {column.name}
         </h2>
-        <p className="account-section-total">{total}</p>
+        <p className="account-section-total">
+          <span>Total {formatDecimal(sums.total)}</span>
+          <span>Cash {formatDecimal(sums.cash)}</span>
+          <span>Credit {formatDecimal(sums.credit)}</span>
+        </p>
       </header>
       <div className="table-wrap">
         <table>
@@ -187,13 +202,16 @@ function AccountSection({
                 </button>
               </th>
               <th>Particulars</th>
-              <th className="amount">Amount</th>
+              <th>Reference</th>
+              <th className="amount">Total</th>
+              <th className="amount">Cash</th>
+              <th className="amount">Credit</th>
             </tr>
           </thead>
           <tbody>
             {rows.length === 0 && (
               <tr>
-                <td colSpan={3} className="hint">
+                <td colSpan={6} className="hint">
                   No entries in this year.
                 </td>
               </tr>
@@ -209,7 +227,10 @@ function AccountSection({
                   </Link>
                   <span className={`status ${row.status}`}>{row.status}</span>
                 </td>
+                <td>{row.reference}</td>
                 <td className="num">{formatDecimal(row.amount)}</td>
+                <td className="num">{formatDecimal(row.cash)}</td>
+                <td className="num">{formatDecimal(row.credit)}</td>
               </tr>
             ))}
           </tbody>

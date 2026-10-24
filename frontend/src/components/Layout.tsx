@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { NavLink, Outlet, useLocation } from 'react-router-dom'
+import { NavLink, Outlet, useLocation, Link } from 'react-router-dom'
 import { api, ensureCsrf, errorMessage } from '../api'
 import { useAuth } from '../auth'
 import { chartAccountModuleList } from '../chartAccountModules'
@@ -241,6 +241,9 @@ export function Layout() {
             </span>
             <span>{user.name}</span>
             {error && <p className="form-error">{error}</p>}
+            <Link className="button-link session-link" to="/password">
+              Password
+            </Link>
             <button type="button" className="logout" onClick={() => void logout()}>
               Log out
             </button>

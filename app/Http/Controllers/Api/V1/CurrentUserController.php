@@ -3,9 +3,11 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\UpdatePasswordRequest;
 use App\Support\CurrentCompany;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class CurrentUserController extends Controller
 {
@@ -41,6 +43,24 @@ class CurrentUserController extends Controller
                     'companies' => $companies,
                 ],
             ],
+        ]);
+    }
+
+    public function updatePassword(UpdatePasswordRequest $request): JsonResponse
+    {
+        $password = $request->validated('password');
+        $request->user()->update(['password' => $password]);
+
+        if ($request->hasSession()) {
+            if (Auth::guard('web')->check()) {
+                Auth::guard('web')->logoutOtherDevices($password);
+            }
+
+            $request->session()->regenerate();
+        }
+
+        return response()->json([
+            'message' => 'Your password has been changed.',
         ]);
     }
 }

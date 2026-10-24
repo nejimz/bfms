@@ -12,7 +12,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable(['company_id', 'account_id', 'date', 'particulars', 'amount_cents', 'currency', 'status', 'posted_at', 'created_by', 'posted_by'])]
+#[Fillable(['company_id', 'account_id', 'date', 'particulars', 'reference', 'amount_cents', 'cash_cents', 'credit_cents', 'currency', 'status', 'posted_at', 'created_by', 'posted_by'])]
 class ChartAccountEntry extends Model
 {
     /** @use HasFactory<ChartAccountEntryFactory> */

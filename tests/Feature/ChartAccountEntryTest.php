@@ -13,7 +13,7 @@ function chartMember(Company $company, string $role = CompanyRole::Owner->value)
 }
 
 /**
- * @return array{date: string, account_id: int, particulars: string, amount: string}
+ * @return array{date: string, account_id: int, particulars: string, amount: string, cash: string, credit: string}
  */
 function chartEntryPayload(Account $account, string $amount = '150.00'): array
 {
@@ -22,6 +22,8 @@ function chartEntryPayload(Account $account, string $amount = '150.00'): array
         'account_id' => $account->id,
         'particulars' => 'Office supplies',
         'amount' => $amount,
+        'cash' => $amount,
+        'credit' => '0.00',
     ];
 }
 
@@ -68,6 +70,9 @@ it('stores a draft and lists it with the account', function () {
         'company_id' => $company->id,
         'account_id' => $cash->id,
         'amount_cents' => 15000,
+        'cash_cents' => 15000,
+        'credit_cents' => 0,
+        'reference' => null,
         'status' => 'draft',
         'posted_by' => null,
     ]);
@@ -95,6 +100,8 @@ it('updates a draft entry', function () {
             'account_id' => $rent->id,
             'particulars' => 'October rent',
             'amount' => '80.50',
+            'cash' => '80.50',
+            'credit' => '0.00',
         ])
         ->assertOk()
         ->assertJsonPath('data.attributes.date', '2026-10-20')
@@ -195,11 +202,13 @@ it('returns 422 when the entry payload is empty', function () {
     $this->actingAs($user)
         ->postJson('/api/v1/chart-account-entries', [])
         ->assertUnprocessable()
-        ->assertJsonValidationErrors(['date', 'account_id', 'particulars', 'amount'])
+        ->assertJsonValidationErrors(['date', 'account_id', 'particulars', 'amount', 'cash', 'credit'])
         ->assertJsonPath('errors.date.0', 'The date field is required.')
         ->assertJsonPath('errors.account_id.0', 'The account id field is required.')
         ->assertJsonPath('errors.particulars.0', 'The particulars field is required.')
-        ->assertJsonPath('errors.amount.0', 'The amount field is required.');
+        ->assertJsonPath('errors.amount.0', 'The amount field is required.')
+        ->assertJsonPath('errors.cash.0', 'Enter the cash amount.')
+        ->assertJsonPath('errors.credit.0', 'Enter the credit amount.');
 });
 
 it('rejects an amount that is not a positive value', function (string $amount, string $message) {
@@ -273,7 +282,7 @@ it('lets a manager post an entry without a business assignment', function () {
 });
 
 /**
- * @return array{date: string, account_id: int, particulars: string, lines: list<array{name: string, quantity: string, amount: string}>}
+ * @return array{date: string, account_id: int, particulars: string, cash: string, credit: string, lines: list<array{name: string, quantity: string, amount: string}>}
  */
 function chartEntryWithLines(Account $account): array
 {
@@ -281,6 +290,8 @@ function chartEntryWithLines(Account $account): array
         'date' => '2026-10-15',
         'account_id' => $account->id,
         'particulars' => 'Northwind Supplies',
+        'cash' => '145.25',
+        'credit' => '0.00',
         'lines' => [
             ['name' => 'Rice', 'quantity' => '2', 'amount' => '100.00'],
             ['name' => 'Sugar', 'quantity' => '1.5', 'amount' => '45.25'],
@@ -350,6 +361,8 @@ it('replaces item lines when a draft is updated', function () {
             'date' => '2026-10-16',
             'account_id' => $purchases->id,
             'particulars' => 'Northwind Supplies',
+            'cash' => '80.00',
+            'credit' => '0.00',
             'lines' => [
                 ['name' => 'Oil', 'quantity' => '1', 'amount' => '80.00'],
             ],
@@ -378,6 +391,8 @@ it('rejects an item line that has no name or no positive quantity or amount', fu
         'date' => '2026-10-15',
         'account_id' => $purchases->id,
         'particulars' => 'Northwind Supplies',
+        'cash' => '10.00',
+        'credit' => '0.00',
         'lines' => [$line],
     ]);
 
@@ -388,6 +403,156 @@ it('rejects an item line that has no name or no positive quantity or amount', fu
     [['name' => 'Rice', 'quantity' => '0', 'amount' => '10.00'], 'lines.0.quantity', 'Enter a quantity greater than zero.'],
     [['name' => 'Rice', 'quantity' => '1', 'amount' => '0.00'], 'lines.0.amount', 'Enter an amount greater than zero.'],
 ]);
+
+it('stores a reference and a partial cash and credit split', function () {
+    $company = Company::factory()->create();
+    $user = chartMember($company);
+    $purchases = Account::factory()->create([
+        'company_id' => $company->id,
+        'code' => '5100',
+        'type' => AccountType::Expense,
+    ]);
+
+    $created = $this->actingAs($user)->postJson('/api/v1/chart-account-entries', [
+        ...chartEntryWithLines($purchases),
+        'reference' => '  DR-1042  ',
+        'cash' => '45.25',
+        'credit' => '100.00',
+    ]);
+
+    $created->assertCreated()
+        ->assertJsonPath('data.attributes.reference', 'DR-1042')
+        ->assertJsonPath('data.attributes.amount', '145.25')
+        ->assertJsonPath('data.attributes.cash', '45.25')
+        ->assertJsonPath('data.attributes.credit', '100.00');
+
+    $this->assertDatabaseHas('chart_account_entries', [
+        'id' => $created->json('data.id'),
+        'reference' => 'DR-1042',
+        'amount_cents' => 14525,
+        'cash_cents' => 4525,
+        'credit_cents' => 10000,
+    ]);
+});
+
+it('stores a blank reference as empty', function () {
+    $company = Company::factory()->create();
+    $user = chartMember($company);
+    $cash = Account::factory()->create(['company_id' => $company->id, 'type' => AccountType::Asset]);
+
+    $created = $this->actingAs($user)->postJson('/api/v1/chart-account-entries', [
+        ...chartEntryPayload($cash),
+        'reference' => '   ',
+    ]);
+
+    $created->assertCreated()
+        ->assertJsonPath('data.attributes.reference', null);
+
+    $this->assertDatabaseHas('chart_account_entries', [
+        'id' => $created->json('data.id'),
+        'reference' => null,
+    ]);
+});
+
+it('returns 422 when cash and credit do not equal the total', function () {
+    $company = Company::factory()->create();
+    $user = chartMember($company);
+    $purchases = Account::factory()->create(['company_id' => $company->id, 'type' => AccountType::Expense]);
+
+    $this->actingAs($user)
+        ->postJson('/api/v1/chart-account-entries', [
+            ...chartEntryWithLines($purchases),
+            'cash' => '50.00',
+            'credit' => '50.00',
+        ])
+        ->assertUnprocessable()
+        ->assertJsonPath('errors.cash.0', 'Cash and credit must equal the total.');
+
+    $this->assertDatabaseCount('chart_account_entries', 0);
+});
+
+it('returns 422 when cash is not an amount', function () {
+    $company = Company::factory()->create();
+    $user = chartMember($company);
+    $cash = Account::factory()->create(['company_id' => $company->id, 'type' => AccountType::Asset]);
+
+    $this->actingAs($user)
+        ->postJson('/api/v1/chart-account-entries', [
+            ...chartEntryPayload($cash),
+            'cash' => 'paid',
+        ])
+        ->assertUnprocessable()
+        ->assertJsonPath('errors.cash.0', 'Enter an amount with up to 2 decimal places.');
+});
+
+it('returns 422 when the reference is longer than 50 characters', function () {
+    $company = Company::factory()->create();
+    $user = chartMember($company);
+    $cash = Account::factory()->create(['company_id' => $company->id, 'type' => AccountType::Asset]);
+
+    $this->actingAs($user)
+        ->postJson('/api/v1/chart-account-entries', [
+            ...chartEntryPayload($cash),
+            'reference' => str_repeat('A', 51),
+        ])
+        ->assertUnprocessable()
+        ->assertJsonPath('errors.reference.0', 'Enter a reference number of at most 50 characters.');
+});
+
+it('corrects the cash and credit on a posted entry', function () {
+    $company = Company::factory()->create();
+    $user = chartMember($company);
+    $sales = Account::factory()->create([
+        'company_id' => $company->id,
+        'code' => '4000',
+        'type' => AccountType::Income,
+    ]);
+    $id = postChartEntry($user, $sales);
+
+    $this->actingAs($user)
+        ->putJson("/api/v1/chart-account-entries/{$id}", [
+            'reference' => 'OR-19',
+            'cash' => '40.00',
+            'credit' => '110.00',
+        ])
+        ->assertOk()
+        ->assertJsonPath('data.attributes.reference', 'OR-19')
+        ->assertJsonPath('data.attributes.amount', '150.00')
+        ->assertJsonPath('data.attributes.cash', '40.00')
+        ->assertJsonPath('data.attributes.credit', '110.00')
+        ->assertJsonPath('data.attributes.status', 'posted');
+
+    $this->assertDatabaseHas('chart_account_entries', [
+        'id' => $id,
+        'reference' => 'OR-19',
+        'amount_cents' => 15000,
+        'cash_cents' => 4000,
+        'credit_cents' => 11000,
+        'particulars' => 'Office supplies',
+        'status' => 'posted',
+    ]);
+});
+
+it('returns 422 when a posted correction does not equal the total', function () {
+    $company = Company::factory()->create();
+    $user = chartMember($company);
+    $cash = Account::factory()->create(['company_id' => $company->id, 'type' => AccountType::Asset]);
+    $id = postChartEntry($user, $cash);
+
+    $this->actingAs($user)
+        ->putJson("/api/v1/chart-account-entries/{$id}", [
+            'cash' => '10.00',
+            'credit' => '10.00',
+        ])
+        ->assertUnprocessable()
+        ->assertJsonPath('errors.cash.0', 'Cash and credit must equal the total.');
+
+    $this->assertDatabaseHas('chart_account_entries', [
+        'id' => $id,
+        'cash_cents' => 15000,
+        'credit_cents' => 0,
+    ]);
+});
 
 it('returns 404 for an entry from another company', function () {
     $company = Company::factory()->create();

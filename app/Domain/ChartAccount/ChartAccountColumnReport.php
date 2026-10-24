@@ -13,7 +13,7 @@ class ChartAccountColumnReport
 {
     /**
      * @return array{
-     *     data: list<array{id: string, date: string, particulars: string, status: string, account_id: string, amount: string}>,
+     *     data: list<array{id: string, date: string, particulars: string, reference: string|null, status: string, account_id: string, amount: string, cash: string, credit: string}>,
      *     meta: array{
      *         year: int,
      *         sort: string,
@@ -52,9 +52,12 @@ class ChartAccountColumnReport
             'id' => (string) $entry->id,
             'date' => $entry->date->toDateString(),
             'particulars' => $entry->particulars,
+            'reference' => $entry->reference,
             'status' => $entry->status->value,
             'account_id' => (string) $entry->account_id,
             'amount' => Money::ofMinor((int) $entry->amount_cents)->toDecimal(),
+            'cash' => Money::ofMinor((int) $entry->cash_cents)->toDecimal(),
+            'credit' => Money::ofMinor((int) $entry->credit_cents)->toDecimal(),
         ])->all();
 
         return [

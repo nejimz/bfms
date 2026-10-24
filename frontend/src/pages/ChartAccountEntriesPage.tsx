@@ -71,8 +71,8 @@ export function ChartAccountEntriesPage({ moduleKey }: { moduleKey?: ChartAccoun
             <strong>No entries yet</strong>
             <span>
               {moduleConfig
-                ? `Record a date, a ${partyLabel.toLowerCase()}, and an amount.`
-                : 'Record a date, an account, particulars, and an amount.'}
+                ? `Record a date, a ${partyLabel.toLowerCase()}, and how much was cash or credit.`
+                : 'Record a date, an account, particulars, and how much was cash or credit.'}
             </span>
           </div>
         )}
@@ -82,7 +82,10 @@ export function ChartAccountEntriesPage({ moduleKey }: { moduleKey?: ChartAccoun
               <span>Date</span>
               <span>Account</span>
               <span>{partyLabel}</span>
-              <span>Amount</span>
+              <span>Reference</span>
+              <span>Total</span>
+              <span>Cash</span>
+              <span>Credit</span>
               <span>Status</span>
             </div>
             {rows.map((entry) => (
@@ -112,7 +115,16 @@ function EntryRow({ entry, listPath }: { entry: ChartAccountEntry; listPath: str
           <span className="entry-items-summary">{entry.lines.map((line) => line.name).join(', ')}</span>
         )}
       </span>
+      <span className="entry-reference">{entry.reference}</span>
       <span className="entry-amount">{formatDecimal(entry.amount)}</span>
+      <span className="entry-cash">
+        <span className="entry-money-label">Cash</span>
+        {formatDecimal(entry.cash)}
+      </span>
+      <span className="entry-credit">
+        <span className="entry-money-label">Credit</span>
+        {formatDecimal(entry.credit)}
+      </span>
       <span className={`status ${entry.status}`}>{entry.status}</span>
     </Link>
   )

@@ -410,6 +410,35 @@ it('returns 403 when a manager or staff member opens column reports', function (
     CompanyRole::Staff->value,
 ]);
 
+it('includes the reference and the cash and credit split', function () {
+    $company = Company::factory()->create(['currency' => 'PHP']);
+    $user = columnMember($company);
+    $sales = Account::factory()->create([
+        'company_id' => $company->id,
+        'code' => '4000',
+        'name' => 'Sales',
+        'type' => AccountType::Income,
+    ]);
+    columnEntry($company, $sales, $user, [
+        'date' => '2026-10-12',
+        'particulars' => 'Harbor Market',
+        'reference' => 'SI-8',
+        'amount_cents' => 15000,
+        'cash_cents' => 5000,
+        'credit_cents' => 10000,
+        'status' => ChartAccountEntryStatus::Posted,
+    ]);
+    $saved = columnReport($company, [$sales], 'Sales columns');
+
+    $this->actingAs($user)
+        ->getJson('/api/v1/reports/chart-account-columns?year=2026&report='.$saved->id)
+        ->assertOk()
+        ->assertJsonPath('data.0.reference', 'SI-8')
+        ->assertJsonPath('data.0.amount', '150.00')
+        ->assertJsonPath('data.0.cash', '50.00')
+        ->assertJsonPath('data.0.credit', '100.00');
+});
+
 it('refuses a guest', function () {
     $this->getJson('/api/v1/reports/chart-account-columns')->assertUnauthorized();
 });

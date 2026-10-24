@@ -13,6 +13,10 @@ use App\Http\Controllers\Api\V1\UserController;
 use App\Http\Middleware\SetCurrentCompany;
 use Illuminate\Support\Facades\Route;
 
+Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
+    Route::patch('/user/password', [CurrentUserController::class, 'updatePassword'])->middleware('throttle:6,1');
+});
+
 Route::middleware(['auth:sanctum', SetCurrentCompany::class])->prefix('v1')->group(function () {
     Route::get('/user', [CurrentUserController::class, 'show']);
     Route::get('/users', [UserController::class, 'index']);

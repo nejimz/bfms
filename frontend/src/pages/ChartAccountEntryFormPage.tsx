@@ -55,6 +55,43 @@ function entryPath(module: ChartAccountModule | null, entryId: string): string {
   return module ? `${module.path}/${entryId}` : `/chart-account-entries/${entryId}`
 }
 
+function plainDecimal(minor: number): string {
+  const absolute = Math.abs(minor)
+
+  return `${Math.floor(absolute / 100)}.${String(absolute % 100).padStart(2, '0')}`
+}
+
+function settlementPayload(reference: string, cash: string, credit: string, totalMinor: number) {
+  const referenceNo = reference.trim()
+  if (referenceNo.length > 50) {
+    throw new Error('Enter a reference number of at most 50 characters.')
+  }
+
+  if (cash.trim() === '') {
+    throw new Error('Enter the cash amount.')
+  }
+
+  if (credit.trim() === '') {
+    throw new Error('Enter the credit amount.')
+  }
+
+  const cashAmount = normalizeDecimal(cash)
+  const creditAmount = normalizeDecimal(credit)
+  if (cashAmount === null || creditAmount === null) {
+    throw new Error('Enter an amount with up to 2 decimal places.')
+  }
+
+  if ((toMinor(cashAmount) ?? 0) + (toMinor(creditAmount) ?? 0) !== totalMinor) {
+    throw new Error('Cash and credit must equal the total.')
+  }
+
+  return {
+    reference: referenceNo === '' ? null : referenceNo,
+    cash: cashAmount,
+    credit: creditAmount,
+  }
+}
+
 function buildPayload(
   date: string,
   accountId: string,
@@ -94,6 +131,9 @@ function buildItemPayload(
   particulars: string,
   partyLabel: string,
   itemLabel: string,
+  reference: string,
+  cash: string,
+  credit: string,
   items: DraftItem[],
 ) {
   const header = buildPayload(date, accountId, particulars, '1.00', partyLabel)
@@ -124,10 +164,13 @@ function buildItemPayload(
     return { name, quantity, amount }
   })
 
+  const totalMinor = lines.reduce((sum, line) => sum + (toMinor(line.amount) ?? 0), 0)
+
   return {
     date: header.date,
     account_id: header.account_id,
     particulars: header.particulars,
+    ...settlementPayload(reference, cash, credit, totalMinor),
     lines,
   }
 }
@@ -164,7 +207,11 @@ export function ChartAccountEntryFormPage({ moduleKey }: { moduleKey?: ChartAcco
   const [date, setDate] = useState(localDate)
   const [accountId, setAccountId] = useState('')
   const [particulars, setParticulars] = useState('')
+  const [reference, setReference] = useState('')
   const [amount, setAmount] = useState('')
+  const [cash, setCash] = useState('')
+  const [credit, setCredit] = useState('')
+  const [settlementEdited, setSettlementEdited] = useState(Boolean(id))
   const [items, setItems] = useState<DraftItem[] | null>(moduleConfig ? [blankItem()] : null)
   const [formError, setFormError] = useState<string | null>(null)
 
@@ -184,7 +231,11 @@ export function ChartAccountEntryFormPage({ moduleKey }: { moduleKey?: ChartAcco
     setDate(entry.date)
     setAccountId(entry.account_id)
     setParticulars(entry.particulars)
+    setReference(entry.reference ?? '')
     setAmount(entry.amount)
+    setCash(entry.cash)
+    setCredit(entry.credit)
+    setSettlementEdited(true)
     if (moduleConfig || entry.lines.length > 0) {
       setItems(
         entry.lines.length > 0
@@ -212,9 +263,7 @@ export function ChartAccountEntryFormPage({ moduleKey }: { moduleKey?: ChartAcco
 
   const save = useMutation({
     mutationFn: async (postAfter: boolean) => {
-      const payload = items
-        ? buildItemPayload(date, selectedAccountId, particulars, partyLabel, moduleConfig?.itemLabel ?? 'item', items)
-        : buildPayload(date, selectedAccountId, particulars, amount, partyLabel)
+      const payload = entryPayload()
       const response = id
         ? await api.put(`/api/v1/chart-account-entries/${id}`, payload)
         : await api.post('/api/v1/chart-account-entries', payload)
@@ -259,9 +308,54 @@ export function ChartAccountEntryFormPage({ moduleKey }: { moduleKey?: ChartAcco
   })
 
   const entry = entryQuery.data
+  const amountMinor = amount.trim() === '' ? null : toMinor(amount)
+  const itemTotal = items?.reduce((sum, item) => sum + (toMinor(item.amount) ?? 0), 0) ?? 0
+  const totalMinor = items ? itemTotal : amountMinor
+  const suggestedCash = totalMinor !== null && totalMinor > 0 ? plainDecimal(totalMinor) : ''
+  const cashValue = settlementEdited ? cash : suggestedCash
+  const creditValue = settlementEdited ? credit : suggestedCash === '' ? '' : '0.00'
 
   if (entry?.status === 'posted') {
-    return <PostedEntry entry={entry} moduleConfig={moduleConfig} listPath={listPath} partyLabel={partyLabel} />
+    return <PostedEntry key={entry.id} entry={entry} listPath={listPath} partyLabel={partyLabel} />
+  }
+
+  function editCash(value: string) {
+    if (!settlementEdited) {
+      setCredit(creditValue)
+    }
+    setSettlementEdited(true)
+    setCash(value)
+  }
+
+  function editCredit(value: string) {
+    if (!settlementEdited) {
+      setCash(cashValue)
+    }
+    setSettlementEdited(true)
+    setCredit(value)
+  }
+
+  function entryPayload() {
+    if (items) {
+      return buildItemPayload(
+        date,
+        selectedAccountId,
+        particulars,
+        partyLabel,
+        moduleConfig?.itemLabel ?? 'item',
+        reference,
+        cashValue,
+        creditValue,
+        items,
+      )
+    }
+
+    const header = buildPayload(date, selectedAccountId, particulars, amount, partyLabel)
+
+    return {
+      ...header,
+      ...settlementPayload(reference, cashValue, creditValue, toMinor(header.amount) ?? 0),
+    }
   }
 
   function submit(event: FormEvent, postAfter: boolean) {
@@ -271,29 +365,31 @@ export function ChartAccountEntryFormPage({ moduleKey }: { moduleKey?: ChartAcco
       return
     }
     try {
-      if (items) {
-        buildItemPayload(date, selectedAccountId, particulars, partyLabel, moduleConfig?.itemLabel ?? 'item', items)
-      } else {
-        buildPayload(date, selectedAccountId, particulars, amount, partyLabel)
-      }
+      entryPayload()
       save.mutate(postAfter)
     } catch (error) {
       setFormError(error instanceof Error ? error.message : 'Check the entry.')
     }
   }
-
-  const amountMinor = toMinor(amount)
-  const itemTotal = items?.reduce((sum, item) => sum + (toMinor(item.amount) ?? 0), 0) ?? 0
   const itemsReady =
     items !== null &&
     items.length > 0 &&
     items.every(
       (item) => item.name.trim() !== '' && normalizeQuantity(item.quantity) !== null && (toMinor(item.amount) ?? 0) > 0,
     )
+  const cashMinor = cashValue.trim() === '' ? null : toMinor(cashValue)
+  const creditMinor = creditValue.trim() === '' ? null : toMinor(creditValue)
+  const settlementMatches =
+    totalMinor !== null &&
+    totalMinor > 0 &&
+    cashMinor !== null &&
+    creditMinor !== null &&
+    cashMinor + creditMinor === totalMinor
   const canPost =
     Boolean(selectedAccountId) &&
     !accountBlocked &&
     particulars.trim() !== '' &&
+    settlementMatches &&
     (items ? itemsReady : amountMinor !== null && amountMinor > 0)
 
   return (
@@ -314,6 +410,15 @@ export function ChartAccountEntryFormPage({ moduleKey }: { moduleKey?: ChartAcco
           <label>
             Date
             <input type="date" value={date} onChange={(event) => setDate(event.target.value)} required />
+          </label>
+          <label className="entry-reference">
+            Reference no.
+            <input
+              value={reference}
+              onChange={(event) => setReference(event.target.value)}
+              maxLength={50}
+              placeholder="Store receipt, delivery receipt, or other number"
+            />
           </label>
           {moduleConfig ? (
             <label className="entry-account-field">
@@ -422,7 +527,32 @@ export function ChartAccountEntryFormPage({ moduleKey }: { moduleKey?: ChartAcco
               />
             </label>
           )}
-          <p className="entry-aside-note">{user?.company.currency}. This register stays off the general ledger.</p>
+          <div className="entry-split">
+            <label>
+              Cash
+              <input
+                inputMode="decimal"
+                placeholder="0.00"
+                value={cashValue}
+                onChange={(event) => editCash(event.target.value)}
+              />
+            </label>
+            <label>
+              Credit
+              <input
+                inputMode="decimal"
+                placeholder="0.00"
+                value={creditValue}
+                onChange={(event) => editCredit(event.target.value)}
+              />
+            </label>
+          </div>
+          {cashMinor !== null && creditMinor !== null && totalMinor !== null && totalMinor > 0 && !settlementMatches && (
+            <p className="form-error">Cash and credit must equal the total.</p>
+          )}
+          <p className="entry-aside-note">
+            Credit is the portion still unpaid. {user?.company.currency}. This register stays off the general ledger.
+          </p>
           {accountNotice && <p className="form-error">{accountNotice}</p>}
           {formError && <p className="form-error">{formError}</p>}
           <div className="entry-actions">
@@ -488,17 +618,46 @@ function moduleAccountNotice(
 
 function PostedEntry({
   entry,
-  moduleConfig,
   listPath,
   partyLabel,
 }: {
   entry: ChartAccountEntry
-  moduleConfig: ChartAccountModule | null
   listPath: string
   partyLabel: string
 }) {
+  const queryClient = useQueryClient()
+  const { user } = useAuth()
+  const companyId = user?.company.id
+  const [reference, setReference] = useState(entry.reference ?? '')
+  const [cash, setCash] = useState(entry.cash)
+  const [credit, setCredit] = useState(entry.credit)
+  const [formError, setFormError] = useState<string | null>(null)
   const code = entry.account?.code
   const name = entry.account?.name ?? entry.account_id
+  const totalMinor = toMinor(entry.amount) ?? 0
+
+  const save = useMutation({
+    mutationFn: async () => {
+      await api.put(`/api/v1/chart-account-entries/${entry.id}`, settlementPayload(reference, cash, credit, totalMinor))
+    },
+    onSuccess: async () => {
+      setFormError(null)
+      await queryClient.invalidateQueries({ queryKey: ['chart-account-entries', companyId] })
+      await queryClient.invalidateQueries({ queryKey: ['chart-account-entry', companyId, entry.id] })
+      await queryClient.invalidateQueries({ queryKey: ['chart-account-columns', companyId] })
+    },
+    onError: (error) => setFormError(errorMessage(error)),
+  })
+
+  function submit(event: FormEvent) {
+    event.preventDefault()
+    try {
+      settlementPayload(reference, cash, credit, totalMinor)
+      save.mutate()
+    } catch (error) {
+      setFormError(error instanceof Error ? error.message : 'Check the entry.')
+    }
+  }
 
   return (
     <div className="page entry-page entry-posted">
@@ -507,7 +666,7 @@ function PostedEntry({
         <span className="status posted">Posted</span>
       </header>
 
-      <article className="panel entry-receipt">
+      <form className="panel entry-receipt" onSubmit={submit}>
         <div className="entry-receipt-meta">
           <time dateTime={entry.date}>{formatEntryDate(entry.date)}</time>
           <span>{entry.currency}</span>
@@ -533,8 +692,38 @@ function PostedEntry({
             ))}
           </ul>
         )}
-        <p className="entry-aside-note">This register stays off the general ledger.</p>
-      </article>
+        <label className="entry-reference">
+          Reference no.
+          <input
+            value={reference}
+            onChange={(event) => setReference(event.target.value)}
+            maxLength={50}
+            placeholder="Store receipt, delivery receipt, or other number"
+          />
+        </label>
+        <div className="entry-split">
+          <label>
+            Cash
+            <input inputMode="decimal" placeholder="0.00" value={cash} onChange={(event) => setCash(event.target.value)} />
+          </label>
+          <label>
+            Credit
+            <input
+              inputMode="decimal"
+              placeholder="0.00"
+              value={credit}
+              onChange={(event) => setCredit(event.target.value)}
+            />
+          </label>
+        </div>
+        {formError && <p className="form-error">{formError}</p>}
+        <p className="entry-aside-note">
+          Credit is the portion still unpaid. The date, items, and total stay locked.
+        </p>
+        <button type="submit" className="primary" disabled={save.isPending}>
+          Save
+        </button>
+      </form>
     </div>
   )
 }

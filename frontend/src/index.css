@@ -152,9 +152,16 @@ a { color: var(--green-dark); }
 .session label { color: #d7dee4; }
 .session input, .session select { color: var(--ink); background: white; }
 .session .logout {
-  margin-top: 0.6rem;
+  margin-top: 0.35rem;
   background: transparent;
   color: white;
+  border-color: #3d4b59;
+}
+.session .session-link {
+  margin-top: 0.6rem;
+  justify-self: start;
+  color: white;
+  background: transparent;
   border-color: #3d4b59;
 }
 .session .form-error { color: #f3c1c1; }
@@ -202,11 +209,11 @@ td .status { margin-left: 0.55rem; vertical-align: middle; }
   background: var(--panel);
   border: 1px solid var(--line);
   border-radius: 18px;
-  overflow: hidden;
+  overflow-x: auto;
 }
 .entry-sheet-head, .entry-row {
   display: grid;
-  grid-template-columns: 8.2rem minmax(9.5rem, 13rem) minmax(0, 1fr) 8.2rem 5.4rem;
+  grid-template-columns: 7.2rem minmax(8rem, 11rem) minmax(0, 1.3fr) minmax(5rem, 8rem) 6.2rem 6.2rem 6.2rem 5.2rem;
   gap: 0.85rem;
   align-items: center;
   padding: 0.9rem 1.15rem;
@@ -218,8 +225,7 @@ td .status { margin-left: 0.55rem; vertical-align: middle; }
   text-transform: uppercase;
   border-bottom: 1px solid var(--line);
 }
-.entry-sheet-head span:nth-child(4),
-.entry-sheet-head span:nth-child(5) { text-align: right; }
+.entry-sheet-head span:nth-child(n+5):nth-child(-n+7) { text-align: right; }
 .entry-row {
   color: inherit;
   text-decoration: none;
@@ -248,11 +254,19 @@ td .status { margin-left: 0.55rem; vertical-align: middle; }
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.entry-amount, .entry-figure {
+.entry-amount, .entry-cash, .entry-credit, .entry-figure {
   font-variant-numeric: tabular-nums;
   font-family: ui-monospace, "SF Mono", Menlo, monospace;
 }
-.entry-amount { text-align: right; font-weight: 600; }
+.entry-amount, .entry-cash, .entry-credit { text-align: right; }
+.entry-money-label { display: none; }
+.entry-amount { font-weight: 600; }
+.entry-row .entry-reference {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .entry-row .status { justify-self: end; }
 .entry-empty {
   display: grid;
@@ -271,7 +285,8 @@ td .status { margin-left: 0.55rem; vertical-align: middle; }
 }
 .entry-fields, .entry-aside { display: grid; gap: 0.95rem; padding: 1.2rem 1.25rem; }
 .entry-fields { grid-template-columns: minmax(11rem, 14rem) minmax(9rem, 11rem); }
-.entry-account-field, .entry-particulars { grid-column: 1 / -1; }
+.entry-account-field, .entry-particulars, .entry-fields > .entry-reference { grid-column: 1 / -1; }
+.entry-split { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
 .entry-locked-account {
   margin: 0;
   border: 1px solid var(--line);
@@ -396,7 +411,10 @@ td .status { margin-left: 0.55rem; vertical-align: middle; }
   font-size: 1.55rem;
   line-height: 1.3;
 }
-.entry-receipt .entry-aside-note { margin-top: 1.45rem; }
+.entry-receipt .entry-aside-note { margin-top: 0.85rem; }
+.entry-receipt .entry-reference,
+.entry-receipt .entry-split { margin-top: 1rem; }
+.entry-receipt button { justify-self: start; margin-top: 0.9rem; }
 .business-select { min-width: 12rem; }
 .grow { flex: 1; min-width: 12rem; }
 
@@ -458,6 +476,10 @@ th .sort-button {
   font-size: 0.82em;
 }
 .account-section-total {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.35rem 1rem;
   margin: 0;
   font-family: ui-monospace, "SF Mono", Menlo, monospace;
   font-variant-numeric: tabular-nums;
@@ -518,15 +540,30 @@ label .form-error { font-size: 0.85rem; }
   .inline-form, .journal-head, .entry-fields, .entry-composer, .column-filters { grid-template-columns: 1fr; }
   .entry-sheet-head { display: none; }
   .entry-row {
-    grid-template-columns: 1fr auto;
+    grid-template-columns: 1fr 1fr;
     grid-template-areas:
       "account amount"
       "narrative narrative"
+      "reference reference"
+      "cash credit"
       "date status";
   }
   .entry-account { grid-area: account; }
   .entry-amount { grid-area: amount; }
   .entry-narrative { grid-area: narrative; white-space: normal; }
+  .entry-row .entry-reference { grid-area: reference; }
+  .entry-row .entry-reference:empty { display: none; }
+  .entry-cash { grid-area: cash; text-align: left; }
+  .entry-credit { grid-area: credit; }
+  .entry-money-label {
+    display: block;
+    color: var(--muted);
+    font-family: inherit;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
   .entry-row time { grid-area: date; color: var(--muted); font-size: 0.85rem; }
   .entry-row .status { grid-area: status; }
   .entry-aside { position: static; }

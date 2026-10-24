@@ -105,6 +105,10 @@ class ChartAccountEntrySeeder extends Seeder
         ]);
 
         $entry->replaceLines($lines);
+        $entry->forceFill([
+            'cash_cents' => $entry->amount_cents,
+            'credit_cents' => 0,
+        ])->save();
     }
 
     /**

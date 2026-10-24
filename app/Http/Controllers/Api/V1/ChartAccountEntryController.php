@@ -46,7 +46,10 @@ class ChartAccountEntryController extends Controller
                 'account_id' => $data['account_id'],
                 'date' => $data['date'],
                 'particulars' => $data['particulars'],
+                'reference' => $data['reference'] ?? null,
                 'amount_cents' => $this->amountMinor($data),
+                'cash_cents' => $this->settlementMinor($data, 'cash'),
+                'credit_cents' => $this->settlementMinor($data, 'credit'),
                 'currency' => $company->currency,
                 'status' => ChartAccountEntryStatus::Draft,
                 'created_by' => $request->user()->id,
@@ -71,18 +74,27 @@ class ChartAccountEntryController extends Controller
 
     public function update(ChartAccountEntryRequest $request, ChartAccountEntry $entry): JsonResponse
     {
-        if ($entry->isPosted()) {
-            return response()->json(['message' => 'Posted chart account entries cannot be edited.'], 409);
-        }
-
         $data = $request->validated();
+
+        if ($entry->isPosted()) {
+            $entry->update([
+                'reference' => array_key_exists('reference', $data) ? $data['reference'] : $entry->reference,
+                'cash_cents' => $this->settlementMinor($data, 'cash'),
+                'credit_cents' => $this->settlementMinor($data, 'credit'),
+            ]);
+
+            return $this->entryResponse($entry);
+        }
 
         DB::transaction(function () use ($data, $entry) {
             $entry->update([
                 'account_id' => $data['account_id'],
                 'date' => $data['date'],
                 'particulars' => $data['particulars'],
+                'reference' => $data['reference'] ?? null,
                 'amount_cents' => $this->amountMinor($data),
+                'cash_cents' => $this->settlementMinor($data, 'cash'),
+                'credit_cents' => $this->settlementMinor($data, 'credit'),
             ]);
 
             if (array_key_exists('lines', $data)) {
@@ -152,6 +164,14 @@ class ChartAccountEntryController extends Controller
         }
 
         return $total->minor;
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    private function settlementMinor(array $data, string $field): int
+    {
+        return Money::fromDecimal((string) $data[$field])->minor;
     }
 
     private function entryResponse(ChartAccountEntry $entry, int $status = 200): JsonResponse

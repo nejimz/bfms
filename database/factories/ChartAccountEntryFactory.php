@@ -14,6 +14,19 @@ use Illuminate\Database\Eloquent\Factories\Factory;
  */
 class ChartAccountEntryFactory extends Factory
 {
+    public function configure(): static
+    {
+        return $this->afterMaking(function (ChartAccountEntry $entry): void {
+            if (! array_key_exists('cash_cents', $entry->getAttributes())) {
+                $entry->cash_cents = $entry->amount_cents;
+            }
+
+            if (! array_key_exists('credit_cents', $entry->getAttributes())) {
+                $entry->credit_cents = 0;
+            }
+        });
+    }
+
     /**
      * @return array<string, mixed>
      */

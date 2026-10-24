@@ -16,6 +16,7 @@ import { CategoryFormPage } from './pages/CategoryFormPage'
 import { JournalFormPage } from './pages/JournalFormPage'
 import { JournalsPage } from './pages/JournalsPage'
 import { LoginPage } from './pages/LoginPage'
+import { PasswordPage } from './pages/PasswordPage'
 import { TrialBalancePage } from './pages/TrialBalancePage'
 import { UserFormPage } from './pages/UserFormPage'
 import { UsersPage } from './pages/UsersPage'
@@ -69,6 +70,7 @@ export default function App() {
             <Route path="/login" element={<LoginPage />} />
             <Route element={<RequireAuth />}>
               <Route index element={<HomeRedirect />} />
+              <Route path="/password" element={<PasswordPage />} />
               <Route element={<RequireAdmin />}>
                 <Route path="/businesses" element={<BusinessesPage />} />
                 <Route path="/businesses/new" element={<BusinessFormPage />} />

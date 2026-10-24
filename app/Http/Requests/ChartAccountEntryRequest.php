@@ -8,6 +8,7 @@ use App\Models\Account;
 use App\Models\ChartAccountEntry;
 use App\Support\CurrentCompany;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Validation\Validator;
 
 class ChartAccountEntryRequest extends FormRequest
@@ -28,11 +29,24 @@ class ChartAccountEntryRequest extends FormRequest
      */
     public function rules(): array
     {
+        $entry = $this->route('entry');
+
+        if ($entry instanceof ChartAccountEntry && $entry->isPosted()) {
+            return [
+                'reference' => ['sometimes', 'nullable', 'string', 'max:50'],
+                'cash' => ['required', 'string'],
+                'credit' => ['required', 'string'],
+            ];
+        }
+
         return [
             'date' => ['required', 'date'],
             'account_id' => ['required', 'integer'],
             'particulars' => ['required', 'string', 'max:1000'],
+            'reference' => ['nullable', 'string', 'max:50'],
             'amount' => ['exclude_with:lines', 'required_without:lines', 'string'],
+            'cash' => ['required', 'string'],
+            'credit' => ['required', 'string'],
             'lines' => ['sometimes', 'array', 'min:1', 'max:30'],
             'lines.*.name' => ['required', 'string', 'max:255'],
             'lines.*.quantity' => ['required', 'string'],
@@ -47,6 +61,9 @@ class ChartAccountEntryRequest extends FormRequest
     {
         return [
             'amount.required_without' => 'The amount field is required.',
+            'reference.max' => 'Enter a reference number of at most 50 characters.',
+            'cash.required' => 'Enter the cash amount.',
+            'credit.required' => 'Enter the credit amount.',
             'lines.min' => 'Add an item.',
             'lines.max' => 'An entry can have at most 30 items.',
             'lines.*.name.required' => 'Enter the item name.',
@@ -55,9 +72,25 @@ class ChartAccountEntryRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
+        $entry = $this->route('entry');
+
+        if ($entry instanceof ChartAccountEntry && $entry->isPosted() && $this->hasAny(['date', 'account_id', 'particulars', 'amount', 'lines'])) {
+            throw new HttpResponseException(response()->json([
+                'message' => 'Posted chart account entries cannot be edited.',
+            ], 409));
+        }
+
         if ($this->has('particulars')) {
             $this->merge([
                 'particulars' => trim((string) $this->input('particulars')),
+            ]);
+        }
+
+        if ($this->exists('reference')) {
+            $reference = trim((string) $this->input('reference'));
+
+            $this->merge([
+                'reference' => $reference === '' ? null : $reference,
             ]);
         }
 
@@ -91,11 +124,29 @@ class ChartAccountEntryRequest extends FormRequest
                 return;
             }
 
+            $entry = $this->route('entry');
+
+            if ($entry instanceof ChartAccountEntry && $entry->isPosted()) {
+                $this->validateSettlement($validator, (int) $entry->amount_cents);
+
+                return;
+            }
+
             if ($this->exists('lines')) {
                 $this->validateLines($validator);
             } else {
                 $this->validateHeaderAmount($validator);
             }
+
+            if ($validator->errors()->isNotEmpty()) {
+                return;
+            }
+
+            $totalMinor = $this->exists('lines')
+                ? $this->linesTotalMinor()
+                : Money::fromDecimal((string) $this->input('amount'))->minor;
+
+            $this->validateSettlement($validator, $totalMinor);
 
             if ($validator->errors()->isNotEmpty()) {
                 return;
@@ -110,6 +161,50 @@ class ChartAccountEntryRequest extends FormRequest
                 $validator->errors()->add('account_id', 'That account is inactive.');
             }
         });
+    }
+
+    private function validateSettlement(Validator $validator, int $totalMinor): void
+    {
+        $cash = $this->parseMoney($validator, 'cash');
+        $credit = $this->parseMoney($validator, 'credit');
+
+        if ($cash === null || $credit === null) {
+            return;
+        }
+
+        try {
+            $settled = $cash->plus($credit);
+        } catch (InvalidMoneyException $exception) {
+            $validator->errors()->add('cash', $exception->getMessage());
+
+            return;
+        }
+
+        if ($settled->minor !== $totalMinor) {
+            $validator->errors()->add('cash', 'Cash and credit must equal the total.');
+        }
+    }
+
+    private function parseMoney(Validator $validator, string $field): ?Money
+    {
+        try {
+            return Money::fromDecimal((string) $this->input($field));
+        } catch (InvalidMoneyException $exception) {
+            $validator->errors()->add($field, $exception->getMessage());
+
+            return null;
+        }
+    }
+
+    private function linesTotalMinor(): int
+    {
+        $total = Money::zero();
+
+        foreach ($this->input('lines') as $line) {
+            $total = $total->plus(Money::fromDecimal((string) $line['amount']));
+        }
+
+        return $total->minor;
     }
 
     private function validateHeaderAmount(Validator $validator): void

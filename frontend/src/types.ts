@@ -39,7 +39,10 @@ export type ChartAccountEntry = {
   date: string
   account_id: string
   particulars: string
+  reference: string | null
   amount: string
+  cash: string
+  credit: string
   currency: string
   status: 'draft' | 'posted'
   posted_at: string | null
@@ -57,9 +60,12 @@ export type ChartAccountColumnRow = {
   id: string
   date: string
   particulars: string
+  reference: string | null
   status: 'draft' | 'posted'
   account_id: string
   amount: string
+  cash: string
+  credit: string
 }
 
 export type ChartAccountColumnReport = {
