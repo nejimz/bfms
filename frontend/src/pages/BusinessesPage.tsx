@@ -1,13 +1,12 @@
 import { useQuery } from '@tanstack/react-query'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { api } from '../api'
 import { useAuth } from '../auth'
 import type { Business } from '../types'
 import { readResource } from '../types'
 
 export function BusinessesPage() {
-  const navigate = useNavigate()
-  const { user, selectCompany } = useAuth()
+  const { user } = useAuth()
   const businesses = useQuery({
     queryKey: ['companies', user?.id],
     enabled: Boolean(user),
@@ -18,13 +17,6 @@ export function BusinessesPage() {
       )
     },
   })
-
-  async function openBooks(companyId: string, path: string) {
-    if (user && companyId !== user.company.id) {
-      await selectCompany(companyId)
-    }
-    navigate(path)
-  }
 
   return (
     <div className="page">
@@ -47,11 +39,9 @@ export function BusinessesPage() {
             <tr>
               <th>Name</th>
               <th>Description</th>
-              <th>Category</th>
-              <th>Currency</th>
-              <th>Role</th>
-              <th>Accounts</th>
-              <th>Journals</th>
+              <th className="center">Category</th>
+              <th className="center">Currency</th>
+              <th className="center">Role</th>
               <th />
             </tr>
           </thead>
@@ -63,25 +53,17 @@ export function BusinessesPage() {
                   {business.id === user?.company.id && <span className="status">Current</span>}
                 </td>
                 <td>{business.description || 'No description'}</td>
-                <td>{business.category_name || 'No category'}</td>
-                <td className="num">{business.currency}</td>
-                <td className="type">{business.role}</td>
-                <td className="num">{business.accounts_count}</td>
-                <td className="num">{business.journals_count}</td>
+                <td className="center">{business.category_name || 'No category'}</td>
+                <td className="num center">{business.currency}</td>
+                <td className="type center">{business.role}</td>
                 <td>
-                  <div className="actions">
-                    {business.role === 'owner' && (
+                  {business.role === 'owner' && (
+                    <div className="actions">
                       <Link className="button-link" to={`/businesses/${business.id}/edit`}>
                         Edit
                       </Link>
-                    )}
-                    <button type="button" onClick={() => void openBooks(business.id, '/accounts')}>
-                      Chart of accounts
-                    </button>
-                    <button type="button" onClick={() => void openBooks(business.id, '/journals')}>
-                      Journals
-                    </button>
-                  </div>
+                    </div>
+                  )}
                 </td>
               </tr>
             ))}

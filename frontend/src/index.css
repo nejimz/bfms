@@ -299,6 +299,7 @@ table { width: 100%; border-collapse: collapse; }
 th, td { padding: 0.75rem 0.9rem; text-align: left; border-bottom: 1px solid var(--line); vertical-align: middle; }
 th { font-size: 0.78rem; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
 th.amount, td.num { text-align: right; font-variant-numeric: tabular-nums; }
+th.center, td.center { text-align: center; }
 .column-filters { grid-template-columns: minmax(12rem, 18rem) 8.5rem; justify-content: start; }
 .account-checklist {
   display: grid;

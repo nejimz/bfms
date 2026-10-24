@@ -1,6 +1,5 @@
 <?php
 
-use App\Domain\Ledger\DefaultChart;
 use App\Enums\AccountType;
 use App\Enums\CompanyRole;
 use App\Enums\JournalStatus;
@@ -80,13 +79,17 @@ it('lets an owner open another business and keeps the books there', function () 
         'role' => CompanyRole::Owner->value,
     ]);
 
-    expect(Account::withoutGlobalScopes()->where('company_id', $newId)->count())
-        ->toBe(count(DefaultChart::ACCOUNTS));
-
     $accounts = $this->actingAs($owner)->getJson('/api/v1/accounts')->assertOk();
-    $codes = collect($accounts->json('data'))->pluck('attributes.code');
 
-    expect($codes->all())->toContain('1000')->not->toContain('9999');
+    expect(collect($accounts->json('data'))->map(fn (array $row): array => [
+        $row['attributes']['code'],
+        $row['attributes']['name'],
+        $row['attributes']['type'],
+    ])->all())->toBe([
+        ['4000', 'Sales', 'income'],
+        ['5000', 'Operation Expenses', 'expense'],
+        ['5100', 'Purchase Expenses', 'expense'],
+    ]);
 
     $this->actingAs($owner)->getJson('/api/v1/user')
         ->assertOk()

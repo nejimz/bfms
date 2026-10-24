@@ -9,20 +9,14 @@ use App\Models\Company;
 final class DefaultChart
 {
     /**
-     * A short generic chart. Tax accounts are intentionally absent.
+     * Accounts created with a new business.
      *
      * @var list<array{code: string, name: string, type: AccountType}>
      */
     public const ACCOUNTS = [
-        ['code' => '1000', 'name' => 'Cash', 'type' => AccountType::Asset],
-        ['code' => '1100', 'name' => 'Accounts Receivable', 'type' => AccountType::Asset],
-        ['code' => '2000', 'name' => 'Accounts Payable', 'type' => AccountType::Liability],
-        ['code' => '3000', 'name' => "Owner's Equity", 'type' => AccountType::Equity],
         ['code' => '4000', 'name' => 'Sales', 'type' => AccountType::Income],
-        ['code' => '5000', 'name' => 'Rent Expense', 'type' => AccountType::Expense],
-        ['code' => '5100', 'name' => 'Utilities Expense', 'type' => AccountType::Expense],
-        ['code' => '5200', 'name' => 'Supplies Expense', 'type' => AccountType::Expense],
-        ['code' => '5300', 'name' => 'Salaries Expense', 'type' => AccountType::Expense],
+        ['code' => '5000', 'name' => 'Operation Expenses', 'type' => AccountType::Expense],
+        ['code' => '5100', 'name' => 'Purchase Expenses', 'type' => AccountType::Expense],
     ];
 
     public static function provision(Company $company): void
