@@ -305,9 +305,7 @@ export function ChartAccountEntryFormPage({ moduleKey }: { moduleKey?: ChartAcco
           </p>
           <h1>{id ? 'Edit draft' : moduleConfig?.title ?? 'New entry'}</h1>
         </div>
-        <Link className="entry-back" to={listPath}>
-          Back to entries
-        </Link>
+        <BackToEntries to={listPath} />
       </header>
 
       <div className="entry-composer">
@@ -456,6 +454,18 @@ export function ChartAccountEntryFormPage({ moduleKey }: { moduleKey?: ChartAcco
   )
 }
 
+function BackToEntries({ to }: { to: string }) {
+  return (
+    <Link className="entry-back" to={to}>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden="true">
+        <path d="M15 6 9 12l6 6" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M9 12h11" strokeLinecap="round" />
+      </svg>
+      Back to entries
+    </Link>
+  )
+}
+
 function moduleAccountNotice(
   moduleConfig: ChartAccountModule | null,
   accountsLoaded: boolean,
@@ -491,42 +501,39 @@ function PostedEntry({
   const name = entry.account?.name ?? entry.account_id
 
   return (
-    <div className="page entry-page">
-      <header className="entry-hero">
-        <div>
-          <p className="eyebrow">Posted · {entry.currency}</p>
-          <h1>{moduleConfig?.title ?? 'Chart account entry'}</h1>
-        </div>
-        <div className="entry-hero-actions">
-          <BusinessSelect disabled />
-          <Link className="entry-back" to={listPath}>
-            Back to entries
-          </Link>
-        </div>
+    <div className="page entry-page entry-posted">
+      <header className="entry-posted-bar">
+        <BackToEntries to={listPath} />
+        <span className="status posted">Posted</span>
       </header>
 
       <article className="panel entry-receipt">
+        <div className="entry-receipt-meta">
+          <time dateTime={entry.date}>{formatEntryDate(entry.date)}</time>
+          <span>{entry.currency}</span>
+        </div>
         <p className="entry-figure">{formatDecimal(entry.amount)}</p>
         <p className="entry-receipt-account">
           {code && <span className="entry-code">{code}</span>}
           <span>{name}</span>
         </p>
-        <time dateTime={entry.date}>{formatEntryDate(entry.date)}</time>
-        {moduleConfig && <p className="entry-party-label">{partyLabel}</p>}
+        <div className="entry-receipt-rule" />
+        <p className="entry-party-label">{partyLabel}</p>
         <p className="entry-quote">{entry.particulars}</p>
         {entry.lines.length > 0 && (
           <ul className="entry-item-list">
             {entry.lines.map((line) => (
               <li key={line.id}>
-                <span>
-                  {line.quantity} × {line.name}
+                <span className="entry-item-name">
+                  <span className="entry-item-qty">{line.quantity}</span>
+                  {line.name}
                 </span>
                 <span>{formatDecimal(line.amount)}</span>
               </li>
             ))}
           </ul>
         )}
-        <p className="entry-aside-note">Posted entries stay off the general ledger.</p>
+        <p className="entry-aside-note">This register stays off the general ledger.</p>
       </article>
     </div>
   )

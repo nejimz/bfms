@@ -187,7 +187,16 @@ td .status { margin-left: 0.55rem; vertical-align: middle; }
 .entry-lede { margin: 0.45rem 0 0; max-width: 36rem; color: var(--muted); }
 .entry-hero-actions { display: flex; align-items: flex-end; gap: 0.85rem; flex-wrap: wrap; }
 .entry-count { margin: 0 0 0.45rem; color: var(--muted); font-size: 0.85rem; }
-.entry-back { align-self: center; text-decoration: none; font-size: 0.92rem; }
+.entry-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  align-self: center;
+  text-decoration: none;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+.entry-back svg { width: 1.15rem; height: 1.15rem; flex: none; }
 
 .entry-sheet {
   background: var(--panel);
@@ -274,11 +283,13 @@ td .status { margin-left: 0.55rem; vertical-align: middle; }
   font-size: 1rem;
 }
 .entry-party-label {
-  margin: 0.8rem 0 0;
+  margin: 0;
   color: var(--muted);
-  font-size: 0.85rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
-.entry-party-label + .entry-quote { margin-top: 0.15rem; }
+.entry-party-label + .entry-quote { margin-top: 0.3rem; }
 .entry-items { grid-column: 1 / -1; display: grid; gap: 0.55rem; }
 .entry-item-head, .entry-item-row {
   display: grid;
@@ -300,15 +311,29 @@ td .status { margin-left: 0.55rem; vertical-align: middle; }
 }
 .entry-item-list {
   display: grid;
-  gap: 0.35rem;
-  margin: 0.85rem 0 0;
-  padding: 0;
+  gap: 0.55rem;
+  margin: 1.2rem 0 0;
+  padding: 0.9rem 0 0;
+  border-top: 1px solid var(--line);
   list-style: none;
 }
 .entry-item-list li {
   display: flex;
   justify-content: space-between;
+  align-items: baseline;
   gap: 1rem;
+}
+.entry-item-name { display: flex; gap: 0.65rem; min-width: 0; }
+.entry-item-qty {
+  min-width: 1.6rem;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 0.85rem;
+}
+.entry-item-list li span:last-child {
+  font-variant-numeric: tabular-nums;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
 }
 .entry-particulars textarea { min-height: 8.5rem; }
 .entry-aside { position: sticky; top: 1.25rem; }
@@ -333,10 +358,45 @@ td .status { margin-left: 0.55rem; vertical-align: middle; }
   color: var(--danger);
 }
 
-.entry-receipt { display: grid; gap: 0.35rem; max-width: 38rem; padding: 1.6rem 1.7rem 1.45rem; }
+.entry-posted { justify-items: center; gap: 1rem; }
+.entry-posted-bar {
+  width: min(100%, 34rem);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.entry-receipt {
+  width: min(100%, 34rem);
+  display: grid;
+  gap: 0;
+  max-width: none;
+  padding: 1.85rem 2rem 1.45rem;
+  border-radius: 22px;
+  box-shadow: 0 16px 40px rgba(28, 25, 21, 0.05);
+}
+.entry-receipt-meta {
+  display: flex;
+  justify-content: space-between;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
 .entry-figure { margin: 0; font-size: 2.4rem; letter-spacing: -0.03em; }
-.entry-receipt-account { display: flex; gap: 0.55rem; align-items: baseline; margin: 0.35rem 0 0; font-size: 1.15rem; }
-.entry-quote { margin: 0.8rem 0 0.2rem; font-size: 1.05rem; line-height: 1.5; }
+.entry-receipt .entry-figure {
+  margin-top: 1.15rem;
+  font-family: Palatino, "Iowan Old Style", Georgia, serif;
+  font-size: 3.15rem;
+  font-weight: 600;
+  letter-spacing: -0.045em;
+}
+.entry-receipt-account { display: flex; gap: 0.55rem; align-items: baseline; margin: 0.2rem 0 0; color: var(--muted); font-size: 0.95rem; }
+.entry-receipt-rule { height: 1px; margin: 1.3rem 0 1.1rem; background: var(--line); }
+.entry-quote {
+  margin: 0.3rem 0 0;
+  font-family: Palatino, "Iowan Old Style", Georgia, serif;
+  font-size: 1.55rem;
+  line-height: 1.3;
+}
+.entry-receipt .entry-aside-note { margin-top: 1.45rem; }
 .business-select { min-width: 12rem; }
 .grow { flex: 1; min-width: 12rem; }
 
@@ -383,16 +443,26 @@ th .sort-button {
   font-weight: inherit;
   color: inherit;
 }
-.account-heading {
-  display: grid;
-  justify-items: end;
-  gap: 0.15rem;
-  min-width: 6.75rem;
-  text-transform: none;
-  letter-spacing: 0;
-  font-size: 0.78rem;
+.account-sections { display: grid; gap: 1.35rem; }
+.account-section { display: grid; gap: 0.55rem; }
+.account-section-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
 }
-.account-heading span:last-child { font-weight: 500; color: var(--ink); }
+.account-section-head h2 { font-size: 1.25rem; }
+.account-code {
+  color: var(--muted);
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 0.82em;
+}
+.account-section-total {
+  margin: 0;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-variant-numeric: tabular-nums;
+  font-weight: 650;
+}
 tr.column-row { cursor: pointer; }
 tr.column-row:hover { background: #f7f1e6; }
 td.particulars { min-width: 12rem; }

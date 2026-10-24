@@ -5,7 +5,14 @@ import { api } from '../api'
 import { useAuth } from '../auth'
 import { BusinessSelect } from '../components/BusinessSelect'
 import { formatDecimal, toMinor } from '../money'
-import { canWriteReport, readResource, type AccountColumnReport, type ChartAccountColumnReport, type ChartAccountColumnRow } from '../types'
+import {
+  canWriteReport,
+  readResource,
+  type AccountColumnReport,
+  type ChartAccountColumn,
+  type ChartAccountColumnReport,
+  type ChartAccountColumnRow,
+} from '../types'
 
 function formatEntryDate(iso: string): string {
   const [year, month, day] = iso.split('-').map(Number)
@@ -37,6 +44,10 @@ function totalFor(rows: ChartAccountColumnRow[], accountId: string): string {
   }, 0)
 
   return decimalFromMinor(minor)
+}
+
+function rowsForAccount(rows: ChartAccountColumnRow[], accountId: string): ChartAccountColumnRow[] {
+  return rows.filter((row) => row.account_id === accountId)
 }
 
 export function ChartAccountColumnsPage() {
@@ -83,7 +94,7 @@ export function ChartAccountColumnsPage() {
             {user?.company.name} · {report.data?.meta.currency ?? user?.company.currency}
           </p>
           <h1>{definition.data?.name ?? 'Account columns'}</h1>
-          <p className="hint">One row per chart account entry. Each amount sits under an account chosen for this report.</p>
+          <p className="hint">Each account lists its own date, particulars, and amount.</p>
         </div>
         <div className="actions">
           <Link className="button-link" to="/chart-account-columns">
@@ -115,77 +126,95 @@ export function ChartAccountColumnsPage() {
       {(report.isError || definition.isError) && (
         <p className="hint">The account columns could not be opened.</p>
       )}
-      {!report.isLoading && !report.isError && report.isFetched && rows.length === 0 && (
-        <p className="hint">No entries in this year.</p>
+      {!report.isLoading && !report.isError && report.isFetched && columns.length === 0 && (
+        <p className="hint">No accounts on this report.</p>
       )}
 
       {!report.isError && columns.length > 0 && (
-        <div className="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th aria-sort={sort === 'asc' ? 'ascending' : 'descending'}>
-                  <button
-                    type="button"
-                    className="sort-button"
-                    onClick={() => setSort((current) => (current === 'asc' ? 'desc' : 'asc'))}
-                  >
-                    Date
-                    <span aria-hidden="true">{sort === 'asc' ? '↑' : '↓'}</span>
-                  </button>
-                </th>
-                <th>Particulars</th>
-                {columns.map((column) => (
-                  <th key={column.id} className="amount">
-                    <span className="account-heading">
-                      <span>{column.code}</span>
-                      <span>{column.name}</span>
-                    </span>
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((row) => (
-                <tr
-                  key={row.id}
-                  className="column-row"
-                  onClick={() => navigate(`/chart-account-entries/${row.id}`)}
-                >
-                  <td>
-                    <time dateTime={row.date}>{formatEntryDate(row.date)}</time>
-                  </td>
-                  <td className="particulars">
-                    <Link
-                      to={`/chart-account-entries/${row.id}`}
-                      onClick={(event) => event.stopPropagation()}
-                    >
-                      {row.particulars}
-                    </Link>
-                    <span className={`status ${row.status}`}>{row.status}</span>
-                  </td>
-                  {columns.map((column) => (
-                    <td key={column.id} className="num">
-                      {row.account_id === column.id ? formatDecimal(row.amount) : ''}
-                    </td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-            <tfoot>
-              <tr>
-                <td>Total</td>
-                <td />
-                {columns.map((column) => (
-                  <td key={column.id} className="num">
-                    {formatDecimal(totalFor(rows, column.id))}
-                  </td>
-                ))}
-              </tr>
-            </tfoot>
-          </table>
+        <div className="account-sections">
+          {columns.map((column) => (
+            <AccountSection
+              key={column.id}
+              column={column}
+              rows={rowsForAccount(rows, column.id)}
+              total={formatDecimal(totalFor(rows, column.id))}
+              sort={sort}
+              onSort={() => setSort((current) => (current === 'asc' ? 'desc' : 'asc'))}
+              onOpen={(entryId) => navigate(`/chart-account-entries/${entryId}`)}
+            />
+          ))}
         </div>
       )}
     </div>
+  )
+}
+
+function AccountSection({
+  column,
+  rows,
+  total,
+  sort,
+  onSort,
+  onOpen,
+}: {
+  column: ChartAccountColumn
+  rows: ChartAccountColumnRow[]
+  total: string
+  sort: 'asc' | 'desc'
+  onSort: () => void
+  onOpen: (entryId: string) => void
+}) {
+  const headingId = `account-${column.id}`
+
+  return (
+    <section className="account-section" aria-labelledby={headingId}>
+      <header className="account-section-head">
+        <h2 id={headingId}>
+          <span className="account-code">{column.code}</span>
+          {' · '}
+          {column.name}
+        </h2>
+        <p className="account-section-total">{total}</p>
+      </header>
+      <div className="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th aria-sort={sort === 'asc' ? 'ascending' : 'descending'}>
+                <button type="button" className="sort-button" onClick={onSort}>
+                  Date
+                  <span aria-hidden="true">{sort === 'asc' ? '↑' : '↓'}</span>
+                </button>
+              </th>
+              <th>Particulars</th>
+              <th className="amount">Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.length === 0 && (
+              <tr>
+                <td colSpan={3} className="hint">
+                  No entries in this year.
+                </td>
+              </tr>
+            )}
+            {rows.map((row) => (
+              <tr key={row.id} className="column-row" onClick={() => onOpen(row.id)}>
+                <td>
+                  <time dateTime={row.date}>{formatEntryDate(row.date)}</time>
+                </td>
+                <td className="particulars">
+                  <Link to={`/chart-account-entries/${row.id}`} onClick={(event) => event.stopPropagation()}>
+                    {row.particulars}
+                  </Link>
+                  <span className={`status ${row.status}`}>{row.status}</span>
+                </td>
+                <td className="num">{formatDecimal(row.amount)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
   )
 }
