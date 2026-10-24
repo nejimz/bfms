@@ -11,19 +11,25 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        $company = Company::query()->create([
-            'name' => 'Harbor Goods',
-            'description' => 'Retail goods and supplies.',
-            'currency' => 'PHP',
-        ]);
+        $company = Company::query()->firstOrCreate(
+            ['name' => 'Harbor Goods'],
+            [
+                'description' => 'Retail goods and supplies.',
+                'currency' => 'PHP',
+            ],
+        );
 
-        User::factory()->admin()->create([
-            'name' => 'Demo Admin',
-            'email' => 'owner@bfms.test',
-            'password' => 'password',
-        ]);
+        if (User::query()->where('email', 'owner@bfms.test')->doesntExist()) {
+            User::factory()->admin()->create([
+                'name' => 'Demo Admin',
+                'email' => 'owner@bfms.test',
+                'password' => 'password',
+            ]);
+        }
 
-        DefaultChart::provision($company);
+        if ($company->wasRecentlyCreated) {
+            DefaultChart::provision($company);
+        }
 
         $this->call(ChartAccountEntrySeeder::class);
     }
