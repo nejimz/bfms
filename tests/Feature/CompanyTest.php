@@ -5,6 +5,7 @@ use App\Enums\AccountType;
 use App\Enums\CompanyRole;
 use App\Enums\JournalStatus;
 use App\Models\Account;
+use App\Models\Category;
 use App\Models\ChartAccountEntry;
 use App\Models\Company;
 use App\Models\Journal;
@@ -286,6 +287,114 @@ it('refuses an edit from someone who does not own that business', function (stri
     CompanyRole::Accountant->value,
     CompanyRole::Staff->value,
 ]);
+
+it('stores a category on a new business', function () {
+    $company = Company::factory()->create();
+    $owner = companyMember($company);
+    $category = Category::factory()->create(['name' => 'Retail']);
+
+    $created = $this->actingAs($owner)->postJson('/api/v1/companies', [
+        'name' => 'Northwind',
+        'currency' => 'PHP',
+        'description' => 'Wholesale imports.',
+        'category_id' => $category->id,
+    ]);
+
+    $created->assertCreated()
+        ->assertJsonPath('data.attributes.category_id', (string) $category->id)
+        ->assertJsonPath('data.attributes.category_name', 'Retail');
+
+    $this->assertDatabaseHas('companies', [
+        'id' => (int) $created->json('data.id'),
+        'category_id' => $category->id,
+    ]);
+});
+
+it('lists each business with its category', function () {
+    $category = Category::factory()->create(['name' => 'Retail']);
+    $company = Company::factory()->create([
+        'name' => 'Harbor',
+        'category_id' => $category->id,
+    ]);
+    $owner = companyMember($company);
+
+    $this->actingAs($owner)->getJson('/api/v1/companies')
+        ->assertOk()
+        ->assertJsonPath('data.0.attributes.category_id', (string) $category->id)
+        ->assertJsonPath('data.0.attributes.category_name', 'Retail');
+});
+
+it('lets an owner change or clear a business category', function () {
+    $retail = Category::factory()->create(['name' => 'Retail']);
+    $wholesale = Category::factory()->create(['name' => 'Wholesale']);
+    $company = Company::factory()->create([
+        'name' => 'Harbor Goods',
+        'description' => 'Retail goods and supplies.',
+        'currency' => 'PHP',
+        'category_id' => $retail->id,
+    ]);
+    $owner = companyMember($company);
+    $payload = [
+        'name' => 'Harbor Goods',
+        'description' => 'Retail goods and supplies.',
+        'currency' => 'PHP',
+    ];
+
+    $this->actingAs($owner)->patchJson("/api/v1/companies/{$company->id}", [
+        ...$payload,
+        'category_id' => $wholesale->id,
+    ])->assertOk()
+        ->assertJsonPath('data.attributes.category_name', 'Wholesale');
+
+    $this->actingAs($owner)->patchJson("/api/v1/companies/{$company->id}", [
+        ...$payload,
+        'category_id' => null,
+    ])->assertOk()
+        ->assertJsonPath('data.attributes.category_id', null)
+        ->assertJsonPath('data.attributes.category_name', null);
+
+    expect($company->fresh()->category_id)->toBeNull();
+});
+
+it('keeps the category when a business edit omits it', function () {
+    $category = Category::factory()->create(['name' => 'Retail']);
+    $company = Company::factory()->create([
+        'name' => 'Harbor Goods',
+        'description' => 'Retail goods and supplies.',
+        'currency' => 'PHP',
+        'category_id' => $category->id,
+    ]);
+    $owner = companyMember($company);
+
+    $this->actingAs($owner)->patchJson("/api/v1/companies/{$company->id}", [
+        'name' => 'Harbor Market',
+        'description' => 'Retail goods and supplies.',
+        'currency' => 'PHP',
+    ])->assertOk()
+        ->assertJsonPath('data.attributes.name', 'Harbor Market')
+        ->assertJsonPath('data.attributes.category_id', (string) $category->id);
+
+    expect($company->fresh()->category_id)->toBe($category->id);
+});
+
+it('rejects a business category that is not in the list', function () {
+    $company = Company::factory()->create([
+        'name' => 'Harbor Goods',
+        'description' => 'Retail goods and supplies.',
+        'currency' => 'PHP',
+    ]);
+    $owner = companyMember($company);
+
+    $this->actingAs($owner)->patchJson("/api/v1/companies/{$company->id}", [
+        'name' => 'Harbor Goods',
+        'description' => 'Retail goods and supplies.',
+        'currency' => 'PHP',
+        'category_id' => 9999,
+    ])->assertUnprocessable()
+        ->assertJsonPath('errors.category_id.0', 'Choose a category from the list.');
+
+    expect($company->fresh()->category_id)->toBeNull();
+});
 
 it('refuses to switch into a business the user does not belong to', function () {
     $company = Company::factory()->create();

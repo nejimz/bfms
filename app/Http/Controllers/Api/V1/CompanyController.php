@@ -20,6 +20,7 @@ class CompanyController extends Controller
 
         $companies = $request->user()
             ->companies()
+            ->with('category')
             ->withCount([
                 'accounts' => fn ($query) => $query->withoutGlobalScope('company'),
                 'journals' => fn ($query) => $query->withoutGlobalScope('company'),
@@ -35,6 +36,8 @@ class CompanyController extends Controller
                     'name' => $company->name,
                     'description' => $company->description,
                     'currency' => $company->currency,
+                    'category_id' => $this->categoryId($company),
+                    'category_name' => $company->category?->name,
                     'role' => $company->pivot->role,
                     'accounts_count' => $company->accounts_count,
                     'journals_count' => $company->journals_count,
@@ -99,6 +102,8 @@ class CompanyController extends Controller
      */
     private function companyPayload(Company $company): array
     {
+        $company->loadMissing('category');
+
         return [
             'data' => [
                 'id' => (string) $company->id,
@@ -107,8 +112,15 @@ class CompanyController extends Controller
                     'name' => $company->name,
                     'description' => $company->description,
                     'currency' => $company->currency,
+                    'category_id' => $this->categoryId($company),
+                    'category_name' => $company->category?->name,
                 ],
             ],
         ];
+    }
+
+    private function categoryId(Company $company): ?string
+    {
+        return $company->category_id === null ? null : (string) $company->category_id;
     }
 }

@@ -47,6 +47,7 @@ export function BusinessesPage() {
             <tr>
               <th>Name</th>
               <th>Description</th>
+              <th>Category</th>
               <th>Currency</th>
               <th>Role</th>
               <th>Accounts</th>
@@ -62,6 +63,7 @@ export function BusinessesPage() {
                   {business.id === user?.company.id && <span className="status">Current</span>}
                 </td>
                 <td>{business.description || 'No description'}</td>
+                <td>{business.category_name || 'No category'}</td>
                 <td className="num">{business.currency}</td>
                 <td className="type">{business.role}</td>
                 <td className="num">{business.accounts_count}</td>

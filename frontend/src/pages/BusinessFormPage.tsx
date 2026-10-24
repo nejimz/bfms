@@ -3,7 +3,7 @@ import { useEffect, useState, type FormEvent } from 'react'
 import { Link, Navigate, useNavigate, useParams } from 'react-router-dom'
 import { api, fieldErrors } from '../api'
 import { useAuth } from '../auth'
-import type { Business } from '../types'
+import type { Business, Category } from '../types'
 import { readResource } from '../types'
 
 const limits = { name: 255, description: 1000 }
@@ -48,8 +48,19 @@ export function BusinessFormPage() {
   })
   const business = businesses.data?.find((item) => item.id === id)
   const currencyLocked = (business?.journals_count ?? 0) > 0
+  const categories = useQuery({
+    queryKey: ['categories'],
+    enabled: Boolean(user),
+    queryFn: async () => {
+      const response = await api.get('/api/v1/categories')
+      return (response.data.data as Array<{ id: string; attributes: Omit<Category, 'id'> }>).map((resource) =>
+        readResource(resource),
+      )
+    },
+  })
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
+  const [categoryId, setCategoryId] = useState('')
   const [currency, setCurrency] = useState('PHP')
   const [filled, setFilled] = useState(!editing)
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -62,6 +73,7 @@ export function BusinessFormPage() {
 
     setName(business.name)
     setDescription(business.description ?? '')
+    setCategoryId(business.category_id ?? '')
     setCurrency(business.currency)
     setFilled(true)
   }, [business, filled])
@@ -89,6 +101,7 @@ export function BusinessFormPage() {
         name: name.trim(),
         description: description.trim(),
         currency: currency.trim(),
+        category_id: categoryId === '' ? null : Number(categoryId),
       }
       if (editing) {
         await api.patch(`/api/v1/companies/${id}`, payload)
@@ -146,6 +159,23 @@ export function BusinessFormPage() {
               aria-invalid={Boolean(errors.description)}
             />
             {errors.description && <span className="form-error">{errors.description}</span>}
+          </label>
+          <label>
+            Category
+            <select
+              value={categoryId}
+              onChange={(event) => setCategoryId(event.target.value)}
+              aria-invalid={Boolean(errors.category_id)}
+            >
+              <option value="">No category</option>
+              {categories.data?.map((category) => (
+                <option key={category.id} value={category.id}>
+                  {category.name}
+                </option>
+              ))}
+            </select>
+            {categories.isError && <span className="form-error">The categories could not be opened.</span>}
+            {errors.category_id && <span className="form-error">{errors.category_id}</span>}
           </label>
           <label>
             Currency

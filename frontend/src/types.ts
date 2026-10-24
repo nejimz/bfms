@@ -83,9 +83,17 @@ export type Membership = {
   role: string
 }
 
+export type Category = {
+  id: string
+  name: string
+  businesses_count: number
+}
+
 export type Business = Membership & {
   accounts_count: number
   journals_count: number
+  category_id: string | null
+  category_name: string | null
 }
 
 export type Session = {

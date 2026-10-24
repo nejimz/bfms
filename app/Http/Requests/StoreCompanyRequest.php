@@ -14,11 +14,18 @@ class StoreCompanyRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
-        $this->merge([
+        $fields = [
             'name' => trim((string) $this->input('name', '')),
             'currency' => strtoupper(trim((string) $this->input('currency', ''))),
             'description' => trim((string) $this->input('description', '')),
-        ]);
+        ];
+
+        if ($this->exists('category_id')) {
+            $categoryId = $this->input('category_id');
+            $fields['category_id'] = $categoryId === '' || $categoryId === null ? null : $categoryId;
+        }
+
+        $this->merge($fields);
     }
 
     /**
@@ -30,6 +37,7 @@ class StoreCompanyRequest extends FormRequest
             'name' => ['required', 'string', 'max:255'],
             'description' => ['required', 'string', 'max:1000'],
             'currency' => ['required', 'string', 'regex:/^[A-Z]{3}$/'],
+            'category_id' => ['sometimes', 'nullable', 'integer', 'exists:categories,id'],
         ];
     }
 
@@ -45,6 +53,7 @@ class StoreCompanyRequest extends FormRequest
             'description.max' => 'The description must be 1,000 characters or fewer.',
             'currency.required' => 'Enter a currency code.',
             'currency.regex' => 'Use a 3-letter currency code, such as PHP.',
+            'category_id.exists' => 'Choose a category from the list.',
         ];
     }
 }

@@ -3,7 +3,7 @@ import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { api, ensureCsrf, errorMessage } from '../api'
 import { useAuth } from '../auth'
 
-type MenuIcon = 'businesses' | 'accounts' | 'entry' | 'journals' | 'balance'
+type MenuIcon = 'businesses' | 'categories' | 'accounts' | 'entry' | 'journals' | 'balance'
 
 type MenuItem = {
   to: string
@@ -11,13 +11,15 @@ type MenuItem = {
   icon: MenuIcon
 }
 
-const linksBeforeSettings: MenuItem[] = [{ to: '/businesses', label: 'Businesses', icon: 'businesses' }]
-
-const settingsLinks: MenuItem[] = [{ to: '/accounts', label: 'Chart Of Accounts', icon: 'accounts' }]
+const settingsLinks: MenuItem[] = [
+  { to: '/businesses', label: 'Businesses', icon: 'businesses' },
+  { to: '/categories', label: 'Categories', icon: 'categories' },
+  { to: '/chart-account-columns', label: 'Account Columns', icon: 'entry' },
+  { to: '/chart-account-entries', label: 'Chart Account Entry', icon: 'entry' },
+  { to: '/accounts', label: 'Chart Of Accounts', icon: 'accounts' },
+]
 
 const linksAfterSettings: MenuItem[] = [
-  { to: '/chart-account-entries', label: 'Chart Account Entry', icon: 'entry' },
-  { to: '/chart-account-columns', label: 'Account columns', icon: 'entry' },
   { to: '/journals', label: 'Journals', icon: 'journals' },
   { to: '/trial-balance', label: 'Trial Balance', icon: 'balance' },
 ]
@@ -99,6 +101,12 @@ function NavIcon({ name }: { name: MenuIcon | 'settings' }) {
           <circle cx="15" cy="12" r="2.25" />
           <path d="M4 17h6M14.5 17H20" />
           <circle cx="11" cy="17" r="2.25" />
+        </>
+      )}
+      {name === 'categories' && (
+        <>
+          <path d="M4 10.5 10.5 4H20v9.5L13.5 20a2 2 0 0 1-2.8 0z" />
+          <circle cx="9" cy="9" r="1" />
         </>
       )}
       {name === 'accounts' && (
@@ -183,9 +191,6 @@ export function Layout() {
           </div>
         </div>
         <nav>
-          {linksBeforeSettings.map((link) => (
-            <MenuLink key={link.to} item={link} />
-          ))}
           <SettingsMenu />
           {linksAfterSettings.map((link) => (
             <MenuLink key={link.to} item={link} />

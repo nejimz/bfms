@@ -10,6 +10,8 @@ import { ChartAccountEntriesPage } from './pages/ChartAccountEntriesPage'
 import { ChartAccountEntryFormPage } from './pages/ChartAccountEntryFormPage'
 import { BusinessFormPage } from './pages/BusinessFormPage'
 import { BusinessesPage } from './pages/BusinessesPage'
+import { CategoriesPage } from './pages/CategoriesPage'
+import { CategoryFormPage } from './pages/CategoryFormPage'
 import { JournalFormPage } from './pages/JournalFormPage'
 import { JournalsPage } from './pages/JournalsPage'
 import { LoginPage } from './pages/LoginPage'
@@ -50,6 +52,9 @@ export default function App() {
               <Route path="/businesses" element={<BusinessesPage />} />
               <Route path="/businesses/new" element={<BusinessFormPage />} />
               <Route path="/businesses/:id/edit" element={<BusinessFormPage />} />
+              <Route path="/categories" element={<CategoriesPage />} />
+              <Route path="/categories/new" element={<CategoryFormPage />} />
+              <Route path="/categories/:id/edit" element={<CategoryFormPage />} />
               <Route path="/accounts" element={<AccountsPage />} />
               <Route path="/chart-account-entries" element={<ChartAccountEntriesPage />} />
               <Route path="/chart-account-columns" element={<AccountColumnReportsPage />} />
