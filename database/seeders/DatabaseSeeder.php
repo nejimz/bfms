@@ -27,5 +27,7 @@ class DatabaseSeeder extends Seeder
         $company->users()->attach($owner->id, ['role' => CompanyRole::Owner->value]);
 
         DefaultChart::provision($company);
+
+        $this->call(ChartAccountEntrySeeder::class);
     }
 }
