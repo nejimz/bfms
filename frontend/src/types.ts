@@ -335,6 +335,14 @@ export function readChartAccountEntry(payload: {
   }
 }
 
+export type ChartAccountEntryPage = {
+  entries: ChartAccountEntry[]
+  page: number
+  lastPage: number
+  total: number
+  drafts: number
+}
+
 export function readChartAccountEntries(payload: {
   data: Array<Resource<Omit<ChartAccountEntry, 'id' | 'account' | 'lines'>>>
   included?: IncludedRecord[]
@@ -351,4 +359,25 @@ export function readChartAccountEntries(payload: {
       lines: entryLines(resource, lines),
     }
   })
+}
+
+export function readChartAccountEntryPage(payload: {
+  data: Array<Resource<Omit<ChartAccountEntry, 'id' | 'account' | 'lines'>>>
+  included?: IncludedRecord[]
+  meta?: {
+    current_page?: number
+    last_page?: number
+    total?: number
+    drafts?: number
+  }
+}): ChartAccountEntryPage {
+  const entries = readChartAccountEntries(payload)
+
+  return {
+    entries,
+    page: payload.meta?.current_page ?? 1,
+    lastPage: payload.meta?.last_page ?? 1,
+    total: payload.meta?.total ?? entries.length,
+    drafts: payload.meta?.drafts ?? entries.filter((entry) => entry.status === 'draft').length,
+  }
 }

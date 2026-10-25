@@ -10,26 +10,55 @@ use App\Http\Requests\ChartAccountEntryRequest;
 use App\Http\Resources\ChartAccountEntryResource;
 use App\Models\ChartAccountEntry;
 use App\Support\CurrentCompany;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\JsonApi\AnonymousResourceCollection;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 use Symfony\Component\HttpFoundation\Response;
 
 class ChartAccountEntryController extends Controller
 {
-    public function index(): AnonymousResourceCollection
+    private const PER_PAGE = 20;
+
+    public function index(Request $request): AnonymousResourceCollection
     {
         $this->authorize('viewAny', ChartAccountEntry::class);
 
+        $validated = $request->validate([
+            'account' => [
+                'nullable',
+                'string',
+                'max:20',
+                Rule::exists('accounts', 'code')->where('company_id', app(CurrentCompany::class)->id()),
+            ],
+            'page' => ['nullable', 'integer', 'min:1'],
+        ]);
+
         $entries = ChartAccountEntry::query()
             ->with(['account', 'lines'])
+            ->when(isset($validated['account']), function (Builder $query) use ($validated): void {
+                $query->whereHas('account', function (Builder $account) use ($validated): void {
+                    $account->where('code', $validated['account']);
+                });
+            })
             ->orderByDesc('date')
-            ->orderByDesc('id')
-            ->get();
+            ->orderByDesc('id');
 
-        $collection = ChartAccountEntryResource::collection($entries);
-        $collection->collection?->each->includePreviouslyLoadedRelationships();
+        if (! isset($validated['account'])) {
+            return $this->entryCollection($entries->get());
+        }
+
+        $drafts = (clone $entries)->where('status', ChartAccountEntryStatus::Draft)->count();
+        $collection = $this->entryCollection($entries->paginate(self::PER_PAGE)->withQueryString());
+        $collection->additional([
+            'meta' => [
+                'drafts' => $drafts,
+            ],
+        ]);
 
         return $collection;
     }
@@ -171,6 +200,17 @@ class ChartAccountEntryController extends Controller
     private function settlementMinor(array $data, string $field): int
     {
         return Money::fromDecimal((string) $data[$field])->minor;
+    }
+
+    /**
+     * @param  Collection<int, ChartAccountEntry>|LengthAwarePaginator<int, ChartAccountEntry>  $entries
+     */
+    private function entryCollection(Collection|LengthAwarePaginator $entries): AnonymousResourceCollection
+    {
+        $collection = ChartAccountEntryResource::collection($entries);
+        $collection->collection?->each->includePreviouslyLoadedRelationships();
+
+        return $collection;
     }
 
     private function entryResponse(ChartAccountEntry $entry, int $status = 200): JsonResponse

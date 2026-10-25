@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\AccountType;
+use App\Enums\ChartAccountEntryStatus;
 use App\Enums\CompanyRole;
 use App\Models\Account;
 use App\Models\ChartAccountEntry;
@@ -103,6 +104,77 @@ it('lists every entry when the register has more than 100', function () {
         ->assertOk()
         ->assertJsonCount(101, 'data')
         ->assertJsonFragment(['id' => (string) $entries->first()->id]);
+});
+
+it('pages one book and keeps the next page', function () {
+    $company = Company::factory()->create();
+    $user = chartMember($company);
+    $sales = Account::factory()->create([
+        'company_id' => $company->id,
+        'code' => '4000',
+        'name' => 'Sales',
+        'type' => AccountType::Income,
+    ]);
+    $purchases = Account::factory()->create([
+        'company_id' => $company->id,
+        'code' => '5100',
+        'name' => 'Purchase Expenses',
+        'type' => AccountType::Expense,
+    ]);
+    $entries = ChartAccountEntry::factory()->count(21)->create([
+        'company_id' => $company->id,
+        'account_id' => $sales->id,
+        'created_by' => $user->id,
+        'date' => '2026-10-15',
+    ]);
+    $entries->first()->update(['status' => ChartAccountEntryStatus::Posted]);
+    ChartAccountEntry::factory()->create([
+        'company_id' => $company->id,
+        'account_id' => $purchases->id,
+        'created_by' => $user->id,
+        'date' => '2026-10-16',
+        'particulars' => 'Shop stock',
+    ]);
+
+    $first = $this->actingAs($user)->getJson('/api/v1/chart-account-entries?account=4000&page=1');
+
+    $first->assertOk()
+        ->assertJsonCount(20, 'data')
+        ->assertJsonPath('meta.current_page', 1)
+        ->assertJsonPath('meta.last_page', 2)
+        ->assertJsonPath('meta.per_page', 20)
+        ->assertJsonPath('meta.total', 21)
+        ->assertJsonPath('meta.drafts', 20)
+        ->assertJsonPath('included.0.attributes.code', '4000')
+        ->assertJsonMissing(['particulars' => 'Shop stock']);
+
+    $this->actingAs($user)
+        ->getJson('/api/v1/chart-account-entries?account=4000&page=2')
+        ->assertOk()
+        ->assertJsonCount(1, 'data')
+        ->assertJsonPath('data.0.id', (string) $entries->first()->id)
+        ->assertJsonPath('data.0.attributes.status', 'posted')
+        ->assertJsonPath('meta.drafts', 20);
+});
+
+it('returns 422 when the entry list account is not in this business', function () {
+    $company = Company::factory()->create();
+    $user = chartMember($company);
+
+    $this->actingAs($user)
+        ->getJson('/api/v1/chart-account-entries?account=4000')
+        ->assertUnprocessable()
+        ->assertJsonPath('errors.account.0', 'The selected account is invalid.');
+});
+
+it('returns 422 when the entry list page is not a page number', function () {
+    $company = Company::factory()->create();
+    $user = chartMember($company);
+
+    $this->actingAs($user)
+        ->getJson('/api/v1/chart-account-entries?page=0')
+        ->assertUnprocessable()
+        ->assertJsonPath('errors.page.0', 'The page field must be at least 1.');
 });
 
 it('updates a draft entry', function () {

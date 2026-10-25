@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { api } from '../api'
 import { useAuth } from '../auth'
@@ -6,7 +7,14 @@ import { chartAccountModule, type ChartAccountModuleKey } from '../chartAccountM
 import { BusinessSelect } from '../components/BusinessSelect'
 import { formatDecimal } from '../money'
 import type { ChartAccountEntry } from '../types'
-import { readChartAccountEntries } from '../types'
+import { readChartAccountEntryPage } from '../types'
+
+function pageNumbers(current: number, last: number): number[] {
+  const start = Math.max(1, Math.min(current - 2, last - 4))
+  const end = Math.min(last, start + 4)
+
+  return Array.from({ length: end - start + 1 }, (_, index) => start + index)
+}
 
 function formatEntryDate(iso: string): string {
   const [year, month, day] = iso.split('-').map(Number)
@@ -27,19 +35,44 @@ export function ChartAccountEntriesPage({ moduleKey }: { moduleKey?: ChartAccoun
   const partyLabel = moduleConfig?.partyLabel ?? 'Particulars'
   const { user } = useAuth()
   const companyId = user?.company.id
+  const scope = `${companyId ?? ''}:${moduleKey ?? ''}`
+  const [page, setPage] = useState(1)
+  const [pageScope, setPageScope] = useState(scope)
+
+  if (pageScope !== scope) {
+    setPageScope(scope)
+    setPage(1)
+  }
+
+  const activePage = pageScope === scope ? page : 1
+  const accountCode = moduleConfig?.accountCode ?? 'all'
   const entries = useQuery({
-    queryKey: ['chart-account-entries', companyId],
+    queryKey: ['chart-account-entries', companyId, accountCode, activePage],
     enabled: Boolean(companyId),
+    placeholderData: (previous, previousQuery) => {
+      if (!previousQuery || previousQuery.queryKey[1] !== companyId || previousQuery.queryKey[2] !== accountCode) {
+        return undefined
+      }
+
+      return previous
+    },
     queryFn: async () => {
-      const response = await api.get('/api/v1/chart-account-entries')
-      return readChartAccountEntries(response.data)
+      const response = await api.get('/api/v1/chart-account-entries', {
+        params: moduleConfig ? { account: moduleConfig.accountCode, page: activePage } : undefined,
+      })
+
+      return readChartAccountEntryPage(response.data)
     },
   })
 
-  const rows = (entries.data ?? []).filter((entry) =>
-    moduleConfig ? entry.account?.code === moduleConfig.accountCode : true,
-  )
-  const drafts = rows.filter((entry) => entry.status === 'draft').length
+  const rows = entries.data?.entries ?? []
+  const total = entries.data?.total ?? 0
+  const drafts = entries.data?.drafts ?? 0
+  const lastPage = Math.max(1, entries.data?.lastPage ?? 1)
+
+  if (moduleConfig && entries.isSuccess && !entries.isPlaceholderData && page > lastPage && pageScope === scope) {
+    setPage(lastPage)
+  }
 
   return (
     <div className="page entry-page">
@@ -50,9 +83,9 @@ export function ChartAccountEntriesPage({ moduleKey }: { moduleKey?: ChartAccoun
           <p className="entry-lede">A private register. Posted lines stay off the general ledger.</p>
         </div>
         <div className="entry-hero-actions">
-          {rows.length > 0 && (
+          {total > 0 && (
             <p className="entry-count">
-              {rows.length} {rows.length === 1 ? 'entry' : 'entries'}
+              {total} {total === 1 ? 'entry' : 'entries'}
               {drafts > 0 ? ` · ${drafts} draft${drafts === 1 ? '' : 's'}` : ''}
             </p>
           )}
@@ -71,7 +104,7 @@ export function ChartAccountEntriesPage({ moduleKey }: { moduleKey?: ChartAccoun
       <section className="entry-sheet" aria-label={moduleConfig?.title ?? 'Chart account entries'}>
         {entries.isLoading && <p className="entry-empty">Opening entries…</p>}
         {entries.isError && <p className="entry-empty">The register could not be opened.</p>}
-        {entries.isSuccess && rows.length === 0 && (
+        {entries.isSuccess && total === 0 && (
           <div className="entry-empty">
             <strong>No entries yet</strong>
             <span>
@@ -96,10 +129,36 @@ export function ChartAccountEntriesPage({ moduleKey }: { moduleKey?: ChartAccoun
             {rows.map((entry) => (
               <EntryRow key={entry.id} entry={entry} listPath={listPath} />
             ))}
+            {moduleConfig && lastPage > 1 && (
+              <EntryPager page={activePage} lastPage={lastPage} onPage={setPage} />
+            )}
           </>
         )}
       </section>
     </div>
+  )
+}
+
+function EntryPager({ page, lastPage, onPage }: { page: number; lastPage: number; onPage: (page: number) => void }) {
+  return (
+    <nav className="entry-pager" aria-label="Pages">
+      <button type="button" onClick={() => onPage(page - 1)} disabled={page <= 1}>
+        Previous
+      </button>
+      {pageNumbers(page, lastPage).map((number) => (
+        <button
+          key={number}
+          type="button"
+          aria-current={number === page ? 'page' : undefined}
+          onClick={() => onPage(number)}
+        >
+          {number}
+        </button>
+      ))}
+      <button type="button" onClick={() => onPage(page + 1)} disabled={page >= lastPage}>
+        Next
+      </button>
+    </nav>
   )
 }
 

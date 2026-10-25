@@ -208,6 +208,20 @@ td .status { margin-left: 0.55rem; vertical-align: middle; }
 .entry-lede { margin: 0.45rem 0 0; max-width: 36rem; color: var(--muted); }
 .entry-hero-actions { display: flex; align-items: flex-end; gap: 0.85rem; flex-wrap: wrap; }
 .entry-count { margin: 0 0 0.45rem; color: var(--muted); font-size: 0.85rem; }
+.entry-pager {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.85rem 1.15rem 1rem;
+}
+.entry-pager button { min-width: 2.4rem; padding: 0.4rem 0.7rem; }
+.entry-pager button[aria-current='page'] {
+  background: var(--green);
+  border-color: var(--green);
+  color: white;
+}
 .entry-back {
   display: inline-flex;
   align-items: center;
