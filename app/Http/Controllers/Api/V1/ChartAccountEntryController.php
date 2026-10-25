@@ -26,7 +26,6 @@ class ChartAccountEntryController extends Controller
             ->with(['account', 'lines'])
             ->orderByDesc('date')
             ->orderByDesc('id')
-            ->limit(100)
             ->get();
 
         $collection = ChartAccountEntryResource::collection($entries);

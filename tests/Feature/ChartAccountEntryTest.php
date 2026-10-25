@@ -85,6 +85,26 @@ it('stores a draft and lists it with the account', function () {
         ->assertJsonPath('included.0.attributes.code', '1000');
 });
 
+it('lists every entry when the register has more than 100', function () {
+    $company = Company::factory()->create();
+    $user = chartMember($company);
+    $account = Account::factory()->create([
+        'company_id' => $company->id,
+    ]);
+    $entries = ChartAccountEntry::factory()->count(101)->create([
+        'company_id' => $company->id,
+        'account_id' => $account->id,
+        'created_by' => $user->id,
+        'date' => '2026-10-15',
+    ]);
+
+    $this->actingAs($user)
+        ->getJson('/api/v1/chart-account-entries')
+        ->assertOk()
+        ->assertJsonCount(101, 'data')
+        ->assertJsonFragment(['id' => (string) $entries->first()->id]);
+});
+
 it('updates a draft entry', function () {
     $company = Company::factory()->create();
     $user = chartMember($company);
