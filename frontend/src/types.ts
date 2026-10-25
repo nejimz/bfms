@@ -146,6 +146,49 @@ export type IncomeExpenseChartReport = {
   }
 }
 
+export type ItemActivityCell = {
+  key: string
+  quantity: string
+  amount: string
+}
+
+export type ItemActivityTotal = {
+  quantity: string
+  amount: string
+  entries: number
+  average: string | null
+}
+
+export type ItemActivityRow = {
+  name: string
+  periods: ItemActivityCell[]
+  total: ItemActivityTotal
+}
+
+export type ItemActivityGrain = 'day' | 'week' | 'month' | 'year'
+
+export type ItemActivityReport = {
+  data: ItemActivityRow[]
+  meta: {
+    book: string
+    grain: ItemActivityGrain
+    account_code: string
+    account_name: string
+    currency: string
+    item_label: string
+    year: number | null
+    month: number | null
+    from: string
+    to: string
+    periods: Array<{ key: string; label: string }>
+    years: number[]
+    totals: {
+      periods: ItemActivityCell[]
+      total: ItemActivityTotal
+    }
+  }
+}
+
 export type BusinessSummaryReport = {
   data: BusinessSummary[]
   meta: {

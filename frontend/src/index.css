@@ -544,6 +544,50 @@ button.chart-legend-item:focus-visible {
   .chart-bar-rise { animation: none; }
 }
 .period-actions { display: flex; gap: 0.5rem; }
+.item-report table { min-width: max-content; }
+.item-report .item-name {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  min-width: 9rem;
+  background: var(--panel);
+  box-shadow: 1px 0 0 var(--line);
+  font-weight: 600;
+}
+.item-report tbody .item-name,
+.item-report tfoot .item-name {
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 0.95rem;
+  color: var(--ink);
+}
+.item-report thead .item-name { z-index: 2; }
+.item-report .total-cell {
+  position: sticky;
+  right: 0;
+  z-index: 1;
+  background: var(--panel);
+  box-shadow: -1px 0 0 var(--line);
+}
+.item-report thead .total-cell { z-index: 2; }
+.item-report tfoot td,
+.item-report tfoot th { background: #faf6ef; }
+.item-report tfoot .item-name,
+.item-report tfoot .total-cell { background: #faf6ef; }
+.item-report td.period,
+.item-report th.period,
+.item-report td.total-cell,
+.item-report th.total-cell { white-space: nowrap; }
+.item-report td.period,
+.item-report th.period { min-width: 6.5rem; }
+.item-report td.total-cell,
+.item-report th.total-cell { min-width: 8.5rem; }
+.item-cell { display: grid; justify-items: end; gap: 0.1rem; }
+.item-qty { font-weight: 600; }
+.item-amount, .item-meta { color: var(--muted); font-size: 0.78rem; font-weight: 400; }
+.item-empty-cell { color: var(--muted); }
+.item-report tfoot .item-qty,
+.item-report tfoot .item-amount { font-weight: 600; }
 .dashboard-groups { display: grid; gap: 1.75rem; }
 .dashboard-group { display: grid; gap: 0.85rem; }
 .dashboard-category {

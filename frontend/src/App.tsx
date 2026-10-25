@@ -13,6 +13,7 @@ import { BusinessFormPage } from './pages/BusinessFormPage'
 import { BusinessesPage } from './pages/BusinessesPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { IncomeExpensePage } from './pages/IncomeExpensePage'
+import { ItemActivityPage } from './pages/ItemActivityPage'
 import { CategoriesPage } from './pages/CategoriesPage'
 import { CategoryFormPage } from './pages/CategoryFormPage'
 import { JournalFormPage } from './pages/JournalFormPage'
@@ -118,6 +119,13 @@ export default function App() {
                   key={`${module.key}-new`}
                   path={`${module.path}/new`}
                   element={<ChartAccountEntryFormPage moduleKey={module.key} />}
+                />
+              ))}
+              {chartAccountModuleList.map((module) => (
+                <Route
+                  key={`${module.key}-items`}
+                  path={`${module.path}/items`}
+                  element={<ItemActivityPage moduleKey={module.key} />}
                 />
               ))}
               {chartAccountModuleList.map((module) => (

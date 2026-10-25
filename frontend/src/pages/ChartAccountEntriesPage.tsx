@@ -57,6 +57,11 @@ export function ChartAccountEntriesPage({ moduleKey }: { moduleKey?: ChartAccoun
             </p>
           )}
           <BusinessSelect />
+          {moduleConfig && (
+            <Link className="button-link" to={`${listPath}/items`}>
+              Item report
+            </Link>
+          )}
           <Link className="primary button-link" to={`${listPath}/new`}>
             New entry
           </Link>
