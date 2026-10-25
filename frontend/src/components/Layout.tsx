@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { NavLink, Outlet, useLocation, Link } from 'react-router-dom'
-import { api, ensureCsrf, errorMessage } from '../api'
+import { api, ensureCsrf, errorMessage, isUnauthorized } from '../api'
 import { useAuth } from '../auth'
 import { chartAccountModuleList } from '../chartAccountModules'
 import { canViewDashboard } from '../types'
@@ -194,11 +194,26 @@ function Chevron() {
 export function Layout() {
   const { user, clear, selectCompany } = useAuth()
   const [error, setError] = useState<string | null>(null)
+  const [loggingOut, setLoggingOut] = useState(false)
 
   async function logout() {
-    await ensureCsrf()
-    await api.post('/session/logout')
-    clear()
+    setError(null)
+    setLoggingOut(true)
+
+    try {
+      await ensureCsrf()
+      await api.post('/session/logout')
+      clear()
+    } catch (caught) {
+      if (isUnauthorized(caught)) {
+        clear()
+
+        return
+      }
+
+      setError(errorMessage(caught))
+      setLoggingOut(false)
+    }
   }
 
   async function switchBusiness(companyId: string) {
@@ -274,8 +289,8 @@ export function Layout() {
               <Link className="button-link session-link" to="/password">
                 Password
               </Link>
-              <button type="button" className="logout" onClick={() => void logout()}>
-                Log out
+              <button type="button" className="logout" onClick={() => void logout()} disabled={loggingOut}>
+                {loggingOut ? 'Logging out…' : 'Log out'}
               </button>
             </div>
           </div>

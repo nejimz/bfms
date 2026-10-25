@@ -35,6 +35,10 @@ export function fieldErrors(error: unknown): Record<string, string> {
   )
 }
 
+export function isUnauthorized(error: unknown): boolean {
+  return axios.isAxiosError(error) && error.response?.status === 401
+}
+
 export function errorMessage(error: unknown): string {
   const data = errorBody(error)
   const first = data?.errors ? Object.values(data.errors)[0]?.[0] : undefined

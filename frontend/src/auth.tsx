@@ -49,7 +49,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         })
       },
       clear: () => {
-        queryClient.clear()
+        // Removing the cache entry leaves this mounted query showing the previous user.
+        queryClient.setQueryData(['user'], null)
+        queryClient.removeQueries({
+          predicate: (query) => query.queryKey[0] !== 'user',
+        })
       },
     }),
     [query.data, query.isLoading, queryClient],
