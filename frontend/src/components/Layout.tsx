@@ -246,34 +246,38 @@ export function Layout() {
         </nav>
         {user && (
           <div className="session">
-            {user.companies.length > 1 ? (
-              <label>
-                Business
-                <select
-                  value={user.company.id}
-                  onChange={(event) => void switchBusiness(event.target.value)}
-                >
-                  {user.companies.map((company) => (
-                    <option key={company.id} value={company.id}>
-                      {company.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            ) : (
-              <strong>{user.company.name}</strong>
-            )}
-            <span>
-              {user.company.currency} · {user.role}
-            </span>
-            <span>{user.name}</span>
-            {error && <p className="form-error">{error}</p>}
-            <Link className="button-link session-link" to="/password">
-              Password
-            </Link>
-            <button type="button" className="logout" onClick={() => void logout()}>
-              Log out
-            </button>
+            <div className="session-identity">
+              {user.companies.length > 1 ? (
+                <label>
+                  Business
+                  <select
+                    value={user.company.id}
+                    onChange={(event) => void switchBusiness(event.target.value)}
+                  >
+                    {user.companies.map((company) => (
+                      <option key={company.id} value={company.id}>
+                        {company.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              ) : (
+                <strong>{user.company.name}</strong>
+              )}
+              <span>
+                {user.company.currency} · {user.role}
+              </span>
+              <span>{user.name}</span>
+              {error && <p className="form-error">{error}</p>}
+            </div>
+            <div className="session-actions">
+              <Link className="button-link session-link" to="/password">
+                Password
+              </Link>
+              <button type="button" className="logout" onClick={() => void logout()}>
+                Log out
+              </button>
+            </div>
           </div>
         )}
       </aside>

@@ -72,7 +72,9 @@ a { color: var(--green-dark); }
 .shell {
   display: grid;
   grid-template-columns: 260px minmax(0, 1fr);
-  min-height: 100vh;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
 }
 
 .sidebar {
@@ -82,9 +84,11 @@ a { color: var(--green-dark); }
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
+  min-height: 0;
+  overflow: hidden;
 }
 
-.brand { display: flex; gap: 0.75rem; align-items: center; }
+.brand { display: flex; gap: 0.75rem; align-items: center; flex: none; }
 .brand strong { display: block; }
 .brand small { color: #b7c0c7; }
 .brand-mark {
@@ -97,7 +101,17 @@ a { color: var(--green-dark); }
   font-family: Palatino, Georgia, serif;
 }
 
-.sidebar nav { display: grid; gap: 0.25rem; align-content: start; }
+.sidebar nav {
+  display: grid;
+  gap: 0.25rem;
+  align-content: start;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: #3d4b59 transparent;
+}
 .sidebar nav a,
 .sidebar nav button {
   display: flex;
@@ -147,18 +161,18 @@ a { color: var(--green-dark); }
 }
 .sidebar nav button[aria-expanded='true'] .nav-chevron { transform: rotate(90deg); }
 
-.session { margin-top: auto; display: grid; gap: 0.2rem; font-size: 0.92rem; }
+.session { flex: none; display: grid; gap: 0.2rem; font-size: 0.92rem; }
+.session-identity { display: grid; gap: 0.2rem; min-width: 0; }
+.session-actions { display: grid; gap: 0.35rem; margin-top: 0.45rem; }
 .session span { color: #b7c0c7; }
 .session label { color: #d7dee4; }
 .session input, .session select { color: var(--ink); background: white; }
 .session .logout {
-  margin-top: 0.35rem;
   background: transparent;
   color: white;
   border-color: #3d4b59;
 }
 .session .session-link {
-  margin-top: 0.6rem;
   justify-self: start;
   color: white;
   background: transparent;
@@ -166,7 +180,7 @@ a { color: var(--green-dark); }
 }
 .session .form-error { color: #f3c1c1; }
 
-.content { min-width: 0; padding: 2rem 2.25rem 3rem; }
+.content { min-width: 0; min-height: 0; overflow: auto; padding: 2rem 2.25rem 3rem; }
 .page { display: grid; gap: 1rem; align-content: start; min-width: 0; }
 .page-header { display: flex; justify-content: space-between; gap: 1rem; align-items: end; flex-wrap: wrap; }
 .page-header .hint { margin: 0.35rem 0 0; }
@@ -614,10 +628,38 @@ label .form-error { font-size: 0.85rem; }
 .lines select, .lines input { min-width: 7rem; }
 
 @media (max-width: 800px) {
-  .shell { grid-template-columns: 1fr; }
-  .sidebar { gap: 1rem; }
-  .session { margin-top: 0; }
+  .shell {
+    grid-template-columns: 1fr;
+    grid-template-rows: minmax(0, 52dvh) minmax(0, 1fr);
+  }
+  .sidebar {
+    gap: 0.75rem;
+    padding-top: max(1rem, env(safe-area-inset-top));
+  }
+  .session {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.65rem;
+  }
+  .session-identity strong,
+  .session-identity span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .session-actions {
+    display: flex;
+    flex: none;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 0.4rem;
+    margin-top: 0;
+  }
+  .session .logout,
+  .session .session-link { margin-top: 0; padding: 0.4rem 0.6rem; }
   .content, .login { padding: 1.25rem; }
+  .content { padding-bottom: max(1.25rem, env(safe-area-inset-bottom)); }
   .login { grid-template-columns: 1fr; gap: 1.5rem; }
   .inline-form, .journal-head, .entry-fields, .entry-composer, .column-filters { grid-template-columns: 1fr; }
   .dashboard-filters label { width: 100%; }
