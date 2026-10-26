@@ -646,6 +646,9 @@ button.chart-legend-item:focus-visible {
   .chart-bar-rise { animation: none; }
   .category-row { transition: none; }
   .category-row-skeleton { animation: none; }
+  .year-category > summary,
+  .year-business > summary,
+  .year-summary-aside::after { transition: none; }
 }
 .period-actions { display: flex; gap: 0.5rem; }
 .item-report table { min-width: max-content; }
@@ -737,9 +740,20 @@ button.account-link:hover { text-decoration: underline; }
 }
 .dashboard-totals h2 { font-size: 1.25rem; }
 .dashboard-totals p { margin: 0; font-variant-numeric: tabular-nums; }
-.year-categories { display: grid; gap: 0.75rem; }
+.year-page .page-header { align-items: start; min-width: 0; }
+.year-page .page-header > div:first-child { flex: 1 1 24rem; min-width: 0; }
+.year-switch {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 0.45rem;
+  margin-top: 1.35rem;
+}
+.year-switch select { width: 6.5rem; }
+.year-categories { display: grid; gap: 0.75rem; min-width: 0; }
 .year-category,
 .year-business {
+  min-width: 0;
   border: 1px solid var(--line);
   border-radius: 14px;
   background: var(--panel);
@@ -749,11 +763,18 @@ button.account-link:hover { text-decoration: underline; }
 .year-business > summary {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 0.85rem;
   padding: 0.95rem 1.05rem;
   cursor: pointer;
   list-style: none;
+  border-radius: 13px;
+  transition: background 0.15s ease;
 }
+.year-category[open] > summary,
+.year-business[open] > summary { border-radius: 13px 13px 0 0; }
+.year-category > summary:hover,
+.year-business > summary:hover { background: #faf6ef; }
+.year-category:has(> summary:hover) { border-color: #d4c6b0; }
 .year-category > summary::-webkit-details-marker,
 .year-business > summary::-webkit-details-marker { display: none; }
 .year-category > summary:focus-visible,
@@ -761,16 +782,23 @@ button.account-link:hover { text-decoration: underline; }
   outline: 2px solid var(--green);
   outline-offset: -2px;
 }
+.year-category > summary .category-mark { flex: none; }
 .year-category-name {
+  min-width: 0;
+  overflow: hidden;
   font-family: Palatino, "Iowan Old Style", Georgia, serif;
   font-size: 1.35rem;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   color: var(--ink);
 }
-.year-business-name { font-weight: 600; }
+.year-business-name { flex: 1 1 8rem; font-weight: 600; }
 .year-summary-aside {
   display: inline-flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.85rem;
   margin-left: auto;
   color: var(--muted);
   font-size: 0.85rem;
@@ -783,19 +811,58 @@ button.account-link:hover { text-decoration: underline; }
   border-bottom: 1.5px solid currentColor;
   transform: rotate(-45deg);
   flex: none;
+  transition: transform 0.15s ease;
 }
 .year-category[open] > summary .year-summary-aside::after,
 .year-business[open] > summary .year-summary-aside::after { transform: rotate(45deg); }
+.year-business-totals {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.55rem 1.15rem;
+}
+.year-figure { display: grid; justify-items: end; gap: 0.08rem; }
+.year-figure-label {
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.year-figure .num {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  font-size: 0.92rem;
+}
+.year-figure.sales .num:not(.is-zero) { color: var(--green); }
+.year-figure.operation_expense .num:not(.is-zero) { color: #c47b2b; }
+.year-figure.purchase_expense .num:not(.is-zero) { color: #8d4a32; }
+.year-figure .account-code { font-size: 0.92rem; }
+.num.is-zero { color: #b7aea2; font-weight: 500; }
 .year-businesses { display: grid; gap: 0.55rem; padding: 0 0.75rem 0.75rem; }
 .year-empty { margin: 0; padding: 0 1.05rem 0.95rem; }
 .year-months th.sales { color: #0d6b4f; }
 .year-months th.operation_expense { color: #c47b2b; }
 .year-months th.purchase_expense { color: #8d4a32; }
-.year-months { overflow: auto; padding: 0 0.35rem 0.85rem; }
+.year-months { overflow: auto; max-width: 100%; padding: 0 0.35rem 0.85rem; }
 .year-months table { min-width: 36rem; }
 .year-months th,
 .year-months td { padding: 0.55rem 0.85rem; }
-.year-months tfoot td { background: #faf6ef; }
+.year-months tfoot td {
+  background: #faf6ef;
+  border-top: 1px solid #d4c6b0;
+  border-bottom: 0;
+  font-weight: 650;
+}
+.year-total-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.year-months tfoot td.num.is-zero { font-weight: 500; }
+.year-months tbody tr:not(.year-days-row):hover td { background: #faf6ef; }
 .year-months button.month-link {
   border: 0;
   background: transparent;
@@ -805,28 +872,40 @@ button.account-link:hover { text-decoration: underline; }
   font-weight: 600;
   text-align: left;
 }
-.year-months button.month-link:hover,
-.year-months button.month-link[aria-expanded='true'] { text-decoration: underline; }
+.year-months button.month-link:hover { text-decoration: underline; }
+.year-months button.month-link[aria-expanded='true'] {
+  text-decoration: none;
+  color: var(--ink);
+}
 .year-month-open td { background: #faf6ef; }
 .year-days-row > td { padding-top: 0; background: #fff; }
 .year-days-status { margin: 0.35rem 0 0.85rem; }
+.year-days {
+  margin: 0.15rem 0.15rem 0.85rem 0.35rem;
+  padding-left: 0.85rem;
+  border-left: 2px solid #e7f3ee;
+}
 .year-days table { min-width: 32rem; }
-.year-records { display: grid; gap: 0.75rem; padding: 0.15rem 0 0.85rem; }
+.year-days th { font-size: 0.72rem; }
+.year-records { display: grid; padding: 0.15rem 0 0.35rem; }
 .year-record {
   display: grid;
-  gap: 0.55rem;
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  padding: 0.75rem 0.9rem;
-  background: #fff;
+  gap: 0.45rem;
+  padding: 0.7rem 0;
+  border-bottom: 1px solid var(--line);
+  background: transparent;
 }
-.year-record-head {
+.year-record:last-child { border-bottom: 0; padding-bottom: 0.15rem; }
+.year-record-main {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
   gap: 0.75rem 1.25rem;
   flex-wrap: wrap;
 }
+.year-record-account,
+.year-record-particulars { display: flex; align-items: baseline; gap: 0.45rem; margin: 0; }
+.year-record-particulars { color: var(--muted); }
 .year-record-money {
   display: flex;
   flex-wrap: wrap;
@@ -983,6 +1062,14 @@ label .form-error { font-size: 0.85rem; }
   .login { grid-template-columns: 1fr; gap: 1.5rem; }
   .inline-form, .journal-head, .entry-fields, .entry-composer, .column-filters { grid-template-columns: 1fr; }
   .dashboard-filters label { width: 100%; }
+  .year-switch { flex: 1 1 100%; width: auto; max-width: 100%; min-width: 0; margin-top: 0.35rem; }
+  .year-switch select { flex: 1 1 auto; width: 6.5rem; min-width: 0; }
+  .year-business > summary { align-items: flex-start; }
+  .year-business > summary .year-summary-aside {
+    flex: 1 1 100%;
+    margin-left: 0;
+    justify-content: space-between;
+  }
   .chart-legend { margin-left: 0; }
   .dashboard-totals { align-items: flex-start; }
   .entry-sheet-head { display: none; }

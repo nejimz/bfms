@@ -1,7 +1,7 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { Fragment, useState } from 'react'
 import { api } from '../api'
-import { formatDecimal } from '../money'
+import { formatDecimal, toMinor } from '../money'
 import type {
   YearlySummaryBusiness,
   YearlySummaryCategory,
@@ -20,6 +20,20 @@ function businessLabel(count: number): string {
   }
 
   return count === 1 ? '1 business' : `${count} businesses`
+}
+
+function initial(name: string): string {
+  return name.trim().charAt(0).toUpperCase() || '·'
+}
+
+function isZeroAmount(value: string): boolean {
+  const negative = value.startsWith('-')
+
+  return toMinor(negative ? value.slice(1) : value) === 0
+}
+
+function amountClass(value: string): string {
+  return isZeroAmount(value) ? 'num is-zero' : 'num'
 }
 
 const figures = [
@@ -63,7 +77,7 @@ export function YearlySummaryPage() {
   const years = Array.from(new Set([year, ...(report.data?.meta.years ?? [])])).sort((left, right) => left - right)
 
   return (
-    <div className="page">
+    <div className="page year-page">
       <header className="page-header">
         <div>
           <p className="eyebrow">{year}</p>
@@ -73,28 +87,22 @@ export function YearlySummaryPage() {
             Drafts stay out of the money.
           </p>
         </div>
-      </header>
-
-      <div className="panel dashboard-filters">
-        <label>
-          Year
-          <select value={year} onChange={(event) => setYear(clampYear(Number(event.target.value)))}>
+        <div className="year-switch">
+          <button type="button" onClick={() => setYear((current) => clampYear(current - 1))} disabled={year <= 1900}>
+            Previous
+          </button>
+          <select aria-label="Year" value={year} onChange={(event) => setYear(clampYear(Number(event.target.value)))}>
             {years.map((option) => (
               <option key={option} value={option}>
                 {option}
               </option>
             ))}
           </select>
-        </label>
-        <div className="period-actions">
-          <button type="button" onClick={() => setYear((current) => clampYear(current - 1))} disabled={year <= 1900}>
-            Previous
-          </button>
           <button type="button" onClick={() => setYear((current) => clampYear(current + 1))} disabled={year >= 9999}>
             Next
           </button>
         </div>
-      </div>
+      </header>
 
       {report.isLoading && <p className="hint">Opening the yearly summary…</p>}
       {report.isError && <p className="hint">The yearly summary could not be opened.</p>}
@@ -115,9 +123,12 @@ function CategoryAccordion({ category, year }: { category: YearlySummaryCategory
   return (
     <details className="year-category">
       <summary>
+        <span className="category-mark" aria-hidden="true">
+          {initial(category.name)}
+        </span>
         <span className="year-category-name">{category.name}</span>
         <span className="year-summary-aside">
-          <span>{businessLabel(category.businesses.length)}</span>
+          <span className="category-count">{businessLabel(category.businesses.length)}</span>
         </span>
       </summary>
       {category.businesses.length === 0 ? (
@@ -145,7 +156,18 @@ function BusinessAccordion({ business, year }: { business: YearlySummaryBusiness
       <summary>
         <span className="year-business-name">{business.name}</span>
         <span className="year-summary-aside">
-          <span className="account-code">{business.currency}</span>
+          <span className="year-business-totals">
+            {figures.map((figure) => (
+              <span key={figure.key} className={`year-figure ${figure.key}`}>
+                <span className="year-figure-label">{figure.label}</span>
+                <span className={amountClass(business[figure.key])}>{formatDecimal(business[figure.key])}</span>
+              </span>
+            ))}
+            <span className="year-figure">
+              <span className="year-figure-label">Currency</span>
+              <span className="account-code">{business.currency}</span>
+            </span>
+          </span>
         </span>
       </summary>
       <div className="year-months">
@@ -178,7 +200,7 @@ function BusinessAccordion({ business, year }: { business: YearlySummaryBusiness
                       </button>
                     </td>
                     {figures.map((figure) => (
-                      <td key={figure.key} className="num">
+                      <td key={figure.key} className={amountClass(row[figure.key])}>
                         {formatDecimal(row[figure.key])}
                       </td>
                     ))}
@@ -196,9 +218,9 @@ function BusinessAccordion({ business, year }: { business: YearlySummaryBusiness
           </tbody>
           <tfoot>
             <tr>
-              <td>Year</td>
+              <td className="year-total-label">Year</td>
               {figures.map((figure) => (
-                <td key={figure.key} className="num">
+                <td key={figure.key} className={amountClass(business[figure.key])}>
                   {formatDecimal(business[figure.key])}
                 </td>
               ))}
@@ -276,7 +298,7 @@ function DailyMonth({ businessId, year, month }: { businessId: string; year: num
                     </button>
                   </td>
                   {figures.map((figure) => (
-                    <td key={figure.key} className="num">
+                    <td key={figure.key} className={amountClass(row[figure.key])}>
                       {formatDecimal(row[figure.key])}
                     </td>
                   ))}
@@ -294,9 +316,9 @@ function DailyMonth({ businessId, year, month }: { businessId: string; year: num
         </tbody>
         <tfoot>
           <tr>
-            <td>Month</td>
+            <td className="year-total-label">Month</td>
             {figures.map((figure) => (
-              <td key={figure.key} className="num">
+              <td key={figure.key} className={amountClass(days[figure.key])}>
                 {formatDecimal(days[figure.key])}
               </td>
             ))}
@@ -347,25 +369,30 @@ function DailyRecords({
     <div className="year-records">
       {records.entries.map((entry) => (
         <article key={entry.id} className="year-record">
-          <div className="year-record-head">
-            <strong>
-              <span className="account-code">{entry.account_code}</span> {entry.account_name}
-            </strong>
-            <span>{entry.particulars}</span>
-            {entry.reference && <span className="account-code">{entry.reference}</span>}
+          <div className="year-record-main">
+            <p className="year-record-account">
+              <span className="account-code">{entry.account_code}</span>
+              <strong>{entry.account_name}</strong>
+            </p>
+            {(entry.particulars || entry.reference) && (
+              <p className="year-record-particulars">
+                {entry.particulars}
+                {entry.reference && <span className="account-code">{entry.reference}</span>}
+              </p>
+            )}
           </div>
           <dl className="year-record-money">
             <div>
               <dt>Amount</dt>
-              <dd>{formatDecimal(entry.amount)}</dd>
+              <dd className={amountClass(entry.amount)}>{formatDecimal(entry.amount)}</dd>
             </div>
             <div>
               <dt>Cash</dt>
-              <dd>{formatDecimal(entry.cash)}</dd>
+              <dd className={amountClass(entry.cash)}>{formatDecimal(entry.cash)}</dd>
             </div>
             <div>
               <dt>Credit</dt>
-              <dd>{formatDecimal(entry.credit)}</dd>
+              <dd className={amountClass(entry.credit)}>{formatDecimal(entry.credit)}</dd>
             </div>
           </dl>
           {entry.lines.length > 0 && (
@@ -383,7 +410,7 @@ function DailyRecords({
                     <tr key={`${entry.id}-${line.name}-${line.quantity}-${line.amount}`}>
                       <td>{line.name}</td>
                       <td className="num">{line.quantity}</td>
-                      <td className="num">{formatDecimal(line.amount)}</td>
+                      <td className={amountClass(line.amount)}>{formatDecimal(line.amount)}</td>
                     </tr>
                   ))}
                 </tbody>
