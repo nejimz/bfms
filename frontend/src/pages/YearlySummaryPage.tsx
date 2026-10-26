@@ -136,14 +136,6 @@ function BusinessAccordion({ business }: { business: YearlySummaryBusiness }) {
           <span className="account-code">{business.currency}</span>
         </span>
       </summary>
-      <dl className="year-figures">
-        {figures.map((figure) => (
-          <div key={figure.key} className={`year-figure ${figure.key}`}>
-            <dt>{figure.label}</dt>
-            <dd>{formatDecimal(business[figure.key])}</dd>
-          </div>
-        ))}
-      </dl>
       <div className="year-months">
         <table>
           <thead>
@@ -168,6 +160,16 @@ function BusinessAccordion({ business }: { business: YearlySummaryBusiness }) {
               </tr>
             ))}
           </tbody>
+          <tfoot>
+            <tr>
+              <td>Year</td>
+              {figures.map((figure) => (
+                <td key={figure.key} className="num">
+                  {formatDecimal(business[figure.key])}
+                </td>
+              ))}
+            </tr>
+          </tfoot>
         </table>
       </div>
     </details>

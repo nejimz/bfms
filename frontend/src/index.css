@@ -788,36 +788,14 @@ button.account-link:hover { text-decoration: underline; }
 .year-business[open] > summary .year-summary-aside::after { transform: rotate(45deg); }
 .year-businesses { display: grid; gap: 0.55rem; padding: 0 0.75rem 0.75rem; }
 .year-empty { margin: 0; padding: 0 1.05rem 0.95rem; }
-.year-figures {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
-  gap: 0.75rem;
-  margin: 0;
-  padding: 0.15rem 1rem 1rem;
-}
-.year-figure { display: grid; gap: 0.15rem; margin: 0; }
-.year-figure dt {
-  font-size: 0.75rem;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-}
-.year-figure dd {
-  margin: 0;
-  font-variant-numeric: tabular-nums;
-  font-family: ui-monospace, "SF Mono", Menlo, monospace;
-  font-weight: 650;
-  font-size: 1.05rem;
-}
-.year-figure.sales dt,
 .year-months th.sales { color: #0d6b4f; }
-.year-figure.operation_expense dt,
 .year-months th.operation_expense { color: #c47b2b; }
-.year-figure.purchase_expense dt,
 .year-months th.purchase_expense { color: #8d4a32; }
 .year-months { overflow: auto; padding: 0 0.35rem 0.85rem; }
 .year-months table { min-width: 36rem; }
 .year-months th,
 .year-months td { padding: 0.55rem 0.85rem; }
+.year-months tfoot td { background: #faf6ef; }
 .account-checklist {
   display: grid;
   gap: 0.35rem;
