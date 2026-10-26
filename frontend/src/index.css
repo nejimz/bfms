@@ -649,7 +649,8 @@ button.chart-legend-item:focus-visible {
   .year-category > summary,
   .year-business > summary,
   .year-summary-aside::after,
-  .year-months button.month-link::after { transition: none; }
+  .year-months button.month-link::after,
+  .year-record-group > summary::after { transition: none; }
 }
 .period-actions { display: flex; gap: 0.5rem; }
 .item-report table { min-width: max-content; }
@@ -902,15 +903,73 @@ button.account-link:hover { text-decoration: underline; }
 }
 .year-days table { min-width: 32rem; }
 .year-days th { font-size: 0.72rem; }
-.year-records { display: grid; padding: 0.15rem 0 0.35rem; }
+.year-records {
+  display: grid;
+  gap: 0.55rem;
+  margin: 0.35rem 0 0.85rem;
+  padding: 0.65rem;
+  background: #faf6ef;
+  border-radius: 12px;
+}
+.year-record-group {
+  border: 1px solid var(--line);
+  border-left-width: 3px;
+  border-radius: 12px;
+  background: #fff;
+  color: var(--ink);
+}
+.year-record-group.sales { border-left-color: var(--green); }
+.year-record-group.operation_expense { border-left-color: #c47b2b; }
+.year-record-group.purchase_expense { border-left-color: #8d4a32; }
+.year-record-group.is-zero { border-left-color: #e4d9c8; }
+.year-record-group > summary {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.7rem 0.9rem;
+  cursor: pointer;
+  list-style: none;
+  color: var(--ink);
+}
+.year-record-group > summary::-webkit-details-marker { display: none; }
+.year-record-group > summary::marker { content: ""; }
+.year-record-group > summary:focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: -2px;
+}
+.year-record-group-name { font-weight: 600; }
+.year-record-group.sales > summary .year-record-group-name { color: var(--green); }
+.year-record-group.operation_expense > summary .year-record-group-name { color: #c47b2b; }
+.year-record-group.purchase_expense > summary .year-record-group-name { color: #8d4a32; }
+.year-record-group.is-zero > summary,
+.year-record-group.is-zero > summary .year-record-group-name,
+.year-record-group.is-zero > summary .num { color: #b7aea2; }
+.year-record-group > summary .num {
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+  font-weight: 650;
+}
+.year-record-group > summary::after {
+  content: "";
+  width: 0.4rem;
+  height: 0.4rem;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(45deg);
+  flex: none;
+  transition: transform 0.15s ease;
+}
+.year-record-group[open] > summary::after { transform: rotate(-135deg); }
+.year-record-group .year-days-status { margin: 0; padding: 0 0.9rem 0.8rem; }
 .year-record {
   display: grid;
   gap: 0.45rem;
+  margin: 0 0.9rem;
   padding: 0.7rem 0;
-  border-bottom: 1px solid var(--line);
-  background: transparent;
+  border-top: 1px solid var(--line);
+  background: #fff;
 }
-.year-record:last-child { border-bottom: 0; padding-bottom: 0.15rem; }
+.year-record:last-child { padding-bottom: 0.85rem; }
 .year-record-main {
   display: flex;
   justify-content: space-between;

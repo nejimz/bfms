@@ -36,10 +36,25 @@ function amountClass(value: string): string {
   return isZeroAmount(value) ? 'num is-zero' : 'num'
 }
 
+function signedMinor(value: string): number {
+  const negative = value.startsWith('-')
+  const minor = toMinor(negative ? value.slice(1) : value) ?? 0
+
+  return negative ? -minor : minor
+}
+
+function sumDecimals(values: string[]): string {
+  const minor = values.reduce((total, value) => total + signedMinor(value), 0)
+  const negative = minor < 0
+  const absolute = Math.abs(minor)
+
+  return `${negative ? '-' : ''}${Math.floor(absolute / 100)}.${String(absolute % 100).padStart(2, '0')}`
+}
+
 const figures = [
-  { key: 'sales', label: 'Sales' },
-  { key: 'operation_expense', label: 'Operation Expenses' },
-  { key: 'purchase_expense', label: 'Purchase Expenses' },
+  { key: 'sales', code: '4000', label: 'Sales' },
+  { key: 'operation_expense', code: '5000', label: 'Operation Expenses' },
+  { key: 'purchase_expense', code: '5100', label: 'Purchase Expenses' },
 ] as const
 
 const monthNames = [
@@ -361,64 +376,77 @@ function DailyRecords({
     return <p className="hint year-days-status">The records could not be opened.</p>
   }
 
-  if (records.entries.length === 0) {
-    return <p className="hint year-days-status">No posted records on this day.</p>
-  }
-
   return (
     <div className="year-records">
-      {records.entries.map((entry) => (
-        <article key={entry.id} className="year-record">
-          <div className="year-record-main">
-            <p className="year-record-account">
-              <span className="account-code">{entry.account_code}</span>
-              <strong>{entry.account_name}</strong>
-            </p>
-            {(entry.particulars || entry.reference) && (
-              <p className="year-record-particulars">
-                {entry.particulars}
-                {entry.reference && <span className="account-code">{entry.reference}</span>}
-              </p>
+      {figures.map((figure) => {
+        const entries = records.entries.filter((entry) => entry.account_code === figure.code)
+        const total = sumDecimals(entries.map((entry) => entry.amount))
+
+        return (
+          <details key={figure.key} className={`year-record-group ${figure.key}${isZeroAmount(total) ? ' is-zero' : ''}`}>
+            <summary>
+              <span className="year-record-group-name">{figure.label}</span>
+              <span className={amountClass(total)}>{formatDecimal(total)}</span>
+            </summary>
+            {entries.length === 0 ? (
+              <p className="hint year-days-status">No posted records.</p>
+            ) : (
+              entries.map((entry) => (
+                <article key={entry.id} className="year-record">
+                  <div className="year-record-main">
+                    <p className="year-record-account">
+                      <span className="account-code">{entry.account_code}</span>
+                      <strong>{entry.account_name}</strong>
+                    </p>
+                    {(entry.particulars || entry.reference) && (
+                      <p className="year-record-particulars">
+                        {entry.particulars}
+                        {entry.reference && <span className="account-code">{entry.reference}</span>}
+                      </p>
+                    )}
+                  </div>
+                  <dl className="year-record-money">
+                    <div>
+                      <dt>Amount</dt>
+                      <dd className={amountClass(entry.amount)}>{formatDecimal(entry.amount)}</dd>
+                    </div>
+                    <div>
+                      <dt>Cash</dt>
+                      <dd className={amountClass(entry.cash)}>{formatDecimal(entry.cash)}</dd>
+                    </div>
+                    <div>
+                      <dt>Credit</dt>
+                      <dd className={amountClass(entry.credit)}>{formatDecimal(entry.credit)}</dd>
+                    </div>
+                  </dl>
+                  {entry.lines.length > 0 && (
+                    <div className="year-record-lines">
+                      <table>
+                        <thead>
+                          <tr>
+                            <th>Item</th>
+                            <th className="amount">Quantity</th>
+                            <th className="amount">Amount</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {entry.lines.map((line) => (
+                            <tr key={`${entry.id}-${line.name}-${line.quantity}-${line.amount}`}>
+                              <td>{line.name}</td>
+                              <td className="num">{line.quantity}</td>
+                              <td className={amountClass(line.amount)}>{formatDecimal(line.amount)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </article>
+              ))
             )}
-          </div>
-          <dl className="year-record-money">
-            <div>
-              <dt>Amount</dt>
-              <dd className={amountClass(entry.amount)}>{formatDecimal(entry.amount)}</dd>
-            </div>
-            <div>
-              <dt>Cash</dt>
-              <dd className={amountClass(entry.cash)}>{formatDecimal(entry.cash)}</dd>
-            </div>
-            <div>
-              <dt>Credit</dt>
-              <dd className={amountClass(entry.credit)}>{formatDecimal(entry.credit)}</dd>
-            </div>
-          </dl>
-          {entry.lines.length > 0 && (
-            <div className="year-record-lines">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Item</th>
-                    <th className="amount">Quantity</th>
-                    <th className="amount">Amount</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {entry.lines.map((line) => (
-                    <tr key={`${entry.id}-${line.name}-${line.quantity}-${line.amount}`}>
-                      <td>{line.name}</td>
-                      <td className="num">{line.quantity}</td>
-                      <td className={amountClass(line.amount)}>{formatDecimal(line.amount)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </article>
-      ))}
+          </details>
+        )
+      })}
     </div>
   )
 }
