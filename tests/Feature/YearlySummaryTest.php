@@ -323,6 +323,171 @@ it('returns 422 when the business month is invalid', function (string $query, st
     'month' => ['business=1&year=2026&month=13', 'month', 'The month field must be between 1 and 12.'],
 ]);
 
+it('lists the posted entries and item lines for one business day', function () {
+    $other = Company::factory()->create(['name' => 'Other Shop']);
+    $alpha = Company::factory()->create(['name' => 'Alpha', 'currency' => 'PHP']);
+    $beta = Company::factory()->create(['name' => 'Beta']);
+    $user = memberWithRole($other);
+    $sales = yearlySummaryAccount($alpha, '4000', 'Sales', AccountType::Income);
+    $operation = yearlySummaryAccount($alpha, '5000', 'Operation Expenses', AccountType::Expense);
+    $petty = yearlySummaryAccount($alpha, '9000', 'Petty', AccountType::Expense);
+    $betaSales = yearlySummaryAccount($beta, '4000', 'Sales', AccountType::Income);
+
+    $sale = yearlySummaryEntry($alpha, $sales, $user, [
+        'date' => '2026-06-15',
+        'particulars' => 'Morning market',
+        'reference' => 'OR-15',
+        'amount_cents' => 5000,
+        'cash_cents' => 3000,
+        'credit_cents' => 2000,
+    ]);
+    $sale->lines()->create([
+        'company_id' => $alpha->id,
+        'position' => 1,
+        'name' => 'Oil',
+        'quantity' => '1.500',
+        'amount_cents' => 2000,
+    ]);
+    $sale->lines()->create([
+        'company_id' => $alpha->id,
+        'position' => 0,
+        'name' => 'Rice',
+        'quantity' => '2.000',
+        'amount_cents' => 3000,
+    ]);
+    yearlySummaryEntry($alpha, $operation, $user, [
+        'date' => '2026-06-15',
+        'particulars' => 'Stall fee',
+        'amount_cents' => 1500,
+        'cash_cents' => 1500,
+        'credit_cents' => 0,
+    ]);
+    yearlySummaryEntry($alpha, $sales, $user, [
+        'date' => '2026-06-15',
+        'particulars' => 'Draft sale',
+        'amount_cents' => 99999,
+        'status' => ChartAccountEntryStatus::Draft,
+    ]);
+    yearlySummaryEntry($alpha, $petty, $user, [
+        'date' => '2026-06-15',
+        'particulars' => 'Petty cash',
+        'amount_cents' => 8000,
+    ]);
+    yearlySummaryEntry($alpha, $sales, $user, [
+        'date' => '2026-06-16',
+        'particulars' => 'Next day',
+        'amount_cents' => 7000,
+    ]);
+    yearlySummaryEntry($beta, $betaSales, $user, [
+        'date' => '2026-06-15',
+        'particulars' => 'Other shop',
+        'amount_cents' => 4000,
+    ]);
+
+    $report = $this->actingAs($user)->getJson('/api/v1/reports/yearly-summary/records?business='.$alpha->id.'&year=2026&month=6&day=15');
+
+    $report->assertOk()
+        ->assertJsonPath('data.id', (string) $alpha->id)
+        ->assertJsonPath('data.name', 'Alpha')
+        ->assertJsonPath('data.currency', 'PHP')
+        ->assertJsonPath('data.year', 2026)
+        ->assertJsonPath('data.month', 6)
+        ->assertJsonPath('data.day', 15)
+        ->assertJsonCount(2, 'data.entries')
+        ->assertJsonPath('data.entries.0.account_code', '4000')
+        ->assertJsonPath('data.entries.0.account_name', 'Sales')
+        ->assertJsonPath('data.entries.0.particulars', 'Morning market')
+        ->assertJsonPath('data.entries.0.reference', 'OR-15')
+        ->assertJsonPath('data.entries.0.amount', '50.00')
+        ->assertJsonPath('data.entries.0.cash', '30.00')
+        ->assertJsonPath('data.entries.0.credit', '20.00')
+        ->assertJsonPath('data.entries.0.lines.0.name', 'Rice')
+        ->assertJsonPath('data.entries.0.lines.0.quantity', '2')
+        ->assertJsonPath('data.entries.0.lines.0.amount', '30.00')
+        ->assertJsonPath('data.entries.0.lines.1.name', 'Oil')
+        ->assertJsonPath('data.entries.0.lines.1.quantity', '1.5')
+        ->assertJsonPath('data.entries.0.lines.1.amount', '20.00')
+        ->assertJsonPath('data.entries.1.account_code', '5000')
+        ->assertJsonPath('data.entries.1.particulars', 'Stall fee')
+        ->assertJsonPath('data.entries.1.reference', null)
+        ->assertJsonPath('data.entries.1.amount', '15.00')
+        ->assertJsonPath('data.entries.1.lines', [])
+        ->assertJsonMissing(['particulars' => 'Draft sale'])
+        ->assertJsonMissing(['particulars' => 'Petty cash'])
+        ->assertJsonMissing(['particulars' => 'Next day'])
+        ->assertJsonMissing(['particulars' => 'Other shop']);
+});
+
+it('returns no records when the day has no posted entries', function () {
+    $company = Company::factory()->create(['name' => 'Alpha']);
+    $user = memberWithRole($company);
+
+    $this->actingAs($user)
+        ->getJson('/api/v1/reports/yearly-summary/records?business='.$company->id.'&year=2026&month=6&day=15')
+        ->assertOk()
+        ->assertJsonPath('data.entries', []);
+});
+
+it('shows another business day to a manager', function () {
+    $first = Company::factory()->create(['name' => 'First Shop']);
+    $second = Company::factory()->create(['name' => 'Second Shop']);
+    $manager = memberWithRole($second, CompanyRole::Accountant->value);
+    $sales = yearlySummaryAccount($first, '4000', 'Sales', AccountType::Income);
+
+    yearlySummaryEntry($first, $sales, $manager, [
+        'date' => '2026-06-04',
+        'particulars' => 'Counter sale',
+        'amount_cents' => 5000,
+    ]);
+
+    $this->actingAs($manager)
+        ->getJson('/api/v1/reports/yearly-summary/records?business='.$first->id.'&year=2026&month=6&day=4')
+        ->assertOk()
+        ->assertJsonPath('data.name', 'First Shop')
+        ->assertJsonPath('data.entries.0.particulars', 'Counter sale');
+});
+
+it('returns 403 when a staff member opens a business day', function () {
+    $company = Company::factory()->create();
+    $hidden = Company::factory()->create(['name' => 'Hidden Books']);
+    $staff = memberWithRole($company, CompanyRole::Staff->value);
+
+    $this->actingAs($staff)
+        ->getJson('/api/v1/reports/yearly-summary/records?business='.$hidden->id.'&year=2026&month=6&day=15')
+        ->assertForbidden()
+        ->assertJsonPath('message', 'This summary is for admins and managers.')
+        ->assertJsonMissing(['name' => 'Hidden Books']);
+});
+
+it('returns 401 when a guest opens a business day', function () {
+    $this->getJson('/api/v1/reports/yearly-summary/records?business=1&year=2026&month=6&day=15')->assertUnauthorized();
+});
+
+it('returns 404 when the business day does not exist', function () {
+    $company = Company::factory()->create(['name' => 'Hidden Books']);
+    $user = memberWithRole($company);
+
+    $this->actingAs($user)
+        ->getJson('/api/v1/reports/yearly-summary/records?business=999999&year=2026&month=6&day=15')
+        ->assertNotFound()
+        ->assertJsonMissing(['name' => 'Hidden Books']);
+});
+
+it('returns 422 when the business day is invalid', function (string $query, string $field, string $message) {
+    $company = Company::factory()->create(['name' => 'Hidden Books']);
+    $user = memberWithRole($company);
+
+    $this->actingAs($user)
+        ->getJson('/api/v1/reports/yearly-summary/records?'.$query)
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors([$field => $message])
+        ->assertJsonMissing(['name' => 'Hidden Books']);
+})->with([
+    'day' => ['business=1&year=2026&month=6', 'day', 'The day field is required.'],
+    'range' => ['business=1&year=2026&month=6&day=32', 'day', 'The day field must be between 1 and 31.'],
+    'calendar' => ['business=1&year=2026&month=2&day=30', 'day', 'That day is not in this month.'],
+]);
+
 it('returns 422 when the summary year is invalid', function (string $query, string $message) {
     $company = Company::factory()->create(['name' => 'Hidden Books']);
     $user = memberWithRole($company);

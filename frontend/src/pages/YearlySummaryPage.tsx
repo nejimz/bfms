@@ -6,6 +6,7 @@ import type {
   YearlySummaryBusiness,
   YearlySummaryCategory,
   YearlySummaryDays,
+  YearlySummaryRecords,
   YearlySummaryReport,
 } from '../types'
 
@@ -68,7 +69,7 @@ export function YearlySummaryPage() {
           <p className="eyebrow">{year}</p>
           <h1>Yearly Summary</h1>
           <p className="hint">
-            Posted sales, operation expenses, and purchase expenses for each business. Open a month to see each day.
+            Posted sales, operation expenses, and purchase expenses for each business. Open a day to see its records.
             Drafts stay out of the money.
           </p>
         </div>
@@ -217,6 +218,12 @@ function dayLabel(year: number, month: number, day: number): string {
 }
 
 function DailyMonth({ businessId, year, month }: { businessId: string; year: number; month: number }) {
+  const [day, setDay] = useState<number | null>(null)
+
+  function toggleDay(next: number) {
+    setDay((current) => (current === next ? null : next))
+  }
+
   const report = useQuery({
     queryKey: ['yearly-summary-days', businessId, year, month],
     queryFn: async () => {
@@ -252,16 +259,38 @@ function DailyMonth({ businessId, year, month }: { businessId: string; year: num
           </tr>
         </thead>
         <tbody>
-          {days.days.map((day) => (
-            <tr key={day.day}>
-              <td>{dayLabel(year, month, day.day)}</td>
-              {figures.map((figure) => (
-                <td key={figure.key} className="num">
-                  {formatDecimal(day[figure.key])}
-                </td>
-              ))}
-            </tr>
-          ))}
+          {days.days.map((row) => {
+            const open = day === row.day
+
+            return (
+              <Fragment key={row.day}>
+                <tr className={open ? 'year-month-open' : undefined}>
+                  <td>
+                    <button
+                      type="button"
+                      className="month-link"
+                      aria-expanded={open}
+                      onClick={() => toggleDay(row.day)}
+                    >
+                      {dayLabel(year, month, row.day)}
+                    </button>
+                  </td>
+                  {figures.map((figure) => (
+                    <td key={figure.key} className="num">
+                      {formatDecimal(row[figure.key])}
+                    </td>
+                  ))}
+                </tr>
+                {open && (
+                  <tr className="year-days-row">
+                    <td colSpan={4}>
+                      <DailyRecords businessId={businessId} year={year} month={month} day={row.day} />
+                    </td>
+                  </tr>
+                )}
+              </Fragment>
+            )
+          })}
         </tbody>
         <tfoot>
           <tr>
@@ -274,6 +303,95 @@ function DailyMonth({ businessId, year, month }: { businessId: string; year: num
           </tr>
         </tfoot>
       </table>
+    </div>
+  )
+}
+
+function DailyRecords({
+  businessId,
+  year,
+  month,
+  day,
+}: {
+  businessId: string
+  year: number
+  month: number
+  day: number
+}) {
+  const report = useQuery({
+    queryKey: ['yearly-summary-records', businessId, year, month, day],
+    queryFn: async () => {
+      const response = await api.get<YearlySummaryRecords>('/api/v1/reports/yearly-summary/records', {
+        params: { business: businessId, year, month, day },
+      })
+
+      return response.data.data
+    },
+  })
+
+  const records = report.data
+
+  if (report.isLoading) {
+    return <p className="hint year-days-status">Opening {dayLabel(year, month, day)}…</p>
+  }
+
+  if (report.isError || !records) {
+    return <p className="hint year-days-status">The records could not be opened.</p>
+  }
+
+  if (records.entries.length === 0) {
+    return <p className="hint year-days-status">No posted records on this day.</p>
+  }
+
+  return (
+    <div className="year-records">
+      {records.entries.map((entry) => (
+        <article key={entry.id} className="year-record">
+          <div className="year-record-head">
+            <strong>
+              <span className="account-code">{entry.account_code}</span> {entry.account_name}
+            </strong>
+            <span>{entry.particulars}</span>
+            {entry.reference && <span className="account-code">{entry.reference}</span>}
+          </div>
+          <dl className="year-record-money">
+            <div>
+              <dt>Amount</dt>
+              <dd>{formatDecimal(entry.amount)}</dd>
+            </div>
+            <div>
+              <dt>Cash</dt>
+              <dd>{formatDecimal(entry.cash)}</dd>
+            </div>
+            <div>
+              <dt>Credit</dt>
+              <dd>{formatDecimal(entry.credit)}</dd>
+            </div>
+          </dl>
+          {entry.lines.length > 0 && (
+            <div className="year-record-lines">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Item</th>
+                    <th className="amount">Quantity</th>
+                    <th className="amount">Amount</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {entry.lines.map((line) => (
+                    <tr key={`${entry.id}-${line.name}-${line.quantity}-${line.amount}`}>
+                      <td>{line.name}</td>
+                      <td className="num">{line.quantity}</td>
+                      <td className="num">{formatDecimal(line.amount)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </article>
+      ))}
     </div>
   )
 }

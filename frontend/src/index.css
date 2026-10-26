@@ -811,6 +811,42 @@ button.account-link:hover { text-decoration: underline; }
 .year-days-row > td { padding-top: 0; background: #fff; }
 .year-days-status { margin: 0.35rem 0 0.85rem; }
 .year-days table { min-width: 32rem; }
+.year-records { display: grid; gap: 0.75rem; padding: 0.15rem 0 0.85rem; }
+.year-record {
+  display: grid;
+  gap: 0.55rem;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 0.75rem 0.9rem;
+  background: #fff;
+}
+.year-record-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.75rem 1.25rem;
+  flex-wrap: wrap;
+}
+.year-record-money {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.5rem;
+  margin: 0;
+}
+.year-record-money div { display: grid; gap: 0.1rem; }
+.year-record-money dt {
+  color: var(--muted);
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.year-record-money dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-weight: 650;
+}
+.year-days .year-record-lines table { min-width: 0; }
 .account-checklist {
   display: grid;
   gap: 0.35rem;

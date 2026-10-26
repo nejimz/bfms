@@ -6,6 +6,7 @@ use App\Domain\Ledger\Money;
 use App\Enums\ChartAccountEntryStatus;
 use App\Models\Category;
 use App\Models\ChartAccountEntry;
+use App\Models\ChartAccountEntryLine;
 use App\Models\Company;
 use App\Models\User;
 use Illuminate\Support\Carbon;
@@ -131,6 +132,83 @@ class YearlySummaryReport
                 'operation_expense' => $totals['operation_expense']->toDecimal(),
                 'purchase_expense' => $totals['purchase_expense']->toDecimal(),
                 'days' => $days,
+            ],
+        ];
+    }
+
+    /**
+     * Posted sales, operation, and purchase entries for one day, with their item lines.
+     *
+     * @return array{
+     *     data: array{
+     *         id: string,
+     *         name: string,
+     *         currency: string,
+     *         year: int,
+     *         month: int,
+     *         day: int,
+     *         entries: list<array{
+     *             id: string,
+     *             account_code: string,
+     *             account_name: string,
+     *             particulars: string,
+     *             reference: string|null,
+     *             amount: string,
+     *             cash: string,
+     *             credit: string,
+     *             lines: list<array{name: string, quantity: string, amount: string}>
+     *         }>
+     *     }
+     * }
+     */
+    public function records(Company $company, int $year, int $month, int $day): array
+    {
+        $date = Carbon::create($year, $month, $day);
+        $entries = ChartAccountEntry::query()
+            ->withoutGlobalScope('company')
+            ->with([
+                'account' => fn ($query) => $query->withoutGlobalScope('company'),
+                'lines' => fn ($query) => $query->withoutGlobalScope('company'),
+            ])
+            ->where('company_id', $company->id)
+            ->where('status', ChartAccountEntryStatus::Posted->value)
+            ->where('date', '>=', $date->toDateString())
+            ->where('date', '<', $date->copy()->addDay()->toDateString())
+            ->whereHas('account', function ($query): void {
+                $query->withoutGlobalScope('company')->whereIn('code', [
+                    IncomeExpenseChartReport::SALES,
+                    IncomeExpenseChartReport::OPERATION_EXPENSE,
+                    IncomeExpenseChartReport::PURCHASE_EXPENSE,
+                ]);
+            })
+            ->orderBy('id')
+            ->get()
+            ->map(fn (ChartAccountEntry $entry): array => [
+                'id' => (string) $entry->id,
+                'account_code' => (string) $entry->account->code,
+                'account_name' => $entry->account->name,
+                'particulars' => $entry->particulars,
+                'reference' => $entry->reference,
+                'amount' => Money::ofMinor((int) $entry->amount_cents)->toDecimal(),
+                'cash' => Money::ofMinor((int) $entry->cash_cents)->toDecimal(),
+                'credit' => Money::ofMinor((int) $entry->credit_cents)->toDecimal(),
+                'lines' => $entry->lines->map(fn (ChartAccountEntryLine $line): array => [
+                    'name' => $line->name,
+                    'quantity' => $line->quantityDecimal(),
+                    'amount' => Money::ofMinor((int) $line->amount_cents)->toDecimal(),
+                ])->values()->all(),
+            ])
+            ->all();
+
+        return [
+            'data' => [
+                'id' => (string) $company->id,
+                'name' => $company->name,
+                'currency' => $company->currency,
+                'year' => $year,
+                'month' => $month,
+                'day' => $day,
+                'entries' => $entries,
             ],
         ];
     }

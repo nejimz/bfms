@@ -65,6 +65,7 @@ Route::middleware(['auth:sanctum', SetCurrentCompany::class])->prefix('v1')->gro
     Route::get('/reports/income-expense', [IncomeExpenseChartController::class, 'show']);
     Route::get('/reports/yearly-summary', [YearlySummaryController::class, 'show']);
     Route::get('/reports/yearly-summary/days', [YearlySummaryController::class, 'days']);
+    Route::get('/reports/yearly-summary/records', [YearlySummaryController::class, 'records']);
     Route::get('/reports/item-activity', [ItemActivityReportController::class, 'show']);
     Route::get('/reports/trial-balance', [TrialBalanceController::class, 'show']);
     Route::get('/reports/chart-account-columns', [ChartAccountColumnReportController::class, 'show']);

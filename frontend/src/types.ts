@@ -227,6 +227,36 @@ export type YearlySummaryDay = {
   purchase_expense: string
 }
 
+export type YearlySummaryRecordLine = {
+  name: string
+  quantity: string
+  amount: string
+}
+
+export type YearlySummaryRecord = {
+  id: string
+  account_code: string
+  account_name: string
+  particulars: string
+  reference: string | null
+  amount: string
+  cash: string
+  credit: string
+  lines: YearlySummaryRecordLine[]
+}
+
+export type YearlySummaryRecords = {
+  data: {
+    id: string
+    name: string
+    currency: string
+    year: number
+    month: number
+    day: number
+    entries: YearlySummaryRecord[]
+  }
+}
+
 export type YearlySummaryDays = {
   data: {
     id: string
