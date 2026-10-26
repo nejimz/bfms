@@ -27,7 +27,8 @@ class YearlySummaryReport
      *             currency: string,
      *             sales: string,
      *             operation_expense: string,
-     *             purchase_expense: string
+     *             purchase_expense: string,
+     *             months: list<array{month: int, sales: string, operation_expense: string, purchase_expense: string}>
      *         }>
      *     }>,
      *     meta: array{year: int, years: list<int>}
@@ -38,12 +39,12 @@ class YearlySummaryReport
         $companies = $this->sortCompanies($user->accessibleCompanies()->with('category')->get());
         $companyIds = array_map(intval(...), $companies->modelKeys());
         $posted = $this->posted($companyIds, $year);
-        /** @var array<int, list<array{id: string, name: string, currency: string, sales: string, operation_expense: string, purchase_expense: string}>> $byCategory */
+        /** @var array<int, list<array{id: string, name: string, currency: string, sales: string, operation_expense: string, purchase_expense: string, months: list<array{month: int, sales: string, operation_expense: string, purchase_expense: string}>}>> $byCategory */
         $byCategory = [];
         $uncategorized = [];
 
         foreach ($companies as $company) {
-            $row = $this->business($company, $posted[$company->id] ?? $this->emptySeries());
+            $row = $this->business($company, $posted[$company->id] ?? [], $year);
 
             if ($company->category_id === null) {
                 $uncategorized[] = $row;
@@ -83,7 +84,7 @@ class YearlySummaryReport
 
     /**
      * @param  list<int>  $companyIds
-     * @return array<int, array{sales: Money, operation_expense: Money, purchase_expense: Money}>
+     * @return array<int, array<string, array{sales: Money, operation_expense: Money, purchase_expense: Money}>>
      */
     private function posted(array $companyIds, int $year): array
     {
@@ -106,8 +107,10 @@ class YearlySummaryReport
             ])
             ->toBase()
             ->select('chart_account_entries.company_id', 'accounts.code')
+            ->selectRaw('substr(chart_account_entries.date, 1, 7) as month_key')
             ->selectRaw('sum(chart_account_entries.amount_cents) as amount_cents')
             ->groupBy('chart_account_entries.company_id', 'accounts.code')
+            ->groupByRaw('substr(chart_account_entries.date, 1, 7)')
             ->get();
 
         foreach ($rows as $row) {
@@ -118,8 +121,9 @@ class YearlySummaryReport
             }
 
             $companyId = (int) $row->company_id;
-            $posted[$companyId] ??= $this->emptySeries();
-            $posted[$companyId][$series] = $posted[$companyId][$series]->plus(
+            $month = (string) $row->month_key;
+            $posted[$companyId][$month] ??= $this->emptySeries();
+            $posted[$companyId][$month][$series] = $posted[$companyId][$month][$series]->plus(
                 Money::ofMinor((int) $row->amount_cents),
             );
         }
@@ -128,18 +132,36 @@ class YearlySummaryReport
     }
 
     /**
-     * @param  array{sales: Money, operation_expense: Money, purchase_expense: Money}  $series
-     * @return array{id: string, name: string, currency: string, sales: string, operation_expense: string, purchase_expense: string}
+     * @param  array<string, array{sales: Money, operation_expense: Money, purchase_expense: Money}>  $months
+     * @return array{id: string, name: string, currency: string, sales: string, operation_expense: string, purchase_expense: string, months: list<array{month: int, sales: string, operation_expense: string, purchase_expense: string}>}
      */
-    private function business(Company $company, array $series): array
+    private function business(Company $company, array $months, int $year): array
     {
+        $totals = $this->emptySeries();
+        $points = [];
+
+        for ($month = 1; $month <= 12; $month++) {
+            $series = $months[sprintf('%04d-%02d', $year, $month)] ?? $this->emptySeries();
+            $points[] = [
+                'month' => $month,
+                'sales' => $series['sales']->toDecimal(),
+                'operation_expense' => $series['operation_expense']->toDecimal(),
+                'purchase_expense' => $series['purchase_expense']->toDecimal(),
+            ];
+
+            foreach ($series as $name => $amount) {
+                $totals[$name] = $totals[$name]->plus($amount);
+            }
+        }
+
         return [
             'id' => (string) $company->id,
             'name' => $company->name,
             'currency' => $company->currency,
-            'sales' => $series['sales']->toDecimal(),
-            'operation_expense' => $series['operation_expense']->toDecimal(),
-            'purchase_expense' => $series['purchase_expense']->toDecimal(),
+            'sales' => $totals['sales']->toDecimal(),
+            'operation_expense' => $totals['operation_expense']->toDecimal(),
+            'purchase_expense' => $totals['purchase_expense']->toDecimal(),
+            'months' => $points,
         ];
     }
 

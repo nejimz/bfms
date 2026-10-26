@@ -22,6 +22,21 @@ const figures = [
   { key: 'purchase_expense', label: 'Purchase Expenses' },
 ] as const
 
+const monthNames = [
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
+]
+
 export function YearlySummaryPage() {
   const today = new Date()
   const [year, setYear] = useState(today.getFullYear())
@@ -48,7 +63,8 @@ export function YearlySummaryPage() {
           <p className="eyebrow">{year}</p>
           <h1>Yearly Summary</h1>
           <p className="hint">
-            Posted sales, operation expenses, and purchase expenses for each business. Drafts stay out of the money.
+            Posted sales, operation expenses, and purchase expenses for each business. Open a business to see each
+            month. Drafts stay out of the money.
           </p>
         </div>
       </header>
@@ -128,6 +144,32 @@ function BusinessAccordion({ business }: { business: YearlySummaryBusiness }) {
           </div>
         ))}
       </dl>
+      <div className="year-months">
+        <table>
+          <thead>
+            <tr>
+              <th>Month</th>
+              {figures.map((figure) => (
+                <th key={figure.key} className={`amount ${figure.key}`}>
+                  {figure.label}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {business.months.map((month) => (
+              <tr key={month.month}>
+                <td>{monthNames[month.month - 1]}</td>
+                {figures.map((figure) => (
+                  <td key={figure.key} className="num">
+                    {formatDecimal(month[figure.key])}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </details>
   )
 }

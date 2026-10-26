@@ -189,6 +189,13 @@ export type ItemActivityReport = {
   }
 }
 
+export type YearlySummaryMonth = {
+  month: number
+  sales: string
+  operation_expense: string
+  purchase_expense: string
+}
+
 export type YearlySummaryBusiness = {
   id: string
   name: string
@@ -196,6 +203,7 @@ export type YearlySummaryBusiness = {
   sales: string
   operation_expense: string
   purchase_expense: string
+  months: YearlySummaryMonth[]
 }
 
 export type YearlySummaryCategory = {

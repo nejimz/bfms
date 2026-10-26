@@ -93,10 +93,25 @@ it('lists every category and the posted yearly sales and expenses of its busines
         ->assertJsonPath('data.0.businesses.0.sales', '50.00')
         ->assertJsonPath('data.0.businesses.0.operation_expense', '25.00')
         ->assertJsonPath('data.0.businesses.0.purchase_expense', '15.00')
+        ->assertJsonCount(12, 'data.0.businesses.0.months')
+        ->assertJsonPath('data.0.businesses.0.months.0.month', 1)
+        ->assertJsonPath('data.0.businesses.0.months.0.sales', '50.00')
+        ->assertJsonPath('data.0.businesses.0.months.0.operation_expense', '0.00')
+        ->assertJsonPath('data.0.businesses.0.months.0.purchase_expense', '0.00')
+        ->assertJsonPath('data.0.businesses.0.months.1.month', 2)
+        ->assertJsonPath('data.0.businesses.0.months.1.sales', '0.00')
+        ->assertJsonPath('data.0.businesses.0.months.5.month', 6)
+        ->assertJsonPath('data.0.businesses.0.months.5.sales', '0.00')
+        ->assertJsonPath('data.0.businesses.0.months.5.purchase_expense', '15.00')
+        ->assertJsonPath('data.0.businesses.0.months.11.month', 12)
+        ->assertJsonPath('data.0.businesses.0.months.11.operation_expense', '25.00')
+        ->assertJsonPath('data.0.businesses.0.months.11.sales', '0.00')
         ->assertJsonPath('data.0.businesses.1.name', 'Gamma')
         ->assertJsonPath('data.0.businesses.1.sales', '0.00')
         ->assertJsonPath('data.0.businesses.1.operation_expense', '20.00')
         ->assertJsonPath('data.0.businesses.1.purchase_expense', '0.00')
+        ->assertJsonPath('data.0.businesses.1.months.2.month', 3)
+        ->assertJsonPath('data.0.businesses.1.months.2.operation_expense', '20.00')
         ->assertJsonPath('data.0.businesses.2.name', 'Quiet')
         ->assertJsonPath('data.0.businesses.2.sales', '0.00')
         ->assertJsonPath('data.0.businesses.2.operation_expense', '0.00')
@@ -108,7 +123,9 @@ it('lists every category and the posted yearly sales and expenses of its busines
         ->assertJsonPath('data.2.name', 'No category')
         ->assertJsonPath('data.2.businesses.0.name', 'Beta')
         ->assertJsonPath('data.2.businesses.0.currency', 'USD')
-        ->assertJsonPath('data.2.businesses.0.sales', '40.00');
+        ->assertJsonPath('data.2.businesses.0.sales', '40.00')
+        ->assertJsonPath('data.2.businesses.0.months.7.month', 8)
+        ->assertJsonPath('data.2.businesses.0.months.7.sales', '40.00');
 });
 
 it('leaves out the uncategorized group when every business has a category', function () {
