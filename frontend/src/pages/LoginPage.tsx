@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { Navigate } from 'react-router-dom'
 import { api, ensureCsrf, errorMessage } from '../api'
 import { useAuth } from '../auth'
+import { OrganizationMark } from '../organization'
 import { homePath } from '../types'
 
 export function LoginPage() {
@@ -34,7 +35,7 @@ export function LoginPage() {
   return (
     <div className="login">
       <section className="login-copy">
-        <p className="eyebrow">Business Financial Management</p>
+        <OrganizationMark tone="page" />
         <h1>Books that stay in balance.</h1>
         <p>
           Record journals in Philippine pesos. A draft can be unfinished. A posted entry

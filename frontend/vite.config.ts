@@ -10,6 +10,7 @@ export default defineConfig({
       '/api': 'http://127.0.0.1:8000',
       '/sanctum': 'http://127.0.0.1:8000',
       '/session': 'http://127.0.0.1:8000',
+      '/storage': 'http://127.0.0.1:8000',
     },
   },
 })

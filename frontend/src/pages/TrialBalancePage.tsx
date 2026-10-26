@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { api } from '../api'
 import { useAuth } from '../auth'
+import { OrganizationHeading } from '../organization'
 import { formatDecimal } from '../money'
 import type { TrialBalance } from '../types'
 
@@ -40,6 +41,7 @@ export function TrialBalancePage() {
     <div className="page">
       <header className="page-header">
         <div>
+          <OrganizationHeading />
           <p className="eyebrow">
             {user?.company.name} · {report.data?.meta.currency ?? user?.company.currency}
           </p>

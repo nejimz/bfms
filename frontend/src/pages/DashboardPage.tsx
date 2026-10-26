@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api, errorMessage } from '../api'
 import { useAuth } from '../auth'
+import { OrganizationHeading } from '../organization'
 import { chartAccountModuleList } from '../chartAccountModules'
 import { formatDecimal, toMinor } from '../money'
 import type { BusinessSummary, BusinessSummaryReport } from '../types'
@@ -125,6 +126,7 @@ export function DashboardPage() {
     <div className="page">
       <header className="page-header">
         <div>
+          <OrganizationHeading />
           <p className="eyebrow">{periodLabel(period, year, month)}</p>
           <h1>Dashboard</h1>
           <p className="hint">Posted chart account totals for every business. Drafts stay out of the money.</p>

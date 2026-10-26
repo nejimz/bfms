@@ -1,6 +1,7 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { Fragment, useState } from 'react'
 import { api } from '../api'
+import { OrganizationHeading } from '../organization'
 import { formatDecimal, toMinor } from '../money'
 import type {
   YearlySummaryBusiness,
@@ -95,6 +96,7 @@ export function YearlySummaryPage() {
     <div className="page year-page">
       <header className="page-header">
         <div>
+          <OrganizationHeading />
           <p className="eyebrow">{year}</p>
           <h1>Yearly Summary</h1>
           <p className="hint">

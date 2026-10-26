@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { api } from '../api'
 import { useAuth } from '../auth'
+import { OrganizationHeading } from '../organization'
 import { BusinessSelect } from '../components/BusinessSelect'
 import { formatDecimal, toMinor } from '../money'
 import {
@@ -101,6 +102,7 @@ export function ChartAccountColumnsPage() {
     <div className="page">
       <header className="page-header">
         <div>
+          <OrganizationHeading />
           <p className="eyebrow">
             {user?.company.name} · {report.data?.meta.currency ?? user?.company.currency}
           </p>

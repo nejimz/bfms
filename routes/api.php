@@ -11,11 +11,16 @@ use App\Http\Controllers\Api\V1\CurrentUserController;
 use App\Http\Controllers\Api\V1\IncomeExpenseChartController;
 use App\Http\Controllers\Api\V1\ItemActivityReportController;
 use App\Http\Controllers\Api\V1\JournalController;
+use App\Http\Controllers\Api\V1\OrganizationController;
 use App\Http\Controllers\Api\V1\TrialBalanceController;
 use App\Http\Controllers\Api\V1\UserController;
 use App\Http\Controllers\Api\V1\YearlySummaryController;
 use App\Http\Middleware\SetCurrentCompany;
 use Illuminate\Support\Facades\Route;
+
+Route::prefix('v1')->group(function () {
+    Route::get('/organization', [OrganizationController::class, 'show']);
+});
 
 Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
     Route::patch('/user/password', [CurrentUserController::class, 'updatePassword'])->middleware('throttle:6,1');
@@ -32,6 +37,7 @@ Route::middleware(['auth:sanctum', SetCurrentCompany::class])->prefix('v1')->gro
     Route::post('/companies', [CompanyController::class, 'store']);
     Route::patch('/companies/{company}', [CompanyController::class, 'update']);
     Route::post('/current-company', [CompanyController::class, 'switch']);
+    Route::post('/organization', [OrganizationController::class, 'update']);
 
     Route::get('/categories', [CategoryController::class, 'index']);
     Route::post('/categories', [CategoryController::class, 'store']);

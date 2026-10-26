@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { api } from '../api'
 import { useAuth } from '../auth'
+import { OrganizationHeading } from '../organization'
 import { chartAccountModule, type ChartAccountModuleKey } from '../chartAccountModules'
 import { BusinessSelect } from '../components/BusinessSelect'
 import { formatDecimal } from '../money'
@@ -100,6 +101,7 @@ export function ItemActivityPage({ moduleKey }: { moduleKey: ChartAccountModuleK
     <div className="page">
       <header className="page-header">
         <div>
+          <OrganizationHeading />
           <p className="eyebrow">
             {user?.company.currency}
             {meta ? ` · ${periodLabel(grain, year, month)}` : ''}

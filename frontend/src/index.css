@@ -51,7 +51,7 @@ input, select, textarea {
   padding: 0.55rem 0.7rem;
 }
 
-input:not([type="checkbox"]):not([type="radio"]):not(.entry-amount-input),
+input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not(.entry-amount-input),
 select {
   /* Text line box plus the shared vertical padding and border. */
   height: calc(1.45em + 1.1rem + 2px);
@@ -99,6 +99,42 @@ a { color: var(--green-dark); }
   border: 1px solid #3d4b59;
   border-radius: 10px;
   font-family: Palatino, Georgia, serif;
+  flex: none;
+}
+.brand-logo {
+  width: 2.4rem;
+  height: 2.4rem;
+  object-fit: contain;
+  border-radius: 10px;
+  background: #fff;
+  flex: none;
+}
+.login-brand { margin-bottom: 1rem; color: var(--ink); }
+.login-brand .brand-mark { border-color: var(--line); }
+.login-brand small { color: var(--muted); }
+.report-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.35rem;
+  color: var(--ink);
+  font-weight: 600;
+}
+.report-brand img {
+  width: 2rem;
+  height: 2rem;
+  object-fit: contain;
+  border-radius: 8px;
+  background: white;
+  border: 1px solid var(--line);
+}
+.logo-preview {
+  width: 4.5rem;
+  height: 4.5rem;
+  object-fit: contain;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: white;
 }
 
 .sidebar nav {

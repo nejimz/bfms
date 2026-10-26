@@ -3,9 +3,10 @@ import { NavLink, Outlet, useLocation, Link } from 'react-router-dom'
 import { api, ensureCsrf, errorMessage, isUnauthorized } from '../api'
 import { useAuth } from '../auth'
 import { chartAccountModuleList } from '../chartAccountModules'
+import { OrganizationMark } from '../organization'
 import { canViewDashboard } from '../types'
 
-type MenuIcon = 'dashboard' | 'chart' | 'summary' | 'businesses' | 'categories' | 'accounts' | 'entry' | 'journals' | 'balance' | 'users'
+type MenuIcon = 'dashboard' | 'chart' | 'summary' | 'company' | 'businesses' | 'categories' | 'accounts' | 'entry' | 'journals' | 'balance' | 'users'
 
 type MenuItem = {
   to: string
@@ -14,6 +15,7 @@ type MenuItem = {
 }
 
 const settingsLinks: MenuItem[] = [
+  { to: '/company', label: 'Company', icon: 'company' },
   { to: '/businesses', label: 'Businesses', icon: 'businesses' },
   { to: '/users', label: 'Users', icon: 'users' },
   { to: '/categories', label: 'Categories', icon: 'categories' },
@@ -124,6 +126,13 @@ function NavIcon({ name }: { name: MenuIcon | 'settings' }) {
           <path d="M4 7h.01" />
           <path d="M4 12h.01" />
           <path d="M4 17h.01" />
+        </>
+      )}
+      {name === 'company' && (
+        <>
+          <rect x="4" y="5" width="16" height="14" rx="2" />
+          <circle cx="9" cy="10" r="1.5" />
+          <path d="M4 16l4.5-4 3 2.5L15 11l5 5" />
         </>
       )}
       {name === 'businesses' && (
@@ -244,13 +253,7 @@ export function Layout() {
   return (
     <div className="shell">
       <aside className="sidebar">
-        <div className="brand">
-          <span className="brand-mark">BF</span>
-          <div>
-            <strong>BFMS</strong>
-            <small>General ledger</small>
-          </div>
-        </div>
+        <OrganizationMark subtitle="General ledger" />
         <nav>
           {user && canViewDashboard(user.role) && (
             <>

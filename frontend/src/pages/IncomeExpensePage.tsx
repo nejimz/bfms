@@ -1,6 +1,7 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { useRef, useState, type AnimationEvent, type MouseEvent } from 'react'
 import { api } from '../api'
+import { OrganizationHeading } from '../organization'
 import { formatMinor, toMinor } from '../money'
 import type { IncomeExpenseChart, IncomeExpenseChartReport, IncomeExpensePoint } from '../types'
 
@@ -142,6 +143,7 @@ export function IncomeExpensePage() {
     <div className="page">
       <header className="page-header">
         <div>
+          <OrganizationHeading />
           <p className="eyebrow">{range}</p>
           <h1>Income & Expenses</h1>
           <p className="hint">

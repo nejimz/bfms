@@ -2,6 +2,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { BrowserRouter, Navigate, Outlet, Route, Routes } from 'react-router-dom'
 import { AuthProvider, useAuth } from './auth'
 import { Layout } from './components/Layout'
+import { OrganizationEffects } from './organization'
 import { AccountsPage } from './pages/AccountsPage'
 import { AccountColumnReportFormPage } from './pages/AccountColumnReportFormPage'
 import { AccountColumnReportsPage } from './pages/AccountColumnReportsPage'
@@ -10,6 +11,7 @@ import { chartAccountModuleList } from './chartAccountModules'
 import { ChartAccountEntriesPage } from './pages/ChartAccountEntriesPage'
 import { ChartAccountEntryFormPage } from './pages/ChartAccountEntryFormPage'
 import { BusinessFormPage } from './pages/BusinessFormPage'
+import { CompanyPage } from './pages/CompanyPage'
 import { BusinessesPage } from './pages/BusinessesPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { IncomeExpensePage } from './pages/IncomeExpensePage'
@@ -79,6 +81,7 @@ export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
+        <OrganizationEffects />
         <BrowserRouter>
           <Routes>
             <Route path="/login" element={<LoginPage />} />
@@ -91,6 +94,7 @@ export default function App() {
                 <Route path="/yearly-summary" element={<YearlySummaryPage />} />
               </Route>
               <Route element={<RequireAdmin />}>
+                <Route path="/company" element={<CompanyPage />} />
                 <Route path="/businesses" element={<BusinessesPage />} />
                 <Route path="/businesses/new" element={<BusinessFormPage />} />
                 <Route path="/businesses/:id/edit" element={<BusinessFormPage />} />
