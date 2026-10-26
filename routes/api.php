@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\V1\ItemActivityReportController;
 use App\Http\Controllers\Api\V1\JournalController;
 use App\Http\Controllers\Api\V1\TrialBalanceController;
 use App\Http\Controllers\Api\V1\UserController;
+use App\Http\Controllers\Api\V1\YearlySummaryController;
 use App\Http\Middleware\SetCurrentCompany;
 use Illuminate\Support\Facades\Route;
 
@@ -62,6 +63,7 @@ Route::middleware(['auth:sanctum', SetCurrentCompany::class])->prefix('v1')->gro
 
     Route::get('/reports/business-summary', [BusinessSummaryController::class, 'show']);
     Route::get('/reports/income-expense', [IncomeExpenseChartController::class, 'show']);
+    Route::get('/reports/yearly-summary', [YearlySummaryController::class, 'show']);
     Route::get('/reports/item-activity', [ItemActivityReportController::class, 'show']);
     Route::get('/reports/trial-balance', [TrialBalanceController::class, 'show']);
     Route::get('/reports/chart-account-columns', [ChartAccountColumnReportController::class, 'show']);

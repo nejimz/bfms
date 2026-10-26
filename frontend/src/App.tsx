@@ -13,6 +13,7 @@ import { BusinessFormPage } from './pages/BusinessFormPage'
 import { BusinessesPage } from './pages/BusinessesPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { IncomeExpensePage } from './pages/IncomeExpensePage'
+import { YearlySummaryPage } from './pages/YearlySummaryPage'
 import { ItemActivityPage } from './pages/ItemActivityPage'
 import { CategoriesPage } from './pages/CategoriesPage'
 import { CategoryFormPage } from './pages/CategoryFormPage'
@@ -87,6 +88,7 @@ export default function App() {
               <Route element={<RequireDashboard />}>
                 <Route path="/dashboard" element={<DashboardPage />} />
                 <Route path="/income-expense" element={<IncomeExpensePage />} />
+                <Route path="/yearly-summary" element={<YearlySummaryPage />} />
               </Route>
               <Route element={<RequireAdmin />}>
                 <Route path="/businesses" element={<BusinessesPage />} />

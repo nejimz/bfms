@@ -189,6 +189,29 @@ export type ItemActivityReport = {
   }
 }
 
+export type YearlySummaryBusiness = {
+  id: string
+  name: string
+  currency: string
+  sales: string
+  operation_expense: string
+  purchase_expense: string
+}
+
+export type YearlySummaryCategory = {
+  id: string | null
+  name: string
+  businesses: YearlySummaryBusiness[]
+}
+
+export type YearlySummaryReport = {
+  data: YearlySummaryCategory[]
+  meta: {
+    year: number
+    years: number[]
+  }
+}
+
 export type BusinessSummaryReport = {
   data: BusinessSummary[]
   meta: {

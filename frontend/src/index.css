@@ -737,6 +737,80 @@ button.account-link:hover { text-decoration: underline; }
 }
 .dashboard-totals h2 { font-size: 1.25rem; }
 .dashboard-totals p { margin: 0; font-variant-numeric: tabular-nums; }
+.year-categories { display: grid; gap: 0.75rem; }
+.year-category,
+.year-business {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--panel);
+}
+.year-business { border-radius: 12px; background: #fff; }
+.year-category > summary,
+.year-business > summary {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.95rem 1.05rem;
+  cursor: pointer;
+  list-style: none;
+}
+.year-category > summary::-webkit-details-marker,
+.year-business > summary::-webkit-details-marker { display: none; }
+.year-category > summary:focus-visible,
+.year-business > summary:focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: -2px;
+}
+.year-category-name {
+  font-family: Palatino, "Iowan Old Style", Georgia, serif;
+  font-size: 1.35rem;
+  color: var(--ink);
+}
+.year-business-name { font-weight: 600; }
+.year-summary-aside {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-left: auto;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+.year-summary-aside::after {
+  content: "";
+  width: 0.45rem;
+  height: 0.45rem;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(-45deg);
+  flex: none;
+}
+.year-category[open] > summary .year-summary-aside::after,
+.year-business[open] > summary .year-summary-aside::after { transform: rotate(45deg); }
+.year-businesses { display: grid; gap: 0.55rem; padding: 0 0.75rem 0.75rem; }
+.year-empty { margin: 0; padding: 0 1.05rem 0.95rem; }
+.year-figures {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0.15rem 1rem 1rem;
+}
+.year-figure { display: grid; gap: 0.15rem; margin: 0; }
+.year-figure dt {
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.year-figure dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-weight: 650;
+  font-size: 1.05rem;
+}
+.year-figure.sales dt { color: #0d6b4f; }
+.year-figure.operation_expense dt { color: #c47b2b; }
+.year-figure.purchase_expense dt { color: #8d4a32; }
 .account-checklist {
   display: grid;
   gap: 0.35rem;
