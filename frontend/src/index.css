@@ -796,6 +796,21 @@ button.account-link:hover { text-decoration: underline; }
 .year-months th,
 .year-months td { padding: 0.55rem 0.85rem; }
 .year-months tfoot td { background: #faf6ef; }
+.year-months button.month-link {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  border-radius: 0;
+  color: var(--green-dark);
+  font-weight: 600;
+  text-align: left;
+}
+.year-months button.month-link:hover,
+.year-months button.month-link[aria-expanded='true'] { text-decoration: underline; }
+.year-month-open td { background: #faf6ef; }
+.year-days-row > td { padding-top: 0; background: #fff; }
+.year-days-status { margin: 0.35rem 0 0.85rem; }
+.year-days table { min-width: 32rem; }
 .account-checklist {
   display: grid;
   gap: 0.35rem;

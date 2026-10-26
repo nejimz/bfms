@@ -220,6 +220,27 @@ export type YearlySummaryReport = {
   }
 }
 
+export type YearlySummaryDay = {
+  day: number
+  sales: string
+  operation_expense: string
+  purchase_expense: string
+}
+
+export type YearlySummaryDays = {
+  data: {
+    id: string
+    name: string
+    currency: string
+    year: number
+    month: number
+    sales: string
+    operation_expense: string
+    purchase_expense: string
+    days: YearlySummaryDay[]
+  }
+}
+
 export type BusinessSummaryReport = {
   data: BusinessSummary[]
   meta: {

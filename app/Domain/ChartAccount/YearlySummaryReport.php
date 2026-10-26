@@ -83,6 +83,59 @@ class YearlySummaryReport
     }
 
     /**
+     * Posted sales, operation expenses, and purchase expenses for every day of one month.
+     *
+     * @return array{
+     *     data: array{
+     *         id: string,
+     *         name: string,
+     *         currency: string,
+     *         year: int,
+     *         month: int,
+     *         sales: string,
+     *         operation_expense: string,
+     *         purchase_expense: string,
+     *         days: list<array{day: int, sales: string, operation_expense: string, purchase_expense: string}>
+     *     }
+     * }
+     */
+    public function days(Company $company, int $year, int $month): array
+    {
+        $posted = $this->postedDays($company, $year, $month);
+        $totals = $this->emptySeries();
+        $days = [];
+        $count = Carbon::create($year, $month, 1)->daysInMonth;
+
+        for ($day = 1; $day <= $count; $day++) {
+            $series = $posted[$day] ?? $this->emptySeries();
+            $days[] = [
+                'day' => $day,
+                'sales' => $series['sales']->toDecimal(),
+                'operation_expense' => $series['operation_expense']->toDecimal(),
+                'purchase_expense' => $series['purchase_expense']->toDecimal(),
+            ];
+
+            foreach ($series as $name => $amount) {
+                $totals[$name] = $totals[$name]->plus($amount);
+            }
+        }
+
+        return [
+            'data' => [
+                'id' => (string) $company->id,
+                'name' => $company->name,
+                'currency' => $company->currency,
+                'year' => $year,
+                'month' => $month,
+                'sales' => $totals['sales']->toDecimal(),
+                'operation_expense' => $totals['operation_expense']->toDecimal(),
+                'purchase_expense' => $totals['purchase_expense']->toDecimal(),
+                'days' => $days,
+            ],
+        ];
+    }
+
+    /**
      * @param  list<int>  $companyIds
      * @return array<int, array<string, array{sales: Money, operation_expense: Money, purchase_expense: Money}>>
      */
@@ -124,6 +177,50 @@ class YearlySummaryReport
             $month = (string) $row->month_key;
             $posted[$companyId][$month] ??= $this->emptySeries();
             $posted[$companyId][$month][$series] = $posted[$companyId][$month][$series]->plus(
+                Money::ofMinor((int) $row->amount_cents),
+            );
+        }
+
+        return $posted;
+    }
+
+    /**
+     * @return array<int, array{sales: Money, operation_expense: Money, purchase_expense: Money}>
+     */
+    private function postedDays(Company $company, int $year, int $month): array
+    {
+        $start = Carbon::create($year, $month, 1);
+        $posted = [];
+        $rows = ChartAccountEntry::query()
+            ->withoutGlobalScope('company')
+            ->join('accounts', 'accounts.id', '=', 'chart_account_entries.account_id')
+            ->where('chart_account_entries.company_id', $company->id)
+            ->where('chart_account_entries.status', ChartAccountEntryStatus::Posted->value)
+            ->where('chart_account_entries.date', '>=', $start->toDateString())
+            ->where('chart_account_entries.date', '<', $start->copy()->addMonth()->toDateString())
+            ->whereIn('accounts.code', [
+                IncomeExpenseChartReport::SALES,
+                IncomeExpenseChartReport::OPERATION_EXPENSE,
+                IncomeExpenseChartReport::PURCHASE_EXPENSE,
+            ])
+            ->toBase()
+            ->select('accounts.code')
+            ->selectRaw('substr(chart_account_entries.date, 9, 2) as day_key')
+            ->selectRaw('sum(chart_account_entries.amount_cents) as amount_cents')
+            ->groupBy('accounts.code')
+            ->groupByRaw('substr(chart_account_entries.date, 9, 2)')
+            ->get();
+
+        foreach ($rows as $row) {
+            $series = $this->seriesKey((string) $row->code);
+
+            if ($series === null) {
+                continue;
+            }
+
+            $day = (int) $row->day_key;
+            $posted[$day] ??= $this->emptySeries();
+            $posted[$day][$series] = $posted[$day][$series]->plus(
                 Money::ofMinor((int) $row->amount_cents),
             );
         }
