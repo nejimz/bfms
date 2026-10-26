@@ -648,7 +648,8 @@ button.chart-legend-item:focus-visible {
   .category-row-skeleton { animation: none; }
   .year-category > summary,
   .year-business > summary,
-  .year-summary-aside::after { transition: none; }
+  .year-summary-aside::after,
+  .year-months button.month-link::after { transition: none; }
 }
 .period-actions { display: flex; gap: 0.5rem; }
 .item-report table { min-width: max-content; }
@@ -864,6 +865,9 @@ button.account-link:hover { text-decoration: underline; }
 .year-months tfoot td.num.is-zero { font-weight: 500; }
 .year-months tbody tr:not(.year-days-row):hover td { background: #faf6ef; }
 .year-months button.month-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
   border: 0;
   background: transparent;
   padding: 0;
@@ -872,10 +876,21 @@ button.account-link:hover { text-decoration: underline; }
   font-weight: 600;
   text-align: left;
 }
-.year-months button.month-link:hover { text-decoration: underline; }
+.year-months button.month-link::after {
+  content: "";
+  width: 0.4rem;
+  height: 0.4rem;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(45deg);
+  flex: none;
+  transition: transform 0.15s ease;
+}
 .year-months button.month-link[aria-expanded='true'] {
-  text-decoration: none;
   color: var(--ink);
+}
+.year-months button.month-link[aria-expanded='true']::after {
+  transform: rotate(-135deg);
 }
 .year-month-open td { background: #faf6ef; }
 .year-days-row > td { padding-top: 0; background: #fff; }
