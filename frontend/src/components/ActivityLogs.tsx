@@ -1,8 +1,19 @@
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
+import { useState } from 'react'
 import { api } from '../api'
 import { readResource, type ActivityLog } from '../types'
 
 export type ActivityModuleName = 'company' | 'business' | 'classification' | 'category' | 'location' | 'user'
+
+type ActivityLogPage = {
+  rows: ActivityLog[]
+  meta: {
+    current_page: number
+    last_page: number
+    per_page: number
+    total: number
+  }
+}
 
 const actionLabel: Record<ActivityLog['action'], string> = {
   added: 'Added',
@@ -26,19 +37,33 @@ function formatWhen(value: string): string {
   }).format(date)
 }
 
-export function ActivityLogs({ module }: { module: ActivityModuleName }) {
-  const logs = useQuery({
-    queryKey: ['activity-logs', module],
-    queryFn: async () => {
-      const response = await api.get('/api/v1/activity-logs', { params: { module } })
+function pageNumbers(current: number, last: number): number[] {
+  const start = Math.max(1, Math.min(current - 2, last - 4))
+  const end = Math.min(last, start + 4)
 
-      return (response.data.data as Array<{ id: string; attributes: Omit<ActivityLog, 'id'> }>).map((resource) =>
-        readResource(resource),
-      )
+  return Array.from({ length: end - start + 1 }, (_, index) => start + index)
+}
+
+export function ActivityLogs({ module }: { module: ActivityModuleName }) {
+  const [page, setPage] = useState(1)
+  const logs = useQuery({
+    queryKey: ['activity-logs', module, page],
+    placeholderData: keepPreviousData,
+    queryFn: async (): Promise<ActivityLogPage> => {
+      const response = await api.get('/api/v1/activity-logs', { params: { module, page } })
+
+      return {
+        rows: (response.data.data as Array<{ id: string; attributes: Omit<ActivityLog, 'id'> }>).map((resource) =>
+          readResource(resource),
+        ),
+        meta: response.data.meta,
+      }
     },
   })
 
-  const rows = logs.data ?? []
+  const rows = logs.data?.rows ?? []
+  const lastPage = logs.data?.meta.last_page ?? 1
+  const currentPage = logs.data?.meta.current_page ?? page
 
   return (
     <section className="activity-logs" aria-labelledby={`${module}-logs`}>
@@ -83,6 +108,26 @@ export function ActivityLogs({ module }: { module: ActivityModuleName }) {
             </tbody>
           </table>
         </div>
+      )}
+      {lastPage > 1 && (
+        <nav className="entry-pager" aria-label="Log pages">
+          <button type="button" onClick={() => setPage(currentPage - 1)} disabled={currentPage <= 1}>
+            Previous
+          </button>
+          {pageNumbers(currentPage, lastPage).map((number) => (
+            <button
+              key={number}
+              type="button"
+              aria-current={number === currentPage ? 'page' : undefined}
+              onClick={() => setPage(number)}
+            >
+              {number}
+            </button>
+          ))}
+          <button type="button" onClick={() => setPage(currentPage + 1)} disabled={currentPage >= lastPage}>
+            Next
+          </button>
+        </nav>
       )}
     </section>
   )

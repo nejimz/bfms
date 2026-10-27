@@ -56,7 +56,7 @@ it('lists the newest logs for one module and keeps the name of who did it', func
         ->and($locations->json('data.0.attributes.record_name'))->toBe('Cebu');
 });
 
-it('returns the latest 50 logs for a module', function () {
+it('returns the newest page of logs and the older page', function () {
     $admin = activityAdmin();
 
     ActivityLog::factory()
@@ -72,14 +72,33 @@ it('returns the latest 50 logs for a module', function () {
             'action' => ActivityAction::Added,
         ]);
 
-    $listed = $this->actingAs($admin)->getJson('/api/v1/activity-logs?module=category')
+    $listed = $this->actingAs($admin)->getJson('/api/v1/activity-logs?module=category&page=1')
         ->assertOk()
         ->assertJsonCount(50, 'data')
-        ->assertJsonPath('data.0.attributes.record_name', 'Record 50');
+        ->assertJsonPath('data.0.attributes.record_name', 'Record 50')
+        ->assertJsonPath('meta.current_page', 1)
+        ->assertJsonPath('meta.last_page', 2)
+        ->assertJsonPath('meta.per_page', 50)
+        ->assertJsonPath('meta.total', 51);
 
     $names = collect($listed->json('data'))->pluck('attributes.record_name');
 
     expect($names)->not->toContain('Record 0');
+
+    $this->actingAs($admin)->getJson('/api/v1/activity-logs?module=category&page=2')
+        ->assertOk()
+        ->assertJsonCount(1, 'data')
+        ->assertJsonPath('data.0.attributes.record_name', 'Record 0')
+        ->assertJsonPath('meta.current_page', 2)
+        ->assertJsonPath('meta.total', 51);
+});
+
+it('returns 422 when the log page is not a page number', function () {
+    $admin = activityAdmin();
+
+    $this->actingAs($admin)->getJson('/api/v1/activity-logs?module=category&page=0')
+        ->assertUnprocessable()
+        ->assertJsonPath('errors.page.0', 'Choose a page.');
 });
 
 it('returns 401 when no one is signed in', function () {

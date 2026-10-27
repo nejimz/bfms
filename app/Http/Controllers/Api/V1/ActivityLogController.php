@@ -17,15 +17,18 @@ use Illuminate\Validation\Rule;
 
 class ActivityLogController extends Controller
 {
-    private const LIMIT = 50;
+    private const PER_PAGE = 50;
 
     public function index(Request $request): JsonResponse
     {
         $data = $request->validate([
             'module' => ['required', Rule::enum(ActivityModule::class)],
+            'page' => ['sometimes', 'integer', 'min:1'],
         ], [
             'module.required' => 'Choose a module.',
             'module.enum' => 'Choose a module.',
+            'page.integer' => 'Choose a page.',
+            'page.min' => 'Choose a page.',
         ]);
 
         $module = ActivityModule::from($data['module']);
@@ -35,8 +38,7 @@ class ActivityLogController extends Controller
             ->where('module', $module)
             ->latest()
             ->orderByDesc('id')
-            ->limit(self::LIMIT)
-            ->get();
+            ->paginate(self::PER_PAGE);
 
         return response()->json([
             'data' => $logs->map(fn (ActivityLog $log): array => [
@@ -50,6 +52,12 @@ class ActivityLogController extends Controller
                     'created_at' => $log->created_at?->toISOString(),
                 ],
             ])->values(),
+            'meta' => [
+                'current_page' => $logs->currentPage(),
+                'last_page' => $logs->lastPage(),
+                'per_page' => $logs->perPage(),
+                'total' => $logs->total(),
+            ],
         ]);
     }
 
