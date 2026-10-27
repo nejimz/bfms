@@ -54,7 +54,9 @@ class CurrentUserController extends Controller
         $password = $request->validated('password');
         $user = $request->user();
         $user->update(['password' => $password]);
-        $activity->record($user, ActivityModule::User, ActivityAction::Changed, $user->name);
+        $activity->record($user, ActivityModule::User, ActivityAction::Changed, $user->name, [
+            ['field' => 'Password', 'from' => 'Hidden', 'to' => 'Updated'],
+        ]);
 
         if ($request->hasSession()) {
             if (Auth::guard('web')->check()) {

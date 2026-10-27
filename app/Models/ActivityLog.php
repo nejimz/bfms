@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['user_id', 'actor_name', 'module', 'action', 'record_name'])]
+#[Fillable(['user_id', 'actor_name', 'module', 'action', 'record_name', 'changes'])]
 class ActivityLog extends Model
 {
     public const UPDATED_AT = null;
@@ -26,6 +26,7 @@ class ActivityLog extends Model
         return [
             'module' => ActivityModule::class,
             'action' => ActivityAction::class,
+            'changes' => 'array',
         ];
     }
 

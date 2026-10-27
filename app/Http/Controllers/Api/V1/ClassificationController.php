@@ -48,12 +48,29 @@ class ClassificationController extends Controller
 
     public function update(UpdateClassificationRequest $request, Classification $classification, ActivityLogger $activity): JsonResponse
     {
+        $classification->load('category');
+        $before = [
+            'Name' => $activity->label($classification->name),
+            'Category' => $activity->label($classification->category?->name),
+        ];
+        $logo = $classification->logo_path;
+
         $classification->update($request->safe()->except(['logo', 'remove_logo']));
         $this->applyLogo($classification, $request);
         $classification->save();
+        $classification->unsetRelation('category');
+        $classification->load('category');
 
-        if ($classification->wasChanged()) {
-            $activity->record($request->user(), ActivityModule::Classification, ActivityAction::Changed, $classification->name);
+        $changes = [
+            ...$activity->changes($before, [
+                'Name' => $activity->label($classification->name),
+                'Category' => $activity->label($classification->category?->name),
+            ]),
+            ...$activity->picture('Logo', is_string($logo) ? $logo : null, is_string($classification->logo_path) ? $classification->logo_path : null),
+        ];
+
+        if ($changes !== []) {
+            $activity->record($request->user(), ActivityModule::Classification, ActivityAction::Changed, $classification->name, $changes);
         }
 
         $classification->load('category')->loadCount('companies');

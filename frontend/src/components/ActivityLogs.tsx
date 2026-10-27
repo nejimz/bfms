@@ -55,6 +55,7 @@ export function ActivityLogs({ module }: { module: ActivityModuleName }) {
                 <th>Who</th>
                 <th>Record</th>
                 <th>Action</th>
+                <th>Changes</th>
               </tr>
             </thead>
             <tbody>
@@ -64,6 +65,19 @@ export function ActivityLogs({ module }: { module: ActivityModuleName }) {
                   <td>{log.actor_name}</td>
                   <td>{log.record_name}</td>
                   <td>{actionLabel[log.action]}</td>
+                  <td>
+                    {log.changes.length === 0 ? (
+                      '—'
+                    ) : (
+                      <ul className="activity-changes">
+                        {log.changes.map((change) => (
+                          <li key={`${change.field}-${change.from}-${change.to}`}>
+                            {change.field}: {change.from} → {change.to}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>

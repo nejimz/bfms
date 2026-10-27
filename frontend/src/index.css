@@ -605,6 +605,8 @@ td .status { margin-left: 0.55rem; vertical-align: middle; }
 
 .activity-logs { display: grid; gap: 0.75rem; }
 .activity-logs h2 { font-size: 1.35rem; }
+.activity-changes { margin: 0; padding: 0; list-style: none; }
+.activity-changes li + li { margin-top: 0.2rem; }
 
 .table-wrap {
   background: var(--panel);

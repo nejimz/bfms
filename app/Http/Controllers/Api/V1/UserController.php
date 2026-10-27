@@ -63,7 +63,8 @@ class UserController extends Controller
     public function update(UpdateUserRequest $request, User $user, ActivityLogger $activity): JsonResponse
     {
         $data = $request->validated();
-        $companyIds = $this->assignedCompanyIds($user);
+        $before = $this->userFields($activity, $user);
+        $password = filled($data['password'] ?? null);
 
         DB::transaction(function () use ($data, $user): void {
             $attributes = [
@@ -84,8 +85,18 @@ class UserController extends Controller
             $this->syncCompanies($user, $data['company_ids'] ?? []);
         });
 
-        if ($user->wasChanged() || $companyIds !== $this->assignedCompanyIds($user)) {
-            $activity->record($request->user(), ActivityModule::User, ActivityAction::Changed, $user->name);
+        $changes = $activity->changes($before, $this->userFields($activity, $user));
+
+        if ($password) {
+            $changes[] = [
+                'field' => 'Password',
+                'from' => 'Hidden',
+                'to' => 'Updated',
+            ];
+        }
+
+        if ($changes !== []) {
+            $activity->record($request->user(), ActivityModule::User, ActivityAction::Changed, $user->name, $changes);
         }
 
         return response()->json(['data' => $this->userResource($user->refresh())]);
@@ -107,22 +118,59 @@ class UserController extends Controller
             ]);
         }
 
+        $active = $user->is_active;
         $user->update(['is_active' => false]);
-        $activity->record($request->user(), ActivityModule::User, ActivityAction::Changed, $user->name);
+
+        if ($active) {
+            $activity->record($request->user(), ActivityModule::User, ActivityAction::Changed, $user->name, [
+                ['field' => 'Status', 'from' => 'Active', 'to' => 'Inactive'],
+            ]);
+        }
 
         return response()->json(['data' => $this->userResource($user)]);
     }
 
     /**
-     * @return list<int>
+     * @return array<string, string>
      */
-    private function assignedCompanyIds(User $user): array
+    private function userFields(ActivityLogger $activity, User $user): array
     {
-        return $user->companies()
-            ->orderBy('companies.id')
-            ->pluck('companies.id')
-            ->map(fn (int|string $id): int => (int) $id)
-            ->all();
+        return [
+            'Name' => $activity->label($user->name),
+            'Email' => $activity->label($user->email),
+            'Role' => $this->roleLabel($user->role),
+            'Status' => $user->is_active ? 'Active' : 'Inactive',
+            'Businesses' => $this->businessLabel($user),
+        ];
+    }
+
+    private function roleLabel(mixed $role): string
+    {
+        if (! $role instanceof UserRole) {
+            $role = UserRole::tryFrom(is_string($role) ? $role : '');
+        }
+
+        return match ($role) {
+            UserRole::Admin => 'Admin',
+            UserRole::Manager => 'Manager',
+            UserRole::Staff => 'Staff',
+            default => 'None',
+        };
+    }
+
+    private function businessLabel(User $user): string
+    {
+        if ($user->role !== UserRole::Staff) {
+            return 'All';
+        }
+
+        $names = $user->companies()->orderBy('companies.name')->pluck('companies.name');
+
+        if ($names->isEmpty()) {
+            return 'None';
+        }
+
+        return $names->join(', ');
     }
 
     /**

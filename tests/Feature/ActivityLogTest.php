@@ -44,6 +44,7 @@ it('lists the newest logs for one module and keeps the name of who did it', func
         ->and($listed->json('data.0.attributes.record_name'))->toBe('Market')
         ->and($listed->json('data.0.attributes.actor_name'))->toBe('Ada Admin')
         ->and($listed->json('data.0.attributes.action'))->toBe(ActivityAction::Added->value)
+        ->and($listed->json('data.0.attributes.changes'))->toBe([])
         ->and($listed->json('data.0.attributes.created_at'))->toBe('2026-10-27T02:00:00.000000Z')
         ->and($listed->json('data.1.attributes.record_name'))->toBe('Vegetables')
         ->and($listed->json('data.1.attributes.created_at'))->toBe('2026-10-27T01:00:00.000000Z');
@@ -138,7 +139,15 @@ it('records who added, changed, and deleted a category', function () {
         'action' => ActivityAction::Changed->value,
         'record_name' => 'Market',
     ]);
-    expect(ActivityLog::query()->where('action', ActivityAction::Changed)->count())->toBe(1);
+    expect(ActivityLog::query()->where('action', ActivityAction::Changed)->first()?->changes)->toBe([
+        ['field' => 'Name', 'from' => 'Vegetables', 'to' => 'Market'],
+    ]);
+
+    $this->actingAs($admin)->getJson('/api/v1/activity-logs?module=category')
+        ->assertOk()
+        ->assertJsonPath('data.0.attributes.changes.0.field', 'Name')
+        ->assertJsonPath('data.0.attributes.changes.0.from', 'Vegetables')
+        ->assertJsonPath('data.0.attributes.changes.0.to', 'Market');
 
     $this->actingAs($admin)->deleteJson("/api/v1/categories/{$id}")->assertNoContent();
 
@@ -191,7 +200,10 @@ it('records a company profile change and ignores an unchanged save', function ()
         'action' => ActivityAction::Changed->value,
         'record_name' => 'Northwind',
     ]);
-    expect(ActivityLog::query()->count())->toBe(1);
+    expect(ActivityLog::query()->first()?->changes)->toBe([
+        ['field' => 'Name', 'from' => 'BFMS', 'to' => 'Northwind'],
+    ])
+        ->and(ActivityLog::query()->count())->toBe(1);
 });
 
 it('records an added and changed business and ignores switching businesses', function () {
@@ -213,7 +225,7 @@ it('records an added and changed business and ignores switching businesses', fun
 
     $this->actingAs($admin)->patchJson("/api/v1/companies/{$id}", [
         'name' => 'Harbor Goods',
-        'description' => 'Wholesale',
+        'description' => 'Retail',
         'currency' => 'USD',
     ])->assertOk();
 
@@ -231,7 +243,11 @@ it('records an added and changed business and ignores switching businesses', fun
         'action' => ActivityAction::Changed->value,
         'record_name' => 'Harbor Goods',
     ]);
-    expect(ActivityLog::query()->count())->toBe(2);
+    expect(ActivityLog::query()->where('action', ActivityAction::Changed)->first()?->changes)->toBe([
+        ['field' => 'Name', 'from' => 'Northwind', 'to' => 'Harbor Goods'],
+        ['field' => 'Description', 'from' => 'Wholesale', 'to' => 'Retail'],
+    ])
+        ->and(ActivityLog::query()->count())->toBe(2);
 });
 
 it('records who added, changed, and deleted a classification', function () {
@@ -268,7 +284,9 @@ it('records who added, changed, and deleted a classification', function () {
         'action' => ActivityAction::Deleted->value,
         'record_name' => 'Wholesale',
     ]);
-    expect(ActivityLog::query()->where('action', ActivityAction::Changed)->count())->toBe(1);
+    expect(ActivityLog::query()->where('action', ActivityAction::Changed)->first()?->changes)->toBe([
+        ['field' => 'Name', 'from' => 'Retail', 'to' => 'Wholesale'],
+    ]);
 });
 
 it('does not record a log when a classification delete is refused', function () {
@@ -317,7 +335,9 @@ it('records who added, changed, and deleted a location', function () {
         'action' => ActivityAction::Deleted->value,
         'record_name' => 'Manila',
     ]);
-    expect(ActivityLog::query()->where('action', ActivityAction::Changed)->count())->toBe(1);
+    expect(ActivityLog::query()->where('action', ActivityAction::Changed)->first()?->changes)->toBe([
+        ['field' => 'Name', 'from' => 'Cebu', 'to' => 'Manila'],
+    ]);
 });
 
 it('does not record a log when a location delete is refused', function () {
@@ -379,13 +399,24 @@ it('records a user change when assigned businesses change and skips an unchanged
         'company_ids' => [$beta->id],
     ])->assertOk();
 
-    $this->assertDatabaseHas('activity_logs', [
-        'actor_name' => 'Ada Admin',
-        'module' => ActivityModule::User->value,
-        'action' => ActivityAction::Changed->value,
-        'record_name' => 'Sara Staff',
-    ]);
-    expect(ActivityLog::query()->count())->toBe(1);
+    $this->actingAs($admin)->patchJson("/api/v1/users/{$staff->id}", [
+        'name' => 'Sara Staff',
+        'email' => 'sara@bfms.test',
+        'role' => UserRole::Staff->value,
+        'company_ids' => [$beta->id],
+        'password' => 'another-secret',
+    ])->assertOk();
+
+    $logs = ActivityLog::query()->orderBy('id')->get();
+
+    expect($logs)->toHaveCount(2)
+        ->and($logs[0]->changes)->toBe([
+            ['field' => 'Businesses', 'from' => 'Alpha', 'to' => 'Beta'],
+        ])
+        ->and($logs[1]->changes)->toBe([
+            ['field' => 'Password', 'from' => 'Hidden', 'to' => 'Updated'],
+        ])
+        ->and(json_encode($logs[1]->changes))->not->toContain('another-secret');
 });
 
 it('records a deactivation as a change and keeps the account', function () {
@@ -401,6 +432,9 @@ it('records a deactivation as a change and keeps the account', function () {
         'module' => ActivityModule::User->value,
         'action' => ActivityAction::Changed->value,
         'record_name' => 'Bea Admin',
+    ]);
+    expect(ActivityLog::query()->first()?->changes)->toBe([
+        ['field' => 'Status', 'from' => 'Active', 'to' => 'Inactive'],
     ]);
     $this->assertDatabaseHas('users', [
         'id' => $other->id,
@@ -438,7 +472,13 @@ it('records a password change without storing the password', function () {
         'record_name' => 'Sara Staff',
     ]);
 
-    expect(ActivityLog::query()->pluck('record_name')->all())->not->toContain('new-password');
+    $log = ActivityLog::query()->first();
+
+    expect($log?->changes)->toBe([
+        ['field' => 'Password', 'from' => 'Hidden', 'to' => 'Updated'],
+    ])
+        ->and(json_encode($log?->changes))->not->toContain('new-password')
+        ->and(ActivityLog::query()->pluck('record_name')->all())->not->toContain('new-password');
 });
 
 it('does not record a log when the current password is wrong', function () {

@@ -71,12 +71,24 @@ class CompanyController extends Controller
 
     public function update(UpdateCompanyRequest $request, Company $company, ActivityLogger $activity): JsonResponse
     {
+        $company->load(['classification', 'location']);
+        $before = $this->businessFields($activity, $company);
+        $logo = $company->logo_path;
+
         $company->update($request->safe()->except(['logo', 'remove_logo']));
         $this->applyLogo($company, $request);
         $company->save();
+        $company->unsetRelation('classification');
+        $company->unsetRelation('location');
+        $company->load(['classification', 'location']);
 
-        if ($company->wasChanged()) {
-            $activity->record($request->user(), ActivityModule::Business, ActivityAction::Changed, $company->name);
+        $changes = [
+            ...$activity->changes($before, $this->businessFields($activity, $company)),
+            ...$activity->picture('Logo', is_string($logo) ? $logo : null, is_string($company->logo_path) ? $company->logo_path : null),
+        ];
+
+        if ($changes !== []) {
+            $activity->record($request->user(), ActivityModule::Business, ActivityAction::Changed, $company->name, $changes);
         }
 
         return response()->json($this->companyPayload($company));
@@ -100,6 +112,20 @@ class CompanyController extends Controller
         $this->rememberCompany($request, $company);
 
         return response()->json($this->companyPayload($company));
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private function businessFields(ActivityLogger $activity, Company $company): array
+    {
+        return [
+            'Name' => $activity->label($company->name),
+            'Description' => $activity->label(is_string($company->description) ? $company->description : null),
+            'Currency' => $activity->label(is_string($company->currency) ? $company->currency : null),
+            'Classification' => $activity->label($company->classification?->name),
+            'Location' => $activity->label($company->location?->name),
+        ];
     }
 
     private function rememberCompany(Request $request, Company $company): void

@@ -373,11 +373,18 @@ export type TrialBalance = {
   }
 }
 
+export type ActivityChange = {
+  field: string
+  from: string
+  to: string
+}
+
 export type ActivityLog = {
   id: string
   actor_name: string
   action: 'added' | 'changed' | 'deleted'
   record_name: string
+  changes: ActivityChange[]
   created_at: string
 }
 

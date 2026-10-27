@@ -46,6 +46,7 @@ class ActivityLogController extends Controller
                     'actor_name' => $log->actor_name,
                     'action' => $log->action?->value,
                     'record_name' => $log->record_name,
+                    'changes' => array_values($log->changes ?? []),
                     'created_at' => $log->created_at?->toISOString(),
                 ],
             ])->values(),

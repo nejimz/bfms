@@ -25,6 +25,10 @@ class OrganizationController extends Controller
     public function update(UpdateOrganizationRequest $request, ActivityLogger $activity): JsonResponse
     {
         $organization = Organization::current();
+        $before = ['Name' => $activity->label($organization->name)];
+        $logo = $organization->logo_path;
+        $icon = $organization->icon_path;
+        $banner = $organization->banner_path;
         $organization->name = $request->string('name')->toString();
 
         $this->applyUpload($organization, 'logo_path', 'logo', $request->file('logo'), $request->boolean('remove_logo'), 'The logo could not be saved.');
@@ -32,10 +36,16 @@ class OrganizationController extends Controller
         $this->applyUpload($organization, 'banner_path', 'banner', $request->file('banner'), $request->boolean('remove_banner'), 'The banner could not be saved.');
 
         $organization->save();
+        $changes = [
+            ...$activity->changes($before, ['Name' => $activity->label($organization->name)]),
+            ...$activity->picture('Logo', is_string($logo) ? $logo : null, is_string($organization->logo_path) ? $organization->logo_path : null),
+            ...$activity->picture('Icon', is_string($icon) ? $icon : null, is_string($organization->icon_path) ? $organization->icon_path : null),
+            ...$activity->picture('Banner', is_string($banner) ? $banner : null, is_string($organization->banner_path) ? $organization->banner_path : null),
+        ];
         $actor = $request->user();
 
-        if ($organization->wasChanged() && $actor instanceof User) {
-            $activity->record($actor, ActivityModule::Company, ActivityAction::Changed, $organization->name);
+        if ($changes !== [] && $actor instanceof User) {
+            $activity->record($actor, ActivityModule::Company, ActivityAction::Changed, $organization->name, $changes);
         }
 
         return response()->json([

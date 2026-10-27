@@ -44,10 +44,12 @@ class CategoryController extends Controller
 
     public function update(UpdateCategoryRequest $request, Category $category, ActivityLogger $activity): JsonResponse
     {
+        $before = ['Name' => $activity->label($category->name)];
         $category->update($request->validated());
+        $changes = $activity->changes($before, ['Name' => $activity->label($category->name)]);
 
-        if ($category->wasChanged()) {
-            $activity->record($request->user(), ActivityModule::Category, ActivityAction::Changed, $category->name);
+        if ($changes !== []) {
+            $activity->record($request->user(), ActivityModule::Category, ActivityAction::Changed, $category->name, $changes);
         }
 
         $category->loadCount('classifications');

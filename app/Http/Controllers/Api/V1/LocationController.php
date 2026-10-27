@@ -44,10 +44,12 @@ class LocationController extends Controller
 
     public function update(UpdateLocationRequest $request, Location $location, ActivityLogger $activity): JsonResponse
     {
+        $before = ['Name' => $activity->label($location->name)];
         $location->update($request->validated());
+        $changes = $activity->changes($before, ['Name' => $activity->label($location->name)]);
 
-        if ($location->wasChanged()) {
-            $activity->record($request->user(), ActivityModule::Location, ActivityAction::Changed, $location->name);
+        if ($changes !== []) {
+            $activity->record($request->user(), ActivityModule::Location, ActivityAction::Changed, $location->name, $changes);
         }
 
         $location->loadCount('companies');
