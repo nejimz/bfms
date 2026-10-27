@@ -14,8 +14,8 @@ class Category extends Model
     /** @use HasFactory<CategoryFactory> */
     use HasFactory;
 
-    public function companies(): HasMany
+    public function classifications(): HasMany
     {
-        return $this->hasMany(Company::class);
+        return $this->hasMany(Classification::class);
     }
 }

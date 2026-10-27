@@ -17,7 +17,7 @@ class CategoryController extends Controller
         $this->authorize('viewAny', Category::class);
 
         $categories = Category::query()
-            ->withCount('companies')
+            ->withCount('classifications')
             ->orderBy('name')
             ->orderBy('id')
             ->get();
@@ -30,7 +30,7 @@ class CategoryController extends Controller
     public function store(StoreCategoryRequest $request): JsonResponse
     {
         $category = Category::query()->create($request->validated());
-        $category->loadCount('companies');
+        $category->loadCount('classifications');
 
         return response()->json([
             'data' => $this->resource($category),
@@ -40,7 +40,7 @@ class CategoryController extends Controller
     public function update(UpdateCategoryRequest $request, Category $category): JsonResponse
     {
         $category->update($request->validated());
-        $category->loadCount('companies');
+        $category->loadCount('classifications');
 
         return response()->json([
             'data' => $this->resource($category),
@@ -51,9 +51,9 @@ class CategoryController extends Controller
     {
         $this->authorize('delete', $category);
 
-        if ($category->companies()->exists()) {
+        if ($category->classifications()->exists()) {
             throw ValidationException::withMessages([
-                'category' => 'Remove this category from its businesses before deleting it.',
+                'category' => 'Remove this category from its classifications before deleting it.',
             ]);
         }
 
@@ -72,7 +72,7 @@ class CategoryController extends Controller
             'type' => 'categories',
             'attributes' => [
                 'name' => $category->name,
-                'businesses_count' => (int) $category->companies_count,
+                'classifications_count' => (int) $category->classifications_count,
             ],
         ];
     }

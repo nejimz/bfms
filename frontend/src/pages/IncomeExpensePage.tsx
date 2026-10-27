@@ -79,17 +79,17 @@ function hoverPoint(event: MouseEvent<SVGRectElement>, panel: HTMLElement): Omit
   }
 }
 
-function groupCharts(rows: IncomeExpenseChart[]): Array<{ category: string; charts: IncomeExpenseChart[] }> {
-  const groups: Array<{ category: string; charts: IncomeExpenseChart[] }> = []
+function groupCharts(rows: IncomeExpenseChart[]): Array<{ classification: string; charts: IncomeExpenseChart[] }> {
+  const groups: Array<{ classification: string; charts: IncomeExpenseChart[] }> = []
 
   for (const chart of rows) {
-    const category = chart.category_name ?? 'No category'
+    const classification = chart.classification_name ?? 'No classification'
     const current = groups[groups.length - 1]
 
-    if (current?.category === category) {
+    if (current?.classification === classification) {
       current.charts.push(chart)
     } else {
-      groups.push({ category, charts: [chart] })
+      groups.push({ classification, charts: [chart] })
     }
   }
 
@@ -97,7 +97,7 @@ function groupCharts(rows: IncomeExpenseChart[]): Array<{ category: string; char
 }
 
 export function IncomeExpensePage() {
-  const [group, setGroup] = useState<'business' | 'category'>('business')
+  const [group, setGroup] = useState<'business' | 'classification'>('business')
   const [hidden, setHidden] = useState<SeriesKey[]>([])
   const [growCharts, setGrowCharts] = useState(true)
 
@@ -115,13 +115,13 @@ export function IncomeExpensePage() {
 
   const rows = report.data?.data ?? []
   const months = report.data?.meta.months ?? []
-  const groups = group === 'business' ? groupCharts(rows) : [{ category: '', charts: rows }]
+  const groups = group === 'business' ? groupCharts(rows) : [{ classification: '', charts: rows }]
   const first = months[0]
   const last = months[months.length - 1]
   const range = first && last ? `${monthLabel(first.year, first.month)} – ${monthLabel(last.year, last.month)}` : ''
   const shown = shownSeries(hidden)
 
-  function changeGroup(next: 'business' | 'category') {
+  function changeGroup(next: 'business' | 'classification') {
     if (next !== group && rows.length > 0) {
       setGrowCharts(false)
     }
@@ -158,10 +158,10 @@ export function IncomeExpensePage() {
           Charts
           <select
             value={group}
-            onChange={(event) => changeGroup(event.target.value === 'category' ? 'category' : 'business')}
+            onChange={(event) => changeGroup(event.target.value === 'classification' ? 'classification' : 'business')}
           >
             <option value="business">Each business</option>
-            <option value="category">Each category</option>
+            <option value="classification">Each classification</option>
           </select>
         </label>
         <ul className="chart-legend">
@@ -192,14 +192,14 @@ export function IncomeExpensePage() {
       {groups.some((item) => item.charts.length > 0) && (
         <div className="dashboard-groups">
           {groups.map((item) => (
-            <section key={item.category || 'charts'} className="dashboard-group" aria-label={item.category || 'Charts'}>
-              {group === 'business' && <h2 className="dashboard-category">{item.category}</h2>}
+            <section key={item.classification || 'charts'} className="dashboard-group" aria-label={item.classification || 'Charts'}>
+              {group === 'business' && <h2 className="dashboard-category">{item.classification}</h2>}
               {item.charts.map((chart) => (
                 <ChartCard
                   key={chart.id}
                   chart={chart}
                   labels={months}
-                  grouped={group === 'category'}
+                  grouped={group === 'classification'}
                   shown={shown}
                   grow={growCharts}
                   onGrown={finishGrowth}

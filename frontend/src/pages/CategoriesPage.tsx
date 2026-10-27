@@ -4,12 +4,12 @@ import { api } from '../api'
 import { useAuth } from '../auth'
 import { readResource, type Category } from '../types'
 
-function businessLabel(count: number): string {
+function classificationLabel(count: number): string {
   if (count === 0) {
-    return 'No businesses'
+    return 'No classifications'
   }
 
-  return `${count} ${count === 1 ? 'business' : 'businesses'}`
+  return `${count} ${count === 1 ? 'classification' : 'classifications'}`
 }
 
 function initial(name: string): string {
@@ -23,7 +23,7 @@ function CategoryRow({ category, editable }: { category: Category; editable: boo
         {initial(category.name)}
       </span>
       <h2>{category.name}</h2>
-      <p className="category-count">{businessLabel(category.businesses_count)}</p>
+      <p className="category-count">{classificationLabel(category.classifications_count)}</p>
       {editable && <span className="category-edit">Edit</span>}
     </>
   )
@@ -54,7 +54,7 @@ export function CategoriesPage() {
 
   const rows = categories.data ?? []
   const editable = user?.role === 'admin'
-  const businessTotal = rows.reduce((total, category) => total + category.businesses_count, 0)
+  const classificationTotal = rows.reduce((total, category) => total + category.classifications_count, 0)
 
   return (
     <div className="page category-page">
@@ -62,12 +62,13 @@ export function CategoriesPage() {
         <div>
           <p className="eyebrow">Directory</p>
           <h1>Categories</h1>
-          <p className="hint">Group businesses, such as retail or wholesale.</p>
+          <p className="hint">Name a shared category, such as vegetables or live stocks and fisheries.</p>
           {categories.isSuccess && rows.length > 0 && (
             <p className="category-tally">
               <strong>{rows.length}</strong> {rows.length === 1 ? 'category' : 'categories'}
               <span aria-hidden="true"> · </span>
-              <strong>{businessTotal}</strong> {businessTotal === 1 ? 'business' : 'businesses'}
+              <strong>{classificationTotal}</strong>{' '}
+              {classificationTotal === 1 ? 'classification' : 'classifications'}
             </p>
           )}
         </div>
@@ -96,7 +97,7 @@ export function CategoriesPage() {
       {categories.isSuccess && rows.length === 0 && (
         <div className="category-empty panel">
           <strong>No categories yet</strong>
-          <p>Add a category when you want to group businesses, such as retail or wholesale.</p>
+          <p>Add a category such as vegetables or live stocks and fisheries. A classification picks one.</p>
           {editable && (
             <Link className="primary button-link" to="/categories/new">
               Add category

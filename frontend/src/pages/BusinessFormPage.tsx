@@ -4,7 +4,7 @@ import { Link, Navigate, useNavigate, useParams } from 'react-router-dom'
 import { api, fieldErrors } from '../api'
 import { useAuth } from '../auth'
 import { PictureField, appendPicture, choosePicture, emptyPicture, imageError, replacePicture, type Picture } from '../components/PictureField'
-import type { Business, Category, Location } from '../types'
+import type { Business, Classification, Location } from '../types'
 import { readResource } from '../types'
 
 const limits = { name: 255, description: 1000 }
@@ -54,19 +54,19 @@ export function BusinessFormPage() {
   })
   const business = businesses.data?.find((item) => item.id === id)
   const currencyLocked = (business?.journals_count ?? 0) > 0
-  const categories = useQuery({
-    queryKey: ['categories'],
+  const classifications = useQuery({
+    queryKey: ['classifications'],
     enabled: Boolean(user),
     queryFn: async () => {
-      const response = await api.get('/api/v1/categories')
-      return (response.data.data as Array<{ id: string; attributes: Omit<Category, 'id'> }>).map((resource) =>
+      const response = await api.get('/api/v1/classifications')
+      return (response.data.data as Array<{ id: string; attributes: Omit<Classification, 'id'> }>).map((resource) =>
         readResource(resource),
       )
     },
   })
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
-  const [categoryId, setCategoryId] = useState('')
+  const [classificationId, setClassificationId] = useState('')
   const [locationId, setLocationId] = useState('')
   const [currency, setCurrency] = useState('PHP')
   const [logo, setLogo] = useState<Picture>(emptyPicture)
@@ -91,7 +91,7 @@ export function BusinessFormPage() {
 
     setName(business.name)
     setDescription(business.description ?? '')
-    setCategoryId(business.category_id ?? '')
+    setClassificationId(business.classification_id ?? '')
     setLocationId(business.location_id ?? '')
     setCurrency(business.currency)
     setFilled(true)
@@ -128,7 +128,7 @@ export function BusinessFormPage() {
       body.append('name', name.trim())
       body.append('description', description.trim())
       body.append('currency', currency.trim())
-      body.append('category_id', categoryId)
+      body.append('classification_id', classificationId)
       body.append('location_id', locationId)
       appendPicture(body, 'logo', logo)
       if (editing) {
@@ -191,21 +191,21 @@ export function BusinessFormPage() {
             {errors.description && <span className="form-error">{errors.description}</span>}
           </label>
           <label>
-            Category
+            Classification
             <select
-              value={categoryId}
-              onChange={(event) => setCategoryId(event.target.value)}
-              aria-invalid={Boolean(errors.category_id)}
+              value={classificationId}
+              onChange={(event) => setClassificationId(event.target.value)}
+              aria-invalid={Boolean(errors.classification_id)}
             >
-              <option value="">No category</option>
-              {categories.data?.map((category) => (
-                <option key={category.id} value={category.id}>
-                  {category.name}
+              <option value="">No classification</option>
+              {classifications.data?.map((classification) => (
+                <option key={classification.id} value={classification.id}>
+                  {classification.name}
                 </option>
               ))}
             </select>
-            {categories.isError && <span className="form-error">The categories could not be opened.</span>}
-            {errors.category_id && <span className="form-error">{errors.category_id}</span>}
+            {classifications.isError && <span className="form-error">The classifications could not be opened.</span>}
+            {errors.classification_id && <span className="form-error">{errors.classification_id}</span>}
           </label>
           <label>
             Location

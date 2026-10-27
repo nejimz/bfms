@@ -20,7 +20,7 @@ class IncomeExpenseChartController extends Controller
         abort_unless($user instanceof User && $user->seesEveryCompany(), 403, 'This chart is for admins and managers.');
 
         $validated = $request->validate([
-            'group' => ['nullable', 'string', Rule::in(['business', 'category'])],
+            'group' => ['nullable', 'string', Rule::in(['business', 'classification'])],
         ]);
 
         $group = $validated['group'] ?? 'business';

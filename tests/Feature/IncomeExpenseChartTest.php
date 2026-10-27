@@ -4,8 +4,8 @@ use App\Enums\AccountType;
 use App\Enums\ChartAccountEntryStatus;
 use App\Enums\CompanyRole;
 use App\Models\Account;
-use App\Models\Category;
 use App\Models\ChartAccountEntry;
+use App\Models\Classification;
 use App\Models\Company;
 use App\Models\User;
 
@@ -36,11 +36,11 @@ function chartAccount(Company $company, string $code, string $name, AccountType 
 
 it('charts posted sales and the two expense accounts for the last twelve months', function () {
     $this->travelTo('2026-10-24');
-    $market = Category::factory()->create(['name' => 'Market']);
+    $market = Classification::factory()->create(['name' => 'Market']);
     $alpha = Company::factory()->create([
         'name' => 'Alpha',
         'currency' => 'PHP',
-        'category_id' => $market->id,
+        'classification_id' => $market->id,
     ]);
     $beta = Company::factory()->create([
         'name' => 'Beta',
@@ -86,7 +86,7 @@ it('charts posted sales and the two expense accounts for the last twelve months'
         ->assertJsonCount(3, 'data')
         ->assertJsonPath('data.0.name', 'Alpha')
         ->assertJsonPath('data.0.currency', 'PHP')
-        ->assertJsonPath('data.0.category_name', 'Market')
+        ->assertJsonPath('data.0.classification_name', 'Market')
         ->assertJsonPath('data.0.business_count', 1)
         ->assertJsonCount(12, 'data.0.months')
         ->assertJsonPath('data.0.months.0.key', '2025-11')
@@ -100,7 +100,7 @@ it('charts posted sales and the two expense accounts for the last twelve months'
         ->assertJsonPath('data.0.months.11.purchase_expense', '0.00')
         ->assertJsonPath('data.1.name', 'Beta')
         ->assertJsonPath('data.1.currency', 'USD')
-        ->assertJsonPath('data.1.category_name', null)
+        ->assertJsonPath('data.1.classification_name', null)
         ->assertJsonPath('data.1.months.11.sales', '40.00')
         ->assertJsonPath('data.2.name', 'Quiet')
         ->assertJsonPath('data.2.months.0.sales', '0.00')
@@ -110,29 +110,29 @@ it('charts posted sales and the two expense accounts for the last twelve months'
         ->assertJsonMissing(['sales' => '70.00']);
 });
 
-it('sums a category without mixing currencies', function () {
+it('sums a classification without mixing currencies', function () {
     $this->travelTo('2026-10-24');
-    $market = Category::factory()->create(['name' => 'Market']);
-    $stalls = Category::factory()->create(['name' => 'Stalls']);
+    $market = Classification::factory()->create(['name' => 'Market']);
+    $stalls = Classification::factory()->create(['name' => 'Stalls']);
     $alpha = Company::factory()->create([
         'name' => 'Alpha',
         'currency' => 'PHP',
-        'category_id' => $market->id,
+        'classification_id' => $market->id,
     ]);
     $gamma = Company::factory()->create([
         'name' => 'Gamma',
         'currency' => 'PHP',
-        'category_id' => $market->id,
+        'classification_id' => $market->id,
     ]);
     $delta = Company::factory()->create([
         'name' => 'Delta',
         'currency' => 'USD',
-        'category_id' => $market->id,
+        'classification_id' => $market->id,
     ]);
     $east = Company::factory()->create([
         'name' => 'East',
         'currency' => 'PHP',
-        'category_id' => $stalls->id,
+        'classification_id' => $stalls->id,
     ]);
     $lone = Company::factory()->create([
         'name' => 'Lone',
@@ -151,19 +151,19 @@ it('sums a category without mixing currencies', function () {
     chartEntry($east, $eastPurchases, $user, ['date' => '2026-10-09', 'amount_cents' => 3000]);
     chartEntry($lone, $loneSales, $user, ['date' => '2026-10-11', 'amount_cents' => 7000]);
 
-    $report = $this->actingAs($user)->getJson('/api/v1/reports/income-expense?group=category');
+    $report = $this->actingAs($user)->getJson('/api/v1/reports/income-expense?group=classification');
 
     $report->assertOk()
-        ->assertJsonPath('meta.group', 'category')
+        ->assertJsonPath('meta.group', 'classification')
         ->assertJsonCount(4, 'data')
-        ->assertJsonPath('data.0.id', 'category:'.$market->id.':PHP')
+        ->assertJsonPath('data.0.id', 'classification:'.$market->id.':PHP')
         ->assertJsonPath('data.0.name', 'Market')
         ->assertJsonPath('data.0.currency', 'PHP')
         ->assertJsonPath('data.0.business_count', 2)
         ->assertJsonPath('data.0.months.11.sales', '100.00')
         ->assertJsonPath('data.0.months.11.operation_expense', '20.00')
         ->assertJsonPath('data.0.months.11.purchase_expense', '0.00')
-        ->assertJsonPath('data.1.id', 'category:'.$market->id.':USD')
+        ->assertJsonPath('data.1.id', 'classification:'.$market->id.':USD')
         ->assertJsonPath('data.1.name', 'Market')
         ->assertJsonPath('data.1.currency', 'USD')
         ->assertJsonPath('data.1.business_count', 1)
@@ -171,9 +171,9 @@ it('sums a category without mixing currencies', function () {
         ->assertJsonPath('data.2.name', 'Stalls')
         ->assertJsonPath('data.2.currency', 'PHP')
         ->assertJsonPath('data.2.months.11.purchase_expense', '30.00')
-        ->assertJsonPath('data.3.name', 'No category')
+        ->assertJsonPath('data.3.name', 'No classification')
         ->assertJsonPath('data.3.currency', 'PHP')
-        ->assertJsonPath('data.3.category_name', null)
+        ->assertJsonPath('data.3.classification_name', null)
         ->assertJsonPath('data.3.months.11.sales', '70.00');
 });
 

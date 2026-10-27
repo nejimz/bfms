@@ -11,15 +11,15 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\Storage;
 
-#[Fillable(['name', 'description', 'currency', 'category_id', 'location_id', 'logo_path'])]
+#[Fillable(['name', 'description', 'currency', 'classification_id', 'location_id', 'logo_path'])]
 class Company extends Model
 {
     /** @use HasFactory<CompanyFactory> */
     use HasFactory;
 
-    public function category(): BelongsTo
+    public function classification(): BelongsTo
     {
-        return $this->belongsTo(Category::class);
+        return $this->belongsTo(Classification::class);
     }
 
     public function location(): BelongsTo

@@ -6,8 +6,8 @@ use App\Domain\Ledger\DefaultChart;
 use App\Domain\Ledger\Money;
 use App\Enums\ChartAccountEntryStatus;
 use App\Models\Account;
-use App\Models\Category;
 use App\Models\ChartAccountEntry;
+use App\Models\Classification;
 use App\Models\Company;
 use App\Models\User;
 use Illuminate\Database\Seeder;
@@ -29,13 +29,13 @@ class ChartAccountEntrySeeder extends Seeder
         }
 
         foreach ($this->kinds() as $kind) {
-            $category = Category::query()->firstOrCreate(['name' => $kind['category']]);
+            $classification = Classification::query()->firstOrCreate(['name' => $kind['classification']]);
             $company = Company::query()->firstOrCreate(
                 ['name' => $kind['name']],
                 [
                     'description' => $kind['description'],
                     'currency' => 'PHP',
-                    'category_id' => $category->id,
+                    'classification_id' => $classification->id,
                 ],
             );
             $this->ensureChart($company);
@@ -174,13 +174,13 @@ class ChartAccountEntrySeeder extends Seeder
     }
 
     /**
-     * @return list<array{category: string, name: string, description: string, books: array<string, array{parties: list<string>, items: list<array{name: string, unit_cents: int, step: int}>}>}>
+     * @return list<array{classification: string, name: string, description: string, books: array<string, array{parties: list<string>, items: list<array{name: string, unit_cents: int, step: int}>}>}>
      */
     private function kinds(): array
     {
         return [
             [
-                'category' => 'Grocery',
+                'classification' => 'Grocery',
                 'name' => 'Palengke Fresh',
                 'description' => 'Wet market stall for rice, produce, and household goods.',
                 'books' => [
@@ -199,7 +199,7 @@ class ChartAccountEntrySeeder extends Seeder
                 ],
             ],
             [
-                'category' => 'Bakery',
+                'classification' => 'Bakery',
                 'name' => 'Morning Crust',
                 'description' => 'Neighborhood bakery for bread, cakes, and pastries.',
                 'books' => [
@@ -218,7 +218,7 @@ class ChartAccountEntrySeeder extends Seeder
                 ],
             ],
             [
-                'category' => 'Pharmacy',
+                'classification' => 'Pharmacy',
                 'name' => 'Botica Rosa',
                 'description' => 'Corner pharmacy for medicines and personal care.',
                 'books' => [
@@ -237,7 +237,7 @@ class ChartAccountEntrySeeder extends Seeder
                 ],
             ],
             [
-                'category' => 'Hardware',
+                'classification' => 'Hardware',
                 'name' => 'Bolt and Timber',
                 'description' => 'Hardware store for tools, lumber, and building supplies.',
                 'books' => [
@@ -256,7 +256,7 @@ class ChartAccountEntrySeeder extends Seeder
                 ],
             ],
             [
-                'category' => 'Eatery',
+                'classification' => 'Eatery',
                 'name' => 'Mesa Nina',
                 'description' => 'Cooked-food counter serving lunch and merienda.',
                 'books' => [
@@ -275,7 +275,7 @@ class ChartAccountEntrySeeder extends Seeder
                 ],
             ],
             [
-                'category' => 'Laundry',
+                'classification' => 'Laundry',
                 'name' => 'Washday',
                 'description' => 'Wash, dry, and fold service for households.',
                 'books' => [
@@ -294,7 +294,7 @@ class ChartAccountEntrySeeder extends Seeder
                 ],
             ],
             [
-                'category' => 'Transport',
+                'classification' => 'Transport',
                 'name' => 'Bayan Rides',
                 'description' => 'Small route transport for passengers and parcels.',
                 'books' => [
@@ -313,7 +313,7 @@ class ChartAccountEntrySeeder extends Seeder
                 ],
             ],
             [
-                'category' => 'Salon',
+                'classification' => 'Salon',
                 'name' => 'Shear House',
                 'description' => 'Haircuts, color, and grooming.',
                 'books' => [
@@ -332,7 +332,7 @@ class ChartAccountEntrySeeder extends Seeder
                 ],
             ],
             [
-                'category' => 'Poultry',
+                'classification' => 'Poultry',
                 'name' => 'Farm Lane',
                 'description' => 'Eggs and dressed chicken from a small farm.',
                 'books' => [
@@ -351,7 +351,7 @@ class ChartAccountEntrySeeder extends Seeder
                 ],
             ],
             [
-                'category' => 'Printing',
+                'classification' => 'Printing',
                 'name' => 'Press Room',
                 'description' => 'Print jobs, tarpaulins, and school documents.',
                 'books' => [

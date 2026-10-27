@@ -4,8 +4,8 @@ use App\Enums\AccountType;
 use App\Enums\ChartAccountEntryStatus;
 use App\Enums\CompanyRole;
 use App\Models\Account;
-use App\Models\Category;
 use App\Models\ChartAccountEntry;
+use App\Models\Classification;
 use App\Models\Company;
 use App\Models\User;
 
@@ -29,11 +29,11 @@ function summaryEntry(Company $company, Account $account, User $user, array $ove
  */
 function summaryBooks(): array
 {
-    $market = Category::factory()->create(['name' => 'Market']);
+    $market = Classification::factory()->create(['name' => 'Market']);
     $alpha = Company::factory()->create([
         'name' => 'Alpha',
         'currency' => 'PHP',
-        'category_id' => $market->id,
+        'classification_id' => $market->id,
     ]);
     $beta = Company::factory()->create([
         'name' => 'Beta',
@@ -158,7 +158,7 @@ it('summarizes posted chart accounts for the selected month', function () {
         ->assertJsonCount(2, 'data')
         ->assertJsonPath('data.0.name', 'Alpha')
         ->assertJsonPath('data.0.currency', 'PHP')
-        ->assertJsonPath('data.0.category_name', 'Market')
+        ->assertJsonPath('data.0.classification_name', 'Market')
         ->assertJsonPath('data.0.income', '120.00')
         ->assertJsonPath('data.0.expense', '25.00')
         ->assertJsonPath('data.0.result', '95.00')
@@ -179,7 +179,7 @@ it('summarizes posted chart accounts for the selected month', function () {
         ->assertJsonPath('data.0.accounts.3.amount', '25.00')
         ->assertJsonPath('data.1.name', 'Beta')
         ->assertJsonPath('data.1.currency', 'USD')
-        ->assertJsonPath('data.1.category_name', null)
+        ->assertJsonPath('data.1.classification_name', null)
         ->assertJsonPath('data.1.income', '50.00')
         ->assertJsonPath('data.1.result', '50.00')
         ->assertJsonMissing(['code' => '5200'])

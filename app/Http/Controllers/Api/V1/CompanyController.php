@@ -21,7 +21,7 @@ class CompanyController extends Controller
 
         $companies = $request->user()
             ->accessibleCompanies()
-            ->with(['category', 'location'])
+            ->with(['classification', 'location'])
             ->withCount([
                 'accounts' => fn ($query) => $query->withoutGlobalScope('company'),
                 'journals' => fn ($query) => $query->withoutGlobalScope('company'),
@@ -37,8 +37,8 @@ class CompanyController extends Controller
                     'name' => $company->name,
                     'description' => $company->description,
                     'currency' => $company->currency,
-                    'category_id' => $this->categoryId($company),
-                    'category_name' => $company->category?->name,
+                    'classification_id' => $this->classificationId($company),
+                    'classification_name' => $company->classification?->name,
                     'location_id' => $this->locationId($company),
                     'location_name' => $company->location?->name,
                     'logo_url' => $company->logoUrl(),
@@ -106,7 +106,7 @@ class CompanyController extends Controller
      */
     private function companyPayload(Company $company): array
     {
-        $company->load(['category', 'location']);
+        $company->load(['classification', 'location']);
 
         return [
             'data' => [
@@ -116,8 +116,8 @@ class CompanyController extends Controller
                     'name' => $company->name,
                     'description' => $company->description,
                     'currency' => $company->currency,
-                    'category_id' => $this->categoryId($company),
-                    'category_name' => $company->category?->name,
+                    'classification_id' => $this->classificationId($company),
+                    'classification_name' => $company->classification?->name,
                     'location_id' => $this->locationId($company),
                     'location_name' => $company->location?->name,
                     'logo_url' => $company->logoUrl(),
@@ -153,9 +153,9 @@ class CompanyController extends Controller
         }
     }
 
-    private function categoryId(Company $company): ?string
+    private function classificationId(Company $company): ?string
     {
-        return $company->category_id === null ? null : (string) $company->category_id;
+        return $company->classification_id === null ? null : (string) $company->classification_id;
     }
 
     private function locationId(Company $company): ?string

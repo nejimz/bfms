@@ -78,7 +78,7 @@ export function CategoryFormPage() {
         await api.post('/api/v1/categories', payload)
       }
       await queryClient.invalidateQueries({ queryKey: ['categories'] })
-      await queryClient.invalidateQueries({ queryKey: ['companies'] })
+      await queryClient.invalidateQueries({ queryKey: ['classifications'] })
       navigate('/categories')
     } catch (caught) {
       const fields = fieldErrors(caught)
@@ -102,7 +102,7 @@ export function CategoryFormPage() {
     try {
       await api.delete(`/api/v1/categories/${id}`)
       await queryClient.invalidateQueries({ queryKey: ['categories'] })
-      await queryClient.invalidateQueries({ queryKey: ['companies'] })
+      await queryClient.invalidateQueries({ queryKey: ['classifications'] })
       navigate('/categories')
     } catch (caught) {
       setFormError(errorMessage(caught))
@@ -116,7 +116,7 @@ export function CategoryFormPage() {
         <div>
           <p className="eyebrow">Directory</p>
           <h1>{editing ? 'Edit category' : 'Add category'}</h1>
-          <p className="hint">A business can belong to one category.</p>
+          <p className="hint">A classification can belong to one category.</p>
         </div>
       </header>
 
@@ -135,8 +135,8 @@ export function CategoryFormPage() {
             />
             {errors.name && <span className="form-error">{errors.name}</span>}
           </label>
-          {editing && (category?.businesses_count ?? 0) > 0 && !formError && (
-            <p className="hint">Remove this category from its businesses before deleting it.</p>
+          {editing && (category?.classifications_count ?? 0) > 0 && !formError && (
+            <p className="hint">Remove this category from its classifications before deleting it.</p>
           )}
           {formError && <p className="form-error">{formError}</p>}
           <div className="actions">

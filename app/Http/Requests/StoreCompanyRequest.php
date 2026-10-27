@@ -20,9 +20,9 @@ class StoreCompanyRequest extends FormRequest
             'description' => trim((string) $this->input('description', '')),
         ];
 
-        if ($this->exists('category_id')) {
-            $categoryId = $this->input('category_id');
-            $fields['category_id'] = $categoryId === '' || $categoryId === null ? null : $categoryId;
+        if ($this->exists('classification_id')) {
+            $classificationId = $this->input('classification_id');
+            $fields['classification_id'] = $classificationId === '' || $classificationId === null ? null : $classificationId;
         }
 
         if ($this->exists('location_id')) {
@@ -42,7 +42,7 @@ class StoreCompanyRequest extends FormRequest
             'name' => ['required', 'string', 'max:255'],
             'description' => ['required', 'string', 'max:1000'],
             'currency' => ['required', 'string', 'regex:/^[A-Z]{3}$/'],
-            'category_id' => ['sometimes', 'nullable', 'integer', 'exists:categories,id'],
+            'classification_id' => ['sometimes', 'nullable', 'integer', 'exists:classifications,id'],
             'location_id' => ['sometimes', 'nullable', 'integer', 'exists:locations,id'],
             'logo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
             'remove_logo' => ['sometimes', 'boolean'],
@@ -61,7 +61,7 @@ class StoreCompanyRequest extends FormRequest
             'description.max' => 'The description must be 1,000 characters or fewer.',
             'currency.required' => 'Enter a currency code.',
             'currency.regex' => 'Use a 3-letter currency code, such as PHP.',
-            'category_id.exists' => 'Choose a category from the list.',
+            'classification_id.exists' => 'Choose a classification from the list.',
             'location_id.exists' => 'Choose a location from the list.',
             'logo.image' => 'Use a JPG, PNG, or WebP logo.',
             'logo.mimes' => 'Use a JPG, PNG, or WebP logo.',

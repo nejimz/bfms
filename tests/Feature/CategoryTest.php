@@ -2,6 +2,7 @@
 
 use App\Enums\CompanyRole;
 use App\Models\Category;
+use App\Models\Classification;
 use App\Models\Company;
 use App\Models\User;
 
@@ -15,16 +16,16 @@ it('creates a category and trims the name', function () {
     $owner = categoryMember($company);
 
     $created = $this->actingAs($owner)->postJson('/api/v1/categories', [
-        'name' => '  Retail  ',
+        'name' => '  Vegetables  ',
     ]);
 
     $created->assertCreated()
-        ->assertJsonPath('data.attributes.name', 'Retail')
-        ->assertJsonPath('data.attributes.businesses_count', 0);
+        ->assertJsonPath('data.attributes.name', 'Vegetables')
+        ->assertJsonPath('data.attributes.classifications_count', 0);
 
     $this->assertDatabaseHas('categories', [
         'id' => (int) $created->json('data.id'),
-        'name' => 'Retail',
+        'name' => 'Vegetables',
     ]);
 });
 
@@ -46,59 +47,60 @@ it('rejects a category without a name or with a name over 255 characters', funct
 it('rejects a category name that already exists in any letter case', function () {
     $company = Company::factory()->create();
     $owner = categoryMember($company);
-    Category::factory()->create(['name' => 'Retail']);
+    Category::factory()->create(['name' => 'Vegetables']);
 
     $this->actingAs($owner)->postJson('/api/v1/categories', [
-        'name' => 'retail',
+        'name' => 'vegetables',
     ])->assertUnprocessable()
         ->assertJsonPath('errors.name.0', 'A category with this name already exists.');
 
     expect(Category::query()->count())->toBe(1);
 });
 
-it('lists categories by name with the number of businesses using each one', function () {
-    $retail = Category::factory()->create(['name' => 'Retail']);
-    Category::factory()->create(['name' => 'Wholesale']);
-    $company = Company::factory()->create(['category_id' => $retail->id, 'name' => 'Harbor']);
-    Company::factory()->create(['category_id' => $retail->id, 'name' => 'Northwind']);
+it('lists categories by name with the number of classifications using each one', function () {
+    $vegetables = Category::factory()->create(['name' => 'Vegetables']);
+    Category::factory()->create(['name' => 'Live stocks and fisheries']);
+    Classification::factory()->create(['category_id' => $vegetables->id, 'name' => 'Grocery']);
+    Classification::factory()->create(['category_id' => $vegetables->id, 'name' => 'Market']);
+    $company = Company::factory()->create();
     $owner = categoryMember($company);
 
     $listed = $this->actingAs($owner)->getJson('/api/v1/categories')->assertOk();
     $rows = collect($listed->json('data'))->keyBy('attributes.name');
 
-    expect($rows->keys()->all())->toBe(['Retail', 'Wholesale'])
-        ->and($rows['Retail']['attributes']['businesses_count'])->toBe(2)
-        ->and($rows['Wholesale']['attributes']['businesses_count'])->toBe(0);
+    expect($rows->keys()->all())->toBe(['Live stocks and fisheries', 'Vegetables'])
+        ->and($rows['Vegetables']['attributes']['classifications_count'])->toBe(2)
+        ->and($rows['Live stocks and fisheries']['attributes']['classifications_count'])->toBe(0);
 });
 
 it('lets an owner rename a category', function () {
     $company = Company::factory()->create();
     $owner = categoryMember($company);
-    $category = Category::factory()->create(['name' => 'Retail']);
+    $category = Category::factory()->create(['name' => 'Vegetables']);
 
     $this->actingAs($owner)->patchJson("/api/v1/categories/{$category->id}", [
-        'name' => '  Wholesale  ',
+        'name' => '  Live stocks and fisheries  ',
     ])->assertOk()
-        ->assertJsonPath('data.attributes.name', 'Wholesale');
+        ->assertJsonPath('data.attributes.name', 'Live stocks and fisheries');
 
     $this->assertDatabaseHas('categories', [
         'id' => $category->id,
-        'name' => 'Wholesale',
+        'name' => 'Live stocks and fisheries',
     ]);
 });
 
 it('keeps the same category name when an owner saves it again', function () {
     $company = Company::factory()->create();
     $owner = categoryMember($company);
-    $category = Category::factory()->create(['name' => 'Retail']);
+    $category = Category::factory()->create(['name' => 'Vegetables']);
 
     $this->actingAs($owner)->patchJson("/api/v1/categories/{$category->id}", [
-        'name' => 'retail',
+        'name' => 'vegetables',
     ])->assertOk()
-        ->assertJsonPath('data.attributes.name', 'retail');
+        ->assertJsonPath('data.attributes.name', 'vegetables');
 });
 
-it('deletes a category that no business uses', function () {
+it('deletes a category that no classification uses', function () {
     $company = Company::factory()->create();
     $owner = categoryMember($company);
     $category = Category::factory()->create();
@@ -109,37 +111,38 @@ it('deletes a category that no business uses', function () {
     $this->assertDatabaseMissing('categories', ['id' => $category->id]);
 });
 
-it('refuses to delete a category that a business still uses', function () {
-    $category = Category::factory()->create(['name' => 'Retail']);
-    $company = Company::factory()->create(['category_id' => $category->id]);
+it('refuses to delete a category that a classification still uses', function () {
+    $category = Category::factory()->create(['name' => 'Vegetables']);
+    $classification = Classification::factory()->create(['category_id' => $category->id]);
+    $company = Company::factory()->create();
     $owner = categoryMember($company);
 
     $this->actingAs($owner)->deleteJson("/api/v1/categories/{$category->id}")
         ->assertUnprocessable()
-        ->assertJsonPath('errors.category.0', 'Remove this category from its businesses before deleting it.');
+        ->assertJsonPath('errors.category.0', 'Remove this category from its classifications before deleting it.');
 
-    $this->assertDatabaseHas('categories', ['id' => $category->id, 'name' => 'Retail']);
-    expect($company->fresh()->category_id)->toBe($category->id);
+    $this->assertDatabaseHas('categories', ['id' => $category->id, 'name' => 'Vegetables']);
+    expect($classification->fresh()->category_id)->toBe($category->id);
 });
 
 it('refuses category changes from someone who is not the owner', function (string $role) {
     $company = Company::factory()->create();
     $user = categoryMember($company, $role);
-    $category = Category::factory()->create(['name' => 'Retail']);
+    $category = Category::factory()->create(['name' => 'Vegetables']);
 
     $this->actingAs($user)->postJson('/api/v1/categories', [
-        'name' => 'Wholesale',
+        'name' => 'Live stocks and fisheries',
     ])->assertForbidden();
 
     $this->actingAs($user)->patchJson("/api/v1/categories/{$category->id}", [
-        'name' => 'Wholesale',
+        'name' => 'Live stocks and fisheries',
     ])->assertForbidden();
 
     $this->actingAs($user)->deleteJson("/api/v1/categories/{$category->id}")
         ->assertForbidden();
 
-    $this->assertDatabaseHas('categories', ['id' => $category->id, 'name' => 'Retail']);
-    $this->assertDatabaseMissing('categories', ['name' => 'Wholesale']);
+    $this->assertDatabaseHas('categories', ['id' => $category->id, 'name' => 'Vegetables']);
+    $this->assertDatabaseMissing('categories', ['name' => 'Live stocks and fisheries']);
 })->with([
     CompanyRole::Accountant->value,
     CompanyRole::Staff->value,

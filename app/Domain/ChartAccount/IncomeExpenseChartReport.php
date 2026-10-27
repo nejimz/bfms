@@ -26,7 +26,7 @@ class IncomeExpenseChartReport
      *         id: string,
      *         name: string,
      *         currency: string,
-     *         category_name: string|null,
+     *         classification_name: string|null,
      *         business_count: int,
      *         months: list<array{key: string, sales: string, operation_expense: string, purchase_expense: string}>
      *     }>,
@@ -43,16 +43,16 @@ class IncomeExpenseChartReport
         $months = $this->months();
         $from = $months[0]['start'];
         $to = $months[array_key_last($months)]['end'];
-        $companies = $this->sortCompanies($user->accessibleCompanies()->with('category')->get());
+        $companies = $this->sortCompanies($user->accessibleCompanies()->with('classification')->get());
         $posted = $this->posted($companies->modelKeys(), $from, $to);
-        $charts = $group === 'category'
-            ? $this->categoryCharts($companies, $posted, $months)
+        $charts = $group === 'classification'
+            ? $this->classificationCharts($companies, $posted, $months)
             : $this->businessCharts($companies, $posted, $months);
 
         return [
             'data' => $charts,
             'meta' => [
-                'group' => $group === 'category' ? 'category' : 'business',
+                'group' => $group === 'classification' ? 'classification' : 'business',
                 'from' => $from,
                 'to' => $to,
                 'months' => array_map(fn (array $month): array => [
@@ -115,7 +115,7 @@ class IncomeExpenseChartReport
      * @param  Collection<int, Company>  $companies
      * @param  array<int, array<string, array{sales: Money, operation_expense: Money, purchase_expense: Money}>>  $posted
      * @param  list<array{key: string, year: int, month: int, start: string, end: string}>  $months
-     * @return list<array{id: string, name: string, currency: string, category_name: string|null, business_count: int, months: list<array{key: string, sales: string, operation_expense: string, purchase_expense: string}>}>
+     * @return list<array{id: string, name: string, currency: string, classification_name: string|null, business_count: int, months: list<array{key: string, sales: string, operation_expense: string, purchase_expense: string}>}>
      */
     private function businessCharts(Collection $companies, array $posted, array $months): array
     {
@@ -126,7 +126,7 @@ class IncomeExpenseChartReport
                 (string) $company->id,
                 $company->name,
                 $company->currency,
-                $company->category?->name,
+                $company->classification?->name,
                 1,
                 $posted[$company->id] ?? [],
                 $months,
@@ -140,21 +140,21 @@ class IncomeExpenseChartReport
      * @param  Collection<int, Company>  $companies
      * @param  array<int, array<string, array{sales: Money, operation_expense: Money, purchase_expense: Money}>>  $posted
      * @param  list<array{key: string, year: int, month: int, start: string, end: string}>  $months
-     * @return list<array{id: string, name: string, currency: string, category_name: string|null, business_count: int, months: list<array{key: string, sales: string, operation_expense: string, purchase_expense: string}>}>
+     * @return list<array{id: string, name: string, currency: string, classification_name: string|null, business_count: int, months: list<array{key: string, sales: string, operation_expense: string, purchase_expense: string}>}>
      */
-    private function categoryCharts(Collection $companies, array $posted, array $months): array
+    private function classificationCharts(Collection $companies, array $posted, array $months): array
     {
-        /** @var array<string, array{name: string, currency: string, category_name: string|null, business_count: int, buckets: array<string, array{sales: Money, operation_expense: Money, purchase_expense: Money}>}> $groups */
+        /** @var array<string, array{name: string, currency: string, classification_name: string|null, business_count: int, buckets: array<string, array{sales: Money, operation_expense: Money, purchase_expense: Money}>}> $groups */
         $groups = [];
 
         foreach ($companies as $company) {
-            $key = ($company->category_id === null ? 'none' : (string) $company->category_id).':'.$company->currency;
+            $key = ($company->classification_id === null ? 'none' : (string) $company->classification_id).':'.$company->currency;
 
             if (! isset($groups[$key])) {
                 $groups[$key] = [
-                    'name' => $company->category?->name ?? 'No category',
+                    'name' => $company->classification?->name ?? 'No classification',
                     'currency' => $company->currency,
-                    'category_name' => $company->category?->name,
+                    'classification_name' => $company->classification?->name,
                     'business_count' => 0,
                     'buckets' => [],
                 ];
@@ -168,10 +168,10 @@ class IncomeExpenseChartReport
 
         foreach ($this->sortGroups($groups) as $key => $group) {
             $charts[] = $this->chart(
-                'category:'.$key,
+                'classification:'.$key,
                 $group['name'],
                 $group['currency'],
-                $group['category_name'],
+                $group['classification_name'],
                 $group['business_count'],
                 $group['buckets'],
                 $months,
@@ -184,9 +184,9 @@ class IncomeExpenseChartReport
     /**
      * @param  array<string, array{sales: Money, operation_expense: Money, purchase_expense: Money}>  $buckets
      * @param  list<array{key: string, year: int, month: int, start: string, end: string}>  $months
-     * @return array{id: string, name: string, currency: string, category_name: string|null, business_count: int, months: list<array{key: string, sales: string, operation_expense: string, purchase_expense: string}>}
+     * @return array{id: string, name: string, currency: string, classification_name: string|null, business_count: int, months: list<array{key: string, sales: string, operation_expense: string, purchase_expense: string}>}
      */
-    private function chart(string $id, string $name, string $currency, ?string $categoryName, int $businessCount, array $buckets, array $months): array
+    private function chart(string $id, string $name, string $currency, ?string $classificationName, int $businessCount, array $buckets, array $months): array
     {
         $points = [];
 
@@ -204,7 +204,7 @@ class IncomeExpenseChartReport
             'id' => $id,
             'name' => $name,
             'currency' => $currency,
-            'category_name' => $categoryName,
+            'classification_name' => $classificationName,
             'business_count' => $businessCount,
             'months' => $points,
         ];
@@ -283,22 +283,22 @@ class IncomeExpenseChartReport
     private function sortCompanies(Collection $companies): Collection
     {
         return $companies->sort(function (Company $left, Company $right): int {
-            $leftCategory = $left->category?->name;
-            $rightCategory = $right->category?->name;
+            $leftClassification = $left->classification?->name;
+            $rightClassification = $right->classification?->name;
 
-            if ($leftCategory === null && $rightCategory !== null) {
+            if ($leftClassification === null && $rightClassification !== null) {
                 return 1;
             }
 
-            if ($leftCategory !== null && $rightCategory === null) {
+            if ($leftClassification !== null && $rightClassification === null) {
                 return -1;
             }
 
-            if ($leftCategory !== null && $rightCategory !== null) {
-                $byCategory = $this->compareText($leftCategory, $rightCategory);
+            if ($leftClassification !== null && $rightClassification !== null) {
+                $byClassification = $this->compareText($leftClassification, $rightClassification);
 
-                if ($byCategory !== 0) {
-                    return $byCategory;
+                if ($byClassification !== 0) {
+                    return $byClassification;
                 }
             }
 
@@ -309,8 +309,8 @@ class IncomeExpenseChartReport
     }
 
     /**
-     * @param  array<string, array{name: string, currency: string, category_name: string|null, business_count: int, buckets: array<string, array{sales: Money, operation_expense: Money, purchase_expense: Money}>}>  $groups
-     * @return array<string, array{name: string, currency: string, category_name: string|null, business_count: int, buckets: array<string, array{sales: Money, operation_expense: Money, purchase_expense: Money}>}>
+     * @param  array<string, array{name: string, currency: string, classification_name: string|null, business_count: int, buckets: array<string, array{sales: Money, operation_expense: Money, purchase_expense: Money}>}>  $groups
+     * @return array<string, array{name: string, currency: string, classification_name: string|null, business_count: int, buckets: array<string, array{sales: Money, operation_expense: Money, purchase_expense: Money}>}>
      */
     private function sortGroups(array $groups): array
     {
@@ -318,19 +318,19 @@ class IncomeExpenseChartReport
             $leftGroup = $groups[$left];
             $rightGroup = $groups[$right];
 
-            if ($leftGroup['category_name'] === null && $rightGroup['category_name'] !== null) {
+            if ($leftGroup['classification_name'] === null && $rightGroup['classification_name'] !== null) {
                 return 1;
             }
 
-            if ($leftGroup['category_name'] !== null && $rightGroup['category_name'] === null) {
+            if ($leftGroup['classification_name'] !== null && $rightGroup['classification_name'] === null) {
                 return -1;
             }
 
-            if ($leftGroup['category_name'] !== null && $rightGroup['category_name'] !== null) {
-                $byCategory = $this->compareText($leftGroup['category_name'], $rightGroup['category_name']);
+            if ($leftGroup['classification_name'] !== null && $rightGroup['classification_name'] !== null) {
+                $byClassification = $this->compareText($leftGroup['classification_name'], $rightGroup['classification_name']);
 
-                if ($byCategory !== 0) {
-                    return $byCategory;
+                if ($byClassification !== 0) {
+                    return $byClassification;
                 }
             }
 

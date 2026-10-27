@@ -52,17 +52,17 @@ function shareWidth(amount: string, maxMinor: number): number {
   return Math.min(100, (minor / maxMinor) * 100)
 }
 
-function groupBusinesses(rows: BusinessSummary[]): Array<{ category: string; businesses: BusinessSummary[] }> {
-  const groups: Array<{ category: string; businesses: BusinessSummary[] }> = []
+function groupBusinesses(rows: BusinessSummary[]): Array<{ classification: string; businesses: BusinessSummary[] }> {
+  const groups: Array<{ classification: string; businesses: BusinessSummary[] }> = []
 
   for (const business of rows) {
-    const category = business.category_name ?? 'No category'
+    const classification = business.classification_name ?? 'No classification'
     const current = groups[groups.length - 1]
 
-    if (current?.category === category) {
+    if (current?.classification === classification) {
       current.businesses.push(business)
     } else {
-      groups.push({ category, businesses: [business] })
+      groups.push({ classification, businesses: [business] })
     }
   }
 
@@ -184,8 +184,8 @@ export function DashboardPage() {
       {groups.length > 0 && (
         <div className="dashboard-groups">
           {groups.map((group) => (
-            <section key={group.category} className="dashboard-group" aria-label={group.category}>
-              <h2 className="dashboard-category">{group.category}</h2>
+            <section key={group.classification} className="dashboard-group" aria-label={group.classification}>
+              <h2 className="dashboard-category">{group.classification}</h2>
               {group.businesses.map((business) => (
                 <BusinessBlock
                   key={business.id}

@@ -23,7 +23,7 @@ class BusinessSummaryReport
      *         id: string,
      *         name: string,
      *         currency: string,
-     *         category_name: string|null,
+     *         classification_name: string|null,
      *         income: string,
      *         expense: string,
      *         result: string,
@@ -53,7 +53,7 @@ class BusinessSummaryReport
     public function build(User $user, string $period, int $year, int $month): array
     {
         [$from, $to, $reportedMonth] = $this->bounds($period, $year, $month);
-        $companies = $this->sortCompanies($user->accessibleCompanies()->with('category')->get());
+        $companies = $this->sortCompanies($user->accessibleCompanies()->with('classification')->get());
         $companyIds = array_map(intval(...), $companies->modelKeys());
         $defaultCodes = array_map(
             fn (array $account): string => $account['code'],
@@ -187,7 +187,7 @@ class BusinessSummaryReport
      *         id: string,
      *         name: string,
      *         currency: string,
-     *         category_name: string|null,
+     *         classification_name: string|null,
      *         income: string,
      *         expense: string,
      *         result: string,
@@ -247,7 +247,7 @@ class BusinessSummaryReport
                 'id' => (string) $company->id,
                 'name' => $company->name,
                 'currency' => $company->currency,
-                'category_name' => $company->category?->name,
+                'classification_name' => $company->classification?->name,
                 'income' => $income->toDecimal(),
                 'expense' => $expense->toDecimal(),
                 'result' => Money::ofMinor($income->minor - $expense->minor)->toDecimal(),
@@ -297,22 +297,22 @@ class BusinessSummaryReport
     private function sortCompanies(Collection $companies): Collection
     {
         return $companies->sort(function (Company $left, Company $right): int {
-            $leftCategory = $left->category?->name;
-            $rightCategory = $right->category?->name;
+            $leftClassification = $left->classification?->name;
+            $rightClassification = $right->classification?->name;
 
-            if ($leftCategory === null && $rightCategory !== null) {
+            if ($leftClassification === null && $rightClassification !== null) {
                 return 1;
             }
 
-            if ($leftCategory !== null && $rightCategory === null) {
+            if ($leftClassification !== null && $rightClassification === null) {
                 return -1;
             }
 
-            if ($leftCategory !== null && $rightCategory !== null) {
-                $byCategory = $this->compareText($leftCategory, $rightCategory);
+            if ($leftClassification !== null && $rightClassification !== null) {
+                $byClassification = $this->compareText($leftClassification, $rightClassification);
 
-                if ($byCategory !== 0) {
-                    return $byCategory;
+                if ($byClassification !== 0) {
+                    return $byClassification;
                 }
             }
 

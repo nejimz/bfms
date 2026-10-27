@@ -4,8 +4,8 @@ use App\Enums\AccountType;
 use App\Enums\ChartAccountEntryStatus;
 use App\Enums\CompanyRole;
 use App\Models\Account;
-use App\Models\Category;
 use App\Models\ChartAccountEntry;
+use App\Models\Classification;
 use App\Models\Company;
 use App\Models\User;
 
@@ -34,24 +34,24 @@ function yearlySummaryAccount(Company $company, string $code, string $name, Acco
     ]);
 }
 
-it('lists every category and the posted yearly sales and expenses of its businesses', function () {
+it('lists every classification and the posted yearly sales and expenses of its businesses', function () {
     $this->travelTo('2026-10-26');
-    $market = Category::factory()->create(['name' => 'market']);
-    $stalls = Category::factory()->create(['name' => 'Stalls']);
+    $market = Classification::factory()->create(['name' => 'market']);
+    $stalls = Classification::factory()->create(['name' => 'Stalls']);
     $alpha = Company::factory()->create([
         'name' => 'Alpha',
         'currency' => 'PHP',
-        'category_id' => $market->id,
+        'classification_id' => $market->id,
     ]);
     $gamma = Company::factory()->create([
         'name' => 'Gamma',
         'currency' => 'PHP',
-        'category_id' => $market->id,
+        'classification_id' => $market->id,
     ]);
     $quiet = Company::factory()->create([
         'name' => 'Quiet',
         'currency' => 'PHP',
-        'category_id' => $market->id,
+        'classification_id' => $market->id,
     ]);
     $beta = Company::factory()->create([
         'name' => 'Beta',
@@ -120,7 +120,7 @@ it('lists every category and the posted yearly sales and expenses of its busines
         ->assertJsonPath('data.1.name', 'Stalls')
         ->assertJsonPath('data.1.businesses', [])
         ->assertJsonPath('data.2.id', null)
-        ->assertJsonPath('data.2.name', 'No category')
+        ->assertJsonPath('data.2.name', 'No classification')
         ->assertJsonPath('data.2.businesses.0.name', 'Beta')
         ->assertJsonPath('data.2.businesses.0.currency', 'USD')
         ->assertJsonPath('data.2.businesses.0.sales', '40.00')
@@ -128,11 +128,11 @@ it('lists every category and the posted yearly sales and expenses of its busines
         ->assertJsonPath('data.2.businesses.0.months.7.sales', '40.00');
 });
 
-it('leaves out the uncategorized group when every business has a category', function () {
-    $market = Category::factory()->create(['name' => 'Market']);
+it('leaves out the unclassified group when every business has a classification', function () {
+    $market = Classification::factory()->create(['name' => 'Market']);
     $company = Company::factory()->create([
         'name' => 'Alpha',
-        'category_id' => $market->id,
+        'classification_id' => $market->id,
     ]);
     $user = memberWithRole($company);
 
@@ -142,7 +142,7 @@ it('leaves out the uncategorized group when every business has a category', func
         ->assertJsonCount(1, 'data')
         ->assertJsonPath('data.0.name', 'Market')
         ->assertJsonPath('data.0.businesses.0.name', 'Alpha')
-        ->assertJsonMissing(['name' => 'No category']);
+        ->assertJsonMissing(['name' => 'No classification']);
 });
 
 it('uses the current year when the year is omitted', function () {
@@ -162,7 +162,7 @@ it('uses the current year when the year is omitted', function () {
 });
 
 it('includes every business for a manager', function () {
-    Category::factory()->create(['name' => 'Empty Lane']);
+    Classification::factory()->create(['name' => 'Empty Lane']);
     Company::factory()->create(['name' => 'First Shop']);
     $second = Company::factory()->create(['name' => 'Second Shop']);
     $manager = memberWithRole($second, CompanyRole::Accountant->value);

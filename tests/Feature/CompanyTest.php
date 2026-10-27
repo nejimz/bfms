@@ -5,8 +5,8 @@ use App\Enums\CompanyRole;
 use App\Enums\JournalStatus;
 use App\Enums\UserRole;
 use App\Models\Account;
-use App\Models\Category;
 use App\Models\ChartAccountEntry;
+use App\Models\Classification;
 use App\Models\Company;
 use App\Models\Journal;
 use App\Models\Location;
@@ -291,50 +291,50 @@ it('refuses an edit from someone who does not own that business', function (stri
     CompanyRole::Staff->value,
 ]);
 
-it('stores a category on a new business', function () {
+it('stores a classification on a new business', function () {
     $company = Company::factory()->create();
     $owner = companyMember($company);
-    $category = Category::factory()->create(['name' => 'Retail']);
+    $classification = Classification::factory()->create(['name' => 'Retail']);
 
     $created = $this->actingAs($owner)->postJson('/api/v1/companies', [
         'name' => 'Northwind',
         'currency' => 'PHP',
         'description' => 'Wholesale imports.',
-        'category_id' => $category->id,
+        'classification_id' => $classification->id,
     ]);
 
     $created->assertCreated()
-        ->assertJsonPath('data.attributes.category_id', (string) $category->id)
-        ->assertJsonPath('data.attributes.category_name', 'Retail');
+        ->assertJsonPath('data.attributes.classification_id', (string) $classification->id)
+        ->assertJsonPath('data.attributes.classification_name', 'Retail');
 
     $this->assertDatabaseHas('companies', [
         'id' => (int) $created->json('data.id'),
-        'category_id' => $category->id,
+        'classification_id' => $classification->id,
     ]);
 });
 
-it('lists each business with its category', function () {
-    $category = Category::factory()->create(['name' => 'Retail']);
+it('lists each business with its classification', function () {
+    $classification = Classification::factory()->create(['name' => 'Retail']);
     $company = Company::factory()->create([
         'name' => 'Harbor',
-        'category_id' => $category->id,
+        'classification_id' => $classification->id,
     ]);
     $owner = companyMember($company);
 
     $this->actingAs($owner)->getJson('/api/v1/companies')
         ->assertOk()
-        ->assertJsonPath('data.0.attributes.category_id', (string) $category->id)
-        ->assertJsonPath('data.0.attributes.category_name', 'Retail');
+        ->assertJsonPath('data.0.attributes.classification_id', (string) $classification->id)
+        ->assertJsonPath('data.0.attributes.classification_name', 'Retail');
 });
 
-it('lets an owner change or clear a business category', function () {
-    $retail = Category::factory()->create(['name' => 'Retail']);
-    $wholesale = Category::factory()->create(['name' => 'Wholesale']);
+it('lets an owner change or clear a business classification', function () {
+    $retail = Classification::factory()->create(['name' => 'Retail']);
+    $wholesale = Classification::factory()->create(['name' => 'Wholesale']);
     $company = Company::factory()->create([
         'name' => 'Harbor Goods',
         'description' => 'Retail goods and supplies.',
         'currency' => 'PHP',
-        'category_id' => $retail->id,
+        'classification_id' => $retail->id,
     ]);
     $owner = companyMember($company);
     $payload = [
@@ -345,27 +345,27 @@ it('lets an owner change or clear a business category', function () {
 
     $this->actingAs($owner)->patchJson("/api/v1/companies/{$company->id}", [
         ...$payload,
-        'category_id' => $wholesale->id,
+        'classification_id' => $wholesale->id,
     ])->assertOk()
-        ->assertJsonPath('data.attributes.category_name', 'Wholesale');
+        ->assertJsonPath('data.attributes.classification_name', 'Wholesale');
 
     $this->actingAs($owner)->patchJson("/api/v1/companies/{$company->id}", [
         ...$payload,
-        'category_id' => null,
+        'classification_id' => null,
     ])->assertOk()
-        ->assertJsonPath('data.attributes.category_id', null)
-        ->assertJsonPath('data.attributes.category_name', null);
+        ->assertJsonPath('data.attributes.classification_id', null)
+        ->assertJsonPath('data.attributes.classification_name', null);
 
-    expect($company->fresh()->category_id)->toBeNull();
+    expect($company->fresh()->classification_id)->toBeNull();
 });
 
-it('keeps the category when a business edit omits it', function () {
-    $category = Category::factory()->create(['name' => 'Retail']);
+it('keeps the classification when a business edit omits it', function () {
+    $classification = Classification::factory()->create(['name' => 'Retail']);
     $company = Company::factory()->create([
         'name' => 'Harbor Goods',
         'description' => 'Retail goods and supplies.',
         'currency' => 'PHP',
-        'category_id' => $category->id,
+        'classification_id' => $classification->id,
     ]);
     $owner = companyMember($company);
 
@@ -375,12 +375,12 @@ it('keeps the category when a business edit omits it', function () {
         'currency' => 'PHP',
     ])->assertOk()
         ->assertJsonPath('data.attributes.name', 'Harbor Market')
-        ->assertJsonPath('data.attributes.category_id', (string) $category->id);
+        ->assertJsonPath('data.attributes.classification_id', (string) $classification->id);
 
-    expect($company->fresh()->category_id)->toBe($category->id);
+    expect($company->fresh()->classification_id)->toBe($classification->id);
 });
 
-it('rejects a business category that is not in the list', function () {
+it('rejects a business classification that is not in the list', function () {
     $company = Company::factory()->create([
         'name' => 'Harbor Goods',
         'description' => 'Retail goods and supplies.',
@@ -392,11 +392,11 @@ it('rejects a business category that is not in the list', function () {
         'name' => 'Harbor Goods',
         'description' => 'Retail goods and supplies.',
         'currency' => 'PHP',
-        'category_id' => 9999,
+        'classification_id' => 9999,
     ])->assertUnprocessable()
-        ->assertJsonPath('errors.category_id.0', 'Choose a category from the list.');
+        ->assertJsonPath('errors.classification_id.0', 'Choose a classification from the list.');
 
-    expect($company->fresh()->category_id)->toBeNull();
+    expect($company->fresh()->classification_id)->toBeNull();
 });
 
 it('refuses to switch into a business the user does not belong to', function () {

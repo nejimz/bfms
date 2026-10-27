@@ -112,7 +112,7 @@ export type BusinessSummary = {
   id: string
   name: string
   currency: string
-  category_name: string | null
+  classification_name: string | null
   income: string
   expense: string
   result: string
@@ -131,7 +131,7 @@ export type IncomeExpenseChart = {
   id: string
   name: string
   currency: string
-  category_name: string | null
+  classification_name: string | null
   business_count: number
   months: IncomeExpensePoint[]
 }
@@ -139,7 +139,7 @@ export type IncomeExpenseChart = {
 export type IncomeExpenseChartReport = {
   data: IncomeExpenseChart[]
   meta: {
-    group: 'business' | 'category'
+    group: 'business' | 'classification'
     from: string
     to: string
     months: Array<{ key: string; year: number; month: number }>
@@ -206,14 +206,14 @@ export type YearlySummaryBusiness = {
   months: YearlySummaryMonth[]
 }
 
-export type YearlySummaryCategory = {
+export type YearlySummaryClassification = {
   id: string | null
   name: string
   businesses: YearlySummaryBusiness[]
 }
 
 export type YearlySummaryReport = {
-  data: YearlySummaryCategory[]
+  data: YearlySummaryClassification[]
   meta: {
     year: number
     years: number[]
@@ -299,7 +299,15 @@ export type Membership = {
 export type Category = {
   id: string
   name: string
+  classifications_count: number
+}
+
+export type Classification = {
+  id: string
+  name: string
   businesses_count: number
+  category_id: string | null
+  category_name: string | null
 }
 
 export type Location = {
@@ -320,8 +328,8 @@ export type DirectoryUser = {
 export type Business = Membership & {
   accounts_count: number
   journals_count: number
-  category_id: string | null
-  category_name: string | null
+  classification_id: string | null
+  classification_name: string | null
   location_id: string | null
   location_name: string | null
   logo_url: string | null

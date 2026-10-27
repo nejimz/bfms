@@ -39,7 +39,7 @@ export function BusinessesPage() {
             <tr>
               <th>Name</th>
               <th>Description</th>
-              <th className="center">Category</th>
+              <th className="center">Classification</th>
               <th className="center">Location</th>
               <th className="center">Currency</th>
               <th />
@@ -58,7 +58,7 @@ export function BusinessesPage() {
                   </span>
                 </td>
                 <td>{business.description || 'No description'}</td>
-                <td className="center">{business.category_name || 'No category'}</td>
+                <td className="center">{business.classification_name || 'No classification'}</td>
                 <td className="center">{business.location_name || 'No location'}</td>
                 <td className="num center">{business.currency}</td>
                 <td>

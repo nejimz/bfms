@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\V1\BusinessSummaryController;
 use App\Http\Controllers\Api\V1\CategoryController;
 use App\Http\Controllers\Api\V1\ChartAccountColumnReportController;
 use App\Http\Controllers\Api\V1\ChartAccountEntryController;
+use App\Http\Controllers\Api\V1\ClassificationController;
 use App\Http\Controllers\Api\V1\CompanyController;
 use App\Http\Controllers\Api\V1\CurrentUserController;
 use App\Http\Controllers\Api\V1\IncomeExpenseChartController;
@@ -39,6 +40,11 @@ Route::middleware(['auth:sanctum', SetCurrentCompany::class])->prefix('v1')->gro
     Route::patch('/companies/{company}', [CompanyController::class, 'update']);
     Route::post('/current-company', [CompanyController::class, 'switch']);
     Route::post('/organization', [OrganizationController::class, 'update']);
+
+    Route::get('/classifications', [ClassificationController::class, 'index']);
+    Route::post('/classifications', [ClassificationController::class, 'store']);
+    Route::patch('/classifications/{classification}', [ClassificationController::class, 'update']);
+    Route::delete('/classifications/{classification}', [ClassificationController::class, 'destroy']);
 
     Route::get('/categories', [CategoryController::class, 'index']);
     Route::post('/categories', [CategoryController::class, 'store']);

@@ -4,9 +4,9 @@ namespace App\Domain\ChartAccount;
 
 use App\Domain\Ledger\Money;
 use App\Enums\ChartAccountEntryStatus;
-use App\Models\Category;
 use App\Models\ChartAccountEntry;
 use App\Models\ChartAccountEntryLine;
+use App\Models\Classification;
 use App\Models\Company;
 use App\Models\User;
 use Illuminate\Support\Carbon;
@@ -16,7 +16,7 @@ class YearlySummaryReport
 {
     /**
      * Posted sales, operation expenses, and purchase expenses for one calendar year,
-     * with every category and the businesses under it.
+     * with every classification and the businesses under it.
      *
      * @return array{
      *     data: list<array{
@@ -37,40 +37,40 @@ class YearlySummaryReport
      */
     public function build(User $user, int $year): array
     {
-        $companies = $this->sortCompanies($user->accessibleCompanies()->with('category')->get());
+        $companies = $this->sortCompanies($user->accessibleCompanies()->with('classification')->get());
         $companyIds = array_map(intval(...), $companies->modelKeys());
         $posted = $this->posted($companyIds, $year);
-        /** @var array<int, list<array{id: string, name: string, currency: string, sales: string, operation_expense: string, purchase_expense: string, months: list<array{month: int, sales: string, operation_expense: string, purchase_expense: string}>}>> $byCategory */
-        $byCategory = [];
-        $uncategorized = [];
+        /** @var array<int, list<array{id: string, name: string, currency: string, sales: string, operation_expense: string, purchase_expense: string, months: list<array{month: int, sales: string, operation_expense: string, purchase_expense: string}>}>> $byClassification */
+        $byClassification = [];
+        $unclassified = [];
 
         foreach ($companies as $company) {
             $row = $this->business($company, $posted[$company->id] ?? [], $year);
 
-            if ($company->category_id === null) {
-                $uncategorized[] = $row;
+            if ($company->classification_id === null) {
+                $unclassified[] = $row;
 
                 continue;
             }
 
-            $byCategory[(int) $company->category_id][] = $row;
+            $byClassification[(int) $company->classification_id][] = $row;
         }
 
         $groups = [];
 
-        foreach ($this->categories() as $category) {
+        foreach ($this->classifications() as $classification) {
             $groups[] = [
-                'id' => (string) $category->id,
-                'name' => $category->name,
-                'businesses' => $byCategory[(int) $category->id] ?? [],
+                'id' => (string) $classification->id,
+                'name' => $classification->name,
+                'businesses' => $byClassification[(int) $classification->id] ?? [],
             ];
         }
 
-        if ($uncategorized !== []) {
+        if ($unclassified !== []) {
             $groups[] = [
                 'id' => null,
-                'name' => 'No category',
-                'businesses' => $uncategorized,
+                'name' => 'No classification',
+                'businesses' => $unclassified,
             ];
         }
 
@@ -363,11 +363,11 @@ class YearlySummaryReport
     }
 
     /**
-     * @return Collection<int, Category>
+     * @return Collection<int, Classification>
      */
-    private function categories(): Collection
+    private function classifications(): Collection
     {
-        return Category::query()->get()->sort(function (Category $left, Category $right): int {
+        return Classification::query()->get()->sort(function (Classification $left, Classification $right): int {
             $byName = $this->compareText($left->name, $right->name);
 
             return $byName !== 0 ? $byName : $left->id <=> $right->id;
@@ -413,22 +413,22 @@ class YearlySummaryReport
     private function sortCompanies(Collection $companies): Collection
     {
         return $companies->sort(function (Company $left, Company $right): int {
-            $leftCategory = $left->category?->name;
-            $rightCategory = $right->category?->name;
+            $leftClassification = $left->classification?->name;
+            $rightClassification = $right->classification?->name;
 
-            if ($leftCategory === null && $rightCategory !== null) {
+            if ($leftClassification === null && $rightClassification !== null) {
                 return 1;
             }
 
-            if ($leftCategory !== null && $rightCategory === null) {
+            if ($leftClassification !== null && $rightClassification === null) {
                 return -1;
             }
 
-            if ($leftCategory !== null && $rightCategory !== null) {
-                $byCategory = $this->compareText($leftCategory, $rightCategory);
+            if ($leftClassification !== null && $rightClassification !== null) {
+                $byClassification = $this->compareText($leftClassification, $rightClassification);
 
-                if ($byCategory !== 0) {
-                    return $byCategory;
+                if ($byClassification !== 0) {
+                    return $byClassification;
                 }
             }
 

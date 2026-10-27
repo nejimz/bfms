@@ -6,7 +6,7 @@ import { chartAccountModuleList } from '../chartAccountModules'
 import { OrganizationMark } from '../organization'
 import { canViewDashboard } from '../types'
 
-type MenuIcon = 'dashboard' | 'chart' | 'summary' | 'company' | 'businesses' | 'categories' | 'locations' | 'accounts' | 'entry' | 'journals' | 'balance' | 'users'
+type MenuIcon = 'dashboard' | 'chart' | 'summary' | 'company' | 'businesses' | 'classifications' | 'categories' | 'locations' | 'accounts' | 'entry' | 'journals' | 'balance' | 'users'
 
 type MenuItem = {
   to: string
@@ -17,6 +17,7 @@ type MenuItem = {
 const businessesLink: MenuItem = { to: '/businesses', label: 'Businesses', icon: 'businesses' }
 
 const businessDirectoryLinks: MenuItem[] = [
+  { to: '/classifications', label: 'Classifications', icon: 'classifications' },
   { to: '/categories', label: 'Categories', icon: 'categories' },
   { to: '/locations', label: 'Locations', icon: 'locations' },
 ]
@@ -182,10 +183,18 @@ function NavIcon({ name }: { name: MenuIcon | 'settings' }) {
           <path d="M5 19c1.2-3 3.6-4.5 7-4.5s5.8 1.5 7 4.5" />
         </>
       )}
-      {name === 'categories' && (
+      {name === 'classifications' && (
         <>
           <path d="M4 10.5 10.5 4H20v9.5L13.5 20a2 2 0 0 1-2.8 0z" />
           <circle cx="9" cy="9" r="1" />
+        </>
+      )}
+      {name === 'categories' && (
+        <>
+          <rect x="4" y="4" width="7" height="7" rx="1.5" />
+          <rect x="13" y="4" width="7" height="7" rx="1.5" />
+          <rect x="4" y="13" width="7" height="7" rx="1.5" />
+          <rect x="13" y="13" width="7" height="7" rx="1.5" />
         </>
       )}
       {name === 'locations' && (

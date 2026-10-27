@@ -5,7 +5,7 @@ import { OrganizationHeading } from '../organization'
 import { formatDecimal, toMinor } from '../money'
 import type {
   YearlySummaryBusiness,
-  YearlySummaryCategory,
+  YearlySummaryClassification,
   YearlySummaryDays,
   YearlySummaryRecords,
   YearlySummaryReport,
@@ -123,12 +123,12 @@ export function YearlySummaryPage() {
 
       {report.isLoading && <p className="hint">Opening the yearly summary…</p>}
       {report.isError && <p className="hint">The yearly summary could not be opened.</p>}
-      {report.isSuccess && groups.length === 0 && <p className="hint">No categories yet.</p>}
+      {report.isSuccess && groups.length === 0 && <p className="hint">No classifications yet.</p>}
 
       {groups.length > 0 && (
         <div className="year-categories">
           {groups.map((group) => (
-            <CategoryAccordion key={group.id ?? 'none'} category={group} year={year} />
+            <ClassificationAccordion key={group.id ?? 'none'} classification={group} year={year} />
           ))}
         </div>
       )}
@@ -136,23 +136,23 @@ export function YearlySummaryPage() {
   )
 }
 
-function CategoryAccordion({ category, year }: { category: YearlySummaryCategory; year: number }) {
+function ClassificationAccordion({ classification, year }: { classification: YearlySummaryClassification; year: number }) {
   return (
     <details className="year-category">
       <summary>
         <span className="category-mark" aria-hidden="true">
-          {initial(category.name)}
+          {initial(classification.name)}
         </span>
-        <span className="year-category-name">{category.name}</span>
+        <span className="year-category-name">{classification.name}</span>
         <span className="year-summary-aside">
-          <span className="category-count">{businessLabel(category.businesses.length)}</span>
+          <span className="category-count">{businessLabel(classification.businesses.length)}</span>
         </span>
       </summary>
-      {category.businesses.length === 0 ? (
-        <p className="hint year-empty">No businesses in this category.</p>
+      {classification.businesses.length === 0 ? (
+        <p className="hint year-empty">No businesses in this classification.</p>
       ) : (
         <div className="year-businesses">
-          {category.businesses.map((business) => (
+          {classification.businesses.map((business) => (
             <BusinessAccordion key={business.id} business={business} year={year} />
           ))}
         </div>
