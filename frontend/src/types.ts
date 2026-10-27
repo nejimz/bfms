@@ -93,7 +93,11 @@ export function canViewDashboard(role: string | undefined): boolean {
   return role === 'admin' || role === 'manager'
 }
 
-export function homePath(role: string | undefined): string {
+export function homePath(role: string | undefined, company?: { id: string } | null): string {
+  if (role === 'admin' && company === null) {
+    return '/businesses'
+  }
+
   return canViewDashboard(role) ? '/dashboard' : '/purchase-expense'
 }
 
@@ -346,7 +350,7 @@ export type Session = {
     name: string
     description: string | null
     currency: string
-  }
+  } | null
   companies: Membership[]
 }
 

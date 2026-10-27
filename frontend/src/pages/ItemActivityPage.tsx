@@ -54,7 +54,7 @@ function isQuiet(cell: ItemActivityCell | undefined): boolean {
 export function ItemActivityPage({ moduleKey }: { moduleKey: ChartAccountModuleKey }) {
   const module = chartAccountModule(moduleKey)
   const { user } = useAuth()
-  const companyId = user?.company.id
+  const companyId = user?.company?.id
   const today = new Date()
   const [grain, setGrain] = useState<ItemActivityGrain>('month')
   const [year, setYear] = useState(today.getFullYear())
@@ -103,7 +103,7 @@ export function ItemActivityPage({ moduleKey }: { moduleKey: ChartAccountModuleK
         <div>
           <OrganizationHeading />
           <p className="eyebrow">
-            {user?.company.currency}
+            {user?.company?.currency}
             {meta ? ` · ${periodLabel(grain, year, month)}` : ''}
           </p>
           <h1>{module.title} by item</h1>

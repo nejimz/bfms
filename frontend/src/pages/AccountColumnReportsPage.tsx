@@ -7,7 +7,7 @@ import { canWriteReport, readResource, type AccountColumnReport } from '../types
 
 export function AccountColumnReportsPage() {
   const { user } = useAuth()
-  const companyId = user?.company.id
+  const companyId = user?.company?.id
   const reports = useQuery({
     queryKey: ['account-column-reports', companyId],
     enabled: Boolean(companyId),
@@ -27,7 +27,7 @@ export function AccountColumnReportsPage() {
       <header className="page-header">
         <div>
           <p className="eyebrow">
-            {user?.company.name} · {user?.company.currency}
+            {user?.company?.name} · {user?.company?.currency}
           </p>
           <h1>Account columns</h1>
           <p className="hint">Each report keeps a name and the chart accounts shown as columns.</p>

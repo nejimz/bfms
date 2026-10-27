@@ -34,7 +34,7 @@ export function ChartAccountEntriesPage({ moduleKey }: { moduleKey?: ChartAccoun
   const listPath = moduleConfig?.path ?? '/chart-account-entries'
   const partyLabel = moduleConfig?.partyLabel ?? 'Particulars'
   const { user } = useAuth()
-  const companyId = user?.company.id
+  const companyId = user?.company?.id
   const scope = `${companyId ?? ''}:${moduleKey ?? ''}`
   const [page, setPage] = useState(1)
   const [pageScope, setPageScope] = useState(scope)
@@ -78,7 +78,7 @@ export function ChartAccountEntriesPage({ moduleKey }: { moduleKey?: ChartAccoun
     <div className="page entry-page">
       <header className="entry-hero">
         <div>
-          <p className="eyebrow">{user?.company.currency}</p>
+          <p className="eyebrow">{user?.company?.currency}</p>
           <h1>{moduleConfig?.title ?? 'Chart account entry'}</h1>
           <p className="entry-lede">A private register. Posted lines stay off the general ledger.</p>
         </div>

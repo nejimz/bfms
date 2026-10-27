@@ -53,7 +53,7 @@ export function BusinessesPage() {
                     {business.logo_url && <img className="business-logo" src={business.logo_url} alt="" />}
                     <span>
                       {business.name}
-                      {business.id === user?.company.id && <span className="status">Current</span>}
+                      {business.id === user?.company?.id && <span className="status">Current</span>}
                     </span>
                   </span>
                 </td>

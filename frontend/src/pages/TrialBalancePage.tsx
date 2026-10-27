@@ -18,7 +18,7 @@ function monthBounds(): { from: string; to: string } {
 
 export function TrialBalancePage() {
   const { user } = useAuth()
-  const companyId = user?.company.id
+  const companyId = user?.company?.id
   const initial = monthBounds()
   const [from, setFrom] = useState(initial.from)
   const [to, setTo] = useState(initial.to)
@@ -43,7 +43,7 @@ export function TrialBalancePage() {
         <div>
           <OrganizationHeading />
           <p className="eyebrow">
-            {user?.company.name} · {report.data?.meta.currency ?? user?.company.currency}
+            {user?.company?.name} · {report.data?.meta.currency ?? user?.company?.currency}
           </p>
           <h1>Trial balance</h1>
         </div>

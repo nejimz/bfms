@@ -666,3 +666,27 @@ it('rejects a business logo larger than 2 MB', function () {
 
     expect($company->fresh()->logo_path)->toBeNull();
 });
+
+it('lets an admin open the books when no business exists', function () {
+    $admin = User::factory()->admin()->create();
+
+    $this->actingAs($admin)->getJson('/api/v1/user')
+        ->assertOk()
+        ->assertJsonPath('data.attributes.company', null)
+        ->assertJsonPath('data.attributes.companies', []);
+
+    $this->actingAs($admin)->getJson('/api/v1/companies')
+        ->assertOk()
+        ->assertJsonPath('data', []);
+});
+
+it('still refuses a manager or staff member when no business exists', function (string $role) {
+    $user = User::factory()->create(['role' => $role]);
+
+    $this->actingAs($user)->getJson('/api/v1/user')
+        ->assertForbidden()
+        ->assertJsonPath('message', 'You do not belong to a company.');
+})->with([
+    UserRole::Manager->value,
+    UserRole::Staff->value,
+]);

@@ -50,7 +50,7 @@ export function JournalFormPage() {
   const location = useLocation()
   const queryClient = useQueryClient()
   const { user } = useAuth()
-  const companyId = user?.company.id
+  const companyId = user?.company?.id
   const accounts = useQuery({
     queryKey: ['accounts', companyId],
     enabled: Boolean(companyId),
@@ -174,7 +174,7 @@ export function JournalFormPage() {
     <form className="page" onSubmit={(event) => submit(event, false)}>
       <header className="page-header">
         <div>
-          <p className="eyebrow">{user?.company.currency} · Journal</p>
+          <p className="eyebrow">{user?.company?.currency} · Journal</p>
           <h1>{id ? 'Edit draft' : 'New journal'}</h1>
         </div>
         <Link to="/journals">Back to journals</Link>

@@ -11,7 +11,7 @@ export function AccountColumnReportFormPage() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const { user } = useAuth()
-  const companyId = user?.company.id
+  const companyId = user?.company?.id
   const accounts = useQuery({
     queryKey: ['accounts', companyId],
     enabled: Boolean(companyId),
@@ -123,7 +123,7 @@ export function AccountColumnReportFormPage() {
     <div className="page">
       <header className="page-header">
         <div>
-          <p className="eyebrow">{user?.company.name}</p>
+          <p className="eyebrow">{user?.company?.name}</p>
           <h1>{editing ? 'Edit report' : 'New report'}</h1>
           <p className="hint">Columns follow the order of the accounts below.</p>
         </div>

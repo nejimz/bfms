@@ -27,6 +27,11 @@ class CurrentCompany
         return $this->company?->id;
     }
 
+    public function selected(): ?Company
+    {
+        return $this->company;
+    }
+
     public function company(): Company
     {
         if ($this->company === null) {

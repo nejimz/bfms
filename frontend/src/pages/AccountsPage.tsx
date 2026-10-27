@@ -10,7 +10,7 @@ const types: AccountType[] = ['asset', 'liability', 'equity', 'income', 'expense
 export function AccountsPage() {
   const queryClient = useQueryClient()
   const { user } = useAuth()
-  const companyId = user?.company.id
+  const companyId = user?.company?.id
   const accounts = useQuery({
     queryKey: ['accounts', companyId],
     enabled: Boolean(companyId),
@@ -61,7 +61,7 @@ export function AccountsPage() {
       <header className="page-header">
         <div>
           <p className="eyebrow">
-            {user?.company.name} · {user?.company.currency}
+            {user?.company?.name} · {user?.company?.currency}
           </p>
           <h1>Chart of accounts</h1>
         </div>

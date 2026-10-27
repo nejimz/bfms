@@ -58,7 +58,7 @@ function RequireAuth() {
 function HomeRedirect() {
   const { user } = useAuth()
 
-  return <Navigate to={homePath(user?.role)} replace />
+  return <Navigate to={homePath(user?.role, user?.company)} replace />
 }
 
 function RequireAdmin() {

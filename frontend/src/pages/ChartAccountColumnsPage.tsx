@@ -66,7 +66,7 @@ export function ChartAccountColumnsPage() {
   const { id } = useParams()
   const { user } = useAuth()
   const navigate = useNavigate()
-  const companyId = user?.company.id
+  const companyId = user?.company?.id
   const today = new Date()
   const [year, setYear] = useState(today.getFullYear())
   const [sort, setSort] = useState<'asc' | 'desc'>('asc')
@@ -104,7 +104,7 @@ export function ChartAccountColumnsPage() {
         <div>
           <OrganizationHeading />
           <p className="eyebrow">
-            {user?.company.name} · {report.data?.meta.currency ?? user?.company.currency}
+            {user?.company?.name} · {report.data?.meta.currency ?? user?.company?.currency}
           </p>
           <h1>{definition.data?.name ?? 'Account columns'}</h1>
           <p className="hint">Each account lists its own date, particulars, reference, cash, and credit.</p>

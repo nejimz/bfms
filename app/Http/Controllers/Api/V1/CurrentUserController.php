@@ -14,7 +14,7 @@ class CurrentUserController extends Controller
     public function show(Request $request): JsonResponse
     {
         $user = $request->user();
-        $company = app(CurrentCompany::class)->company();
+        $company = app(CurrentCompany::class)->selected();
         $companies = $user->accessibleCompanies()
             ->orderBy('companies.name')
             ->get()
@@ -34,7 +34,7 @@ class CurrentUserController extends Controller
                     'name' => $user->name,
                     'email' => $user->email,
                     'role' => $user->role?->value,
-                    'company' => [
+                    'company' => $company === null ? null : [
                         'id' => (string) $company->id,
                         'name' => $company->name,
                         'description' => $company->description,

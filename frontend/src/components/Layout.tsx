@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { NavLink, Outlet, useLocation, Link } from 'react-router-dom'
+import { NavLink, Navigate, Outlet, useLocation, Link } from 'react-router-dom'
 import { api, ensureCsrf, errorMessage, isUnauthorized } from '../api'
 import { useAuth } from '../auth'
 import { chartAccountModuleList } from '../chartAccountModules'
@@ -45,6 +45,12 @@ const dashboardLink: MenuItem = { to: '/dashboard', label: 'Dashboard', icon: 'd
 const incomeExpenseLink: MenuItem = { to: '/income-expense', label: 'Income & Expenses', icon: 'chart' }
 const yearlySummaryLink: MenuItem = { to: '/yearly-summary', label: 'Yearly Summary', icon: 'summary' }
 
+const openWithoutBusiness = ['/businesses', '/classifications', '/categories', '/locations', '/users', '/company', '/password']
+
+function canOpenWithoutBusiness(pathname: string): boolean {
+  return openWithoutBusiness.some((path) => pathname === path || pathname.startsWith(`${path}/`))
+}
+
 const linksAfterSettings: MenuItem[] = [
   { to: '/journals', label: 'Journals', icon: 'journals' },
   { to: '/trial-balance', label: 'Trial Balance', icon: 'balance' },
@@ -56,10 +62,14 @@ function settingsRouteActive(pathname: string): boolean {
   )
 }
 
+const needsBusiness = new Set(['/chart-account-columns', '/chart-account-entries', '/accounts'])
+
 function SettingsMenu() {
+  const { user } = useAuth()
   const location = useLocation()
   const active = settingsRouteActive(location.pathname)
   const [open, setOpen] = useState(true)
+  const links = user?.company ? settingsLinks : settingsLinks.filter((link) => !needsBusiness.has(link.to))
 
   useEffect(() => {
     if (active) {
@@ -84,7 +94,7 @@ function SettingsMenu() {
       </button>
       {open && (
         <div className="nav-sub" id="settings-menu">
-          {settingsLinks.map((link) => {
+          {links.map((link) => {
             if (businessDirectoryLinks.some((child) => child.to === link.to)) {
               return null
             }
@@ -270,6 +280,7 @@ function Chevron() {
 
 export function Layout() {
   const { user, clear, selectCompany } = useAuth()
+  const location = useLocation()
   const [error, setError] = useState<string | null>(null)
   const [loggingOut, setLoggingOut] = useState(false)
 
@@ -294,7 +305,7 @@ export function Layout() {
   }
 
   async function switchBusiness(companyId: string) {
-    if (!user || companyId === user.company.id) {
+    if (!user?.company || companyId === user.company.id) {
       return
     }
 
@@ -307,12 +318,16 @@ export function Layout() {
     }
   }
 
+  if (user?.role === 'admin' && user.company === null && !canOpenWithoutBusiness(location.pathname)) {
+    return <Navigate to="/businesses" replace />
+  }
+
   return (
     <div className="shell">
       <aside className="sidebar">
         <OrganizationMark subtitle="General ledger" />
         <nav>
-          {user && canViewDashboard(user.role) && (
+          {user?.company && canViewDashboard(user.role) && (
             <>
               <MenuLink item={dashboardLink} />
               <MenuLink item={yearlySummaryLink} />
@@ -322,19 +337,19 @@ export function Layout() {
           {user?.role === 'admin' && (
             <>
               <SettingsMenu />
-              {linksAfterSettings.map((link) => (
+              {user.company && linksAfterSettings.map((link) => (
                 <MenuLink key={link.to} item={link} />
               ))}
             </>
           )}
-          {moduleLinks.map((link) => (
+          {user?.company && moduleLinks.map((link) => (
             <MenuLink key={link.to} item={link} />
           ))}
         </nav>
         {user && (
           <div className="session">
             <div className="session-identity">
-              {user.companies.length > 1 ? (
+              {user.companies.length > 1 && user.company ? (
                 <label>
                   Business
                   <select
@@ -349,10 +364,10 @@ export function Layout() {
                   </select>
                 </label>
               ) : (
-                <strong>{user.company.name}</strong>
+                <strong>{user.company?.name ?? 'No business'}</strong>
               )}
               <span>
-                {user.company.currency} · {user.role}
+                {user.company ? `${user.company.currency} · ${user.role}` : user.role}
               </span>
               <span>{user.name}</span>
               {error && <p className="form-error">{error}</p>}

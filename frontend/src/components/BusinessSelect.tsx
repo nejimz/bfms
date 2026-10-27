@@ -12,12 +12,12 @@ export function BusinessSelect({
   const { user, selectCompany } = useAuth()
   const [error, setError] = useState<string | null>(null)
 
-  if (!user) {
+  if (!user?.company) {
     return null
   }
 
   async function change(companyId: string) {
-    if (!user || disabled || companyId === user.company.id) {
+    if (!user?.company || disabled || companyId === user.company.id) {
       return
     }
 

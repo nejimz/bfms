@@ -184,7 +184,7 @@ export function ChartAccountEntryFormPage({ moduleKey }: { moduleKey?: ChartAcco
   const location = useLocation()
   const queryClient = useQueryClient()
   const { user } = useAuth()
-  const companyId = user?.company.id
+  const companyId = user?.company?.id
   const accounts = useQuery({
     queryKey: ['accounts', companyId],
     enabled: Boolean(companyId),
@@ -397,7 +397,7 @@ export function ChartAccountEntryFormPage({ moduleKey }: { moduleKey?: ChartAcco
       <header className="entry-hero">
         <div>
           <p className="eyebrow">
-            {user?.company.currency} · {moduleConfig?.title ?? 'Chart account entry'}
+            {user?.company?.currency} · {moduleConfig?.title ?? 'Chart account entry'}
           </p>
           <h1>{id ? 'Edit draft' : moduleConfig?.title ?? 'New entry'}</h1>
         </div>
@@ -551,7 +551,7 @@ export function ChartAccountEntryFormPage({ moduleKey }: { moduleKey?: ChartAcco
             <p className="form-error">Cash and credit must equal the total.</p>
           )}
           <p className="entry-aside-note">
-            Credit is the portion still unpaid. {user?.company.currency}. This register stays off the general ledger.
+            Credit is the portion still unpaid. {user?.company?.currency}. This register stays off the general ledger.
           </p>
           {accountNotice && <p className="form-error">{accountNotice}</p>}
           {formError && <p className="form-error">{formError}</p>}
@@ -627,7 +627,7 @@ function PostedEntry({
 }) {
   const queryClient = useQueryClient()
   const { user } = useAuth()
-  const companyId = user?.company.id
+  const companyId = user?.company?.id
   const [reference, setReference] = useState(entry.reference ?? '')
   const [cash, setCash] = useState(entry.cash)
   const [credit, setCredit] = useState(entry.credit)

@@ -8,7 +8,7 @@ import { readResource } from '../types'
 
 export function JournalsPage() {
   const { user } = useAuth()
-  const companyId = user?.company.id
+  const companyId = user?.company?.id
   const journals = useQuery({
     queryKey: ['journals', companyId],
     enabled: Boolean(companyId),
@@ -24,7 +24,7 @@ export function JournalsPage() {
     <div className="page">
       <header className="page-header">
         <div>
-          <p className="eyebrow">{user?.company.currency}</p>
+          <p className="eyebrow">{user?.company?.currency}</p>
           <h1>Journals</h1>
         </div>
         <BusinessSelect />

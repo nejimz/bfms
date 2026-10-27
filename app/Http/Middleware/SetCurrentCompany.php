@@ -35,6 +35,10 @@ class SetCurrentCompany
         $company ??= $user->accessibleCompanies()->orderBy('companies.id')->first();
 
         if (! $company instanceof Company) {
+            if ($user->isAdmin()) {
+                return $next($request);
+            }
+
             abort(403, 'You do not belong to a company.');
         }
 

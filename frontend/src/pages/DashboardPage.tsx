@@ -112,7 +112,7 @@ export function DashboardPage() {
     setSwitchError(null)
 
     try {
-      if (user && companyId !== user.company.id) {
+      if (user?.company && companyId !== user.company.id) {
         await selectCompany(companyId)
       }
 

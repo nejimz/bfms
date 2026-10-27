@@ -13,7 +13,7 @@ export function LoginPage() {
   const [pending, setPending] = useState(false)
 
   if (!isLoading && user) {
-    return <Navigate to={homePath(user.role)} replace />
+    return <Navigate to={homePath(user.role, user.company)} replace />
   }
 
   async function submit(event: FormEvent) {
