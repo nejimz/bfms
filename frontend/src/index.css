@@ -219,6 +219,9 @@ a { color: var(--green-dark); }
   padding-left: 0.55rem;
   border-left: 1px solid #3d4b59;
 }
+.nav-sub .nav-sub {
+  margin-left: 0.45rem;
+}
 .nav-chevron {
   width: 0.7rem;
   height: 0.7rem;

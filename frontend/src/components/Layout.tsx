@@ -14,12 +14,18 @@ type MenuItem = {
   icon: MenuIcon
 }
 
-const settingsLinks: MenuItem[] = [
-  { to: '/company', label: 'Company', icon: 'company' },
-  { to: '/businesses', label: 'Businesses', icon: 'businesses' },
-  { to: '/users', label: 'Users', icon: 'users' },
+const businessesLink: MenuItem = { to: '/businesses', label: 'Businesses', icon: 'businesses' }
+
+const businessDirectoryLinks: MenuItem[] = [
   { to: '/categories', label: 'Categories', icon: 'categories' },
   { to: '/locations', label: 'Locations', icon: 'locations' },
+]
+
+const settingsLinks: MenuItem[] = [
+  { to: '/company', label: 'Company', icon: 'company' },
+  businessesLink,
+  ...businessDirectoryLinks,
+  { to: '/users', label: 'Users', icon: 'users' },
   { to: '/chart-account-columns', label: 'Account Columns', icon: 'entry' },
   { to: '/chart-account-entries', label: 'Chart Account Entry', icon: 'entry' },
   { to: '/accounts', label: 'Chart Of Accounts', icon: 'accounts' },
@@ -72,9 +78,26 @@ function SettingsMenu() {
       </button>
       {open && (
         <div className="nav-sub" id="settings-menu">
-          {settingsLinks.map((link) => (
-            <MenuLink key={link.to} item={link} />
-          ))}
+          {settingsLinks.map((link) => {
+            if (businessDirectoryLinks.some((child) => child.to === link.to)) {
+              return null
+            }
+
+            if (link.to !== businessesLink.to) {
+              return <MenuLink key={link.to} item={link} />
+            }
+
+            return (
+              <div className="nav-group" key={link.to}>
+                <MenuLink item={link} />
+                <div className="nav-sub" id="business-menu">
+                  {businessDirectoryLinks.map((child) => (
+                    <MenuLink key={child.to} item={child} />
+                  ))}
+                </div>
+              </div>
+            )
+          })}
         </div>
       )}
     </div>
