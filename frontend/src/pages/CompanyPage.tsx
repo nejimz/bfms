@@ -1,6 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { useEffect, useState, type FormEvent } from 'react'
 import { api, fieldErrors } from '../api'
+import { ActivityLogs } from '../components/ActivityLogs'
 import { PictureField, appendPicture, choosePicture, emptyPicture, imageError, replacePicture, type Picture } from '../components/PictureField'
 import { useOrganization } from '../organization'
 
@@ -85,6 +86,7 @@ export function CompanyPage() {
       await api.post('/api/v1/organization', body)
       clearPictures()
       await queryClient.invalidateQueries({ queryKey: ['organization'] })
+      await queryClient.invalidateQueries({ queryKey: ['activity-logs', 'company'] })
     } catch (caught) {
       setErrors(fieldErrors(caught))
     } finally {
@@ -162,6 +164,7 @@ export function CompanyPage() {
           </div>
         </form>
       )}
+      <ActivityLogs module="company" />
     </div>
   )
 }

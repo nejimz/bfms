@@ -2,7 +2,10 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Domain\Activity\ActivityLogger;
 use App\Domain\Ledger\DefaultChart;
+use App\Enums\ActivityAction;
+use App\Enums\ActivityModule;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreCompanyRequest;
 use App\Http\Requests\UpdateCompanyRequest;
@@ -49,7 +52,7 @@ class CompanyController extends Controller
         ]);
     }
 
-    public function store(StoreCompanyRequest $request): JsonResponse
+    public function store(StoreCompanyRequest $request, ActivityLogger $activity): JsonResponse
     {
         $company = DB::transaction(function () use ($request) {
             $company = Company::query()->create($request->safe()->except(['logo', 'remove_logo']));
@@ -61,15 +64,20 @@ class CompanyController extends Controller
         });
 
         $this->rememberCompany($request, $company);
+        $activity->record($request->user(), ActivityModule::Business, ActivityAction::Added, $company->name);
 
         return response()->json($this->companyPayload($company), 201);
     }
 
-    public function update(UpdateCompanyRequest $request, Company $company): JsonResponse
+    public function update(UpdateCompanyRequest $request, Company $company, ActivityLogger $activity): JsonResponse
     {
         $company->update($request->safe()->except(['logo', 'remove_logo']));
         $this->applyLogo($company, $request);
         $company->save();
+
+        if ($company->wasChanged()) {
+            $activity->record($request->user(), ActivityModule::Business, ActivityAction::Changed, $company->name);
+        }
 
         return response()->json($this->companyPayload($company));
     }

@@ -603,6 +603,9 @@ td .status { margin-left: 0.55rem; vertical-align: middle; }
 .business-select { min-width: 12rem; }
 .grow { flex: 1; min-width: 12rem; }
 
+.activity-logs { display: grid; gap: 0.75rem; }
+.activity-logs h2 { font-size: 1.35rem; }
+
 .table-wrap {
   background: var(--panel);
   border: 1px solid var(--line);

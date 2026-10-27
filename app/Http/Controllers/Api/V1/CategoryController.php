@@ -2,11 +2,15 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Domain\Activity\ActivityLogger;
+use App\Enums\ActivityAction;
+use App\Enums\ActivityModule;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreCategoryRequest;
 use App\Http\Requests\UpdateCategoryRequest;
 use App\Models\Category;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -27,9 +31,10 @@ class CategoryController extends Controller
         ]);
     }
 
-    public function store(StoreCategoryRequest $request): JsonResponse
+    public function store(StoreCategoryRequest $request, ActivityLogger $activity): JsonResponse
     {
         $category = Category::query()->create($request->validated());
+        $activity->record($request->user(), ActivityModule::Category, ActivityAction::Added, $category->name);
         $category->loadCount('classifications');
 
         return response()->json([
@@ -37,9 +42,14 @@ class CategoryController extends Controller
         ], 201);
     }
 
-    public function update(UpdateCategoryRequest $request, Category $category): JsonResponse
+    public function update(UpdateCategoryRequest $request, Category $category, ActivityLogger $activity): JsonResponse
     {
         $category->update($request->validated());
+
+        if ($category->wasChanged()) {
+            $activity->record($request->user(), ActivityModule::Category, ActivityAction::Changed, $category->name);
+        }
+
         $category->loadCount('classifications');
 
         return response()->json([
@@ -47,7 +57,7 @@ class CategoryController extends Controller
         ]);
     }
 
-    public function destroy(Category $category): Response
+    public function destroy(Request $request, Category $category, ActivityLogger $activity): Response
     {
         $this->authorize('delete', $category);
 
@@ -57,7 +67,9 @@ class CategoryController extends Controller
             ]);
         }
 
+        $name = $category->name;
         $category->delete();
+        $activity->record($request->user(), ActivityModule::Category, ActivityAction::Deleted, $name);
 
         return response()->noContent();
     }

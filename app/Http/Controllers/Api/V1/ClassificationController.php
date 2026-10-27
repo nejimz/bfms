@@ -2,11 +2,15 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Domain\Activity\ActivityLogger;
+use App\Enums\ActivityAction;
+use App\Enums\ActivityModule;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreClassificationRequest;
 use App\Http\Requests\UpdateClassificationRequest;
 use App\Models\Classification;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpFoundation\Response;
@@ -29,11 +33,12 @@ class ClassificationController extends Controller
         ]);
     }
 
-    public function store(StoreClassificationRequest $request): JsonResponse
+    public function store(StoreClassificationRequest $request, ActivityLogger $activity): JsonResponse
     {
         $classification = Classification::query()->create($request->safe()->except(['logo', 'remove_logo']));
         $this->applyLogo($classification, $request);
         $classification->save();
+        $activity->record($request->user(), ActivityModule::Classification, ActivityAction::Added, $classification->name);
         $classification->load('category')->loadCount('companies');
 
         return response()->json([
@@ -41,11 +46,16 @@ class ClassificationController extends Controller
         ], 201);
     }
 
-    public function update(UpdateClassificationRequest $request, Classification $classification): JsonResponse
+    public function update(UpdateClassificationRequest $request, Classification $classification, ActivityLogger $activity): JsonResponse
     {
         $classification->update($request->safe()->except(['logo', 'remove_logo']));
         $this->applyLogo($classification, $request);
         $classification->save();
+
+        if ($classification->wasChanged()) {
+            $activity->record($request->user(), ActivityModule::Classification, ActivityAction::Changed, $classification->name);
+        }
+
         $classification->load('category')->loadCount('companies');
 
         return response()->json([
@@ -53,7 +63,7 @@ class ClassificationController extends Controller
         ]);
     }
 
-    public function destroy(Classification $classification): Response
+    public function destroy(Request $request, Classification $classification, ActivityLogger $activity): Response
     {
         $this->authorize('delete', $classification);
 
@@ -63,8 +73,10 @@ class ClassificationController extends Controller
             ]);
         }
 
+        $name = $classification->name;
         $path = $classification->logo_path;
         $classification->delete();
+        $activity->record($request->user(), ActivityModule::Classification, ActivityAction::Deleted, $name);
         $classification->deleteFile(is_string($path) ? $path : null);
 
         return response()->noContent();

@@ -2,9 +2,13 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Domain\Activity\ActivityLogger;
+use App\Enums\ActivityAction;
+use App\Enums\ActivityModule;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\UpdateOrganizationRequest;
 use App\Models\Organization;
+use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Validation\ValidationException;
@@ -18,7 +22,7 @@ class OrganizationController extends Controller
         ]);
     }
 
-    public function update(UpdateOrganizationRequest $request): JsonResponse
+    public function update(UpdateOrganizationRequest $request, ActivityLogger $activity): JsonResponse
     {
         $organization = Organization::current();
         $organization->name = $request->string('name')->toString();
@@ -28,6 +32,11 @@ class OrganizationController extends Controller
         $this->applyUpload($organization, 'banner_path', 'banner', $request->file('banner'), $request->boolean('remove_banner'), 'The banner could not be saved.');
 
         $organization->save();
+        $actor = $request->user();
+
+        if ($organization->wasChanged() && $actor instanceof User) {
+            $activity->record($actor, ActivityModule::Company, ActivityAction::Changed, $organization->name);
+        }
 
         return response()->json([
             'data' => $this->resource($organization),

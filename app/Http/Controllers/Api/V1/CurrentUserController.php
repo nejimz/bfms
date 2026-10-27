@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Domain\Activity\ActivityLogger;
+use App\Enums\ActivityAction;
+use App\Enums\ActivityModule;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\UpdatePasswordRequest;
 use App\Support\CurrentCompany;
@@ -46,10 +49,12 @@ class CurrentUserController extends Controller
         ]);
     }
 
-    public function updatePassword(UpdatePasswordRequest $request): JsonResponse
+    public function updatePassword(UpdatePasswordRequest $request, ActivityLogger $activity): JsonResponse
     {
         $password = $request->validated('password');
-        $request->user()->update(['password' => $password]);
+        $user = $request->user();
+        $user->update(['password' => $password]);
+        $activity->record($user, ActivityModule::User, ActivityAction::Changed, $user->name);
 
         if ($request->hasSession()) {
             if (Auth::guard('web')->check()) {

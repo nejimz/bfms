@@ -373,6 +373,14 @@ export type TrialBalance = {
   }
 }
 
+export type ActivityLog = {
+  id: string
+  actor_name: string
+  action: 'added' | 'changed' | 'deleted'
+  record_name: string
+  created_at: string
+}
+
 type Resource<T> = {
   id: string
   type?: string

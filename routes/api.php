@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\V1\AccountColumnReportController;
 use App\Http\Controllers\Api\V1\AccountController;
+use App\Http\Controllers\Api\V1\ActivityLogController;
 use App\Http\Controllers\Api\V1\BusinessSummaryController;
 use App\Http\Controllers\Api\V1\CategoryController;
 use App\Http\Controllers\Api\V1\ChartAccountColumnReportController;
@@ -29,6 +30,7 @@ Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
 });
 
 Route::middleware(['auth:sanctum', SetCurrentCompany::class])->prefix('v1')->group(function () {
+    Route::get('/activity-logs', [ActivityLogController::class, 'index']);
     Route::get('/user', [CurrentUserController::class, 'show']);
     Route::get('/users', [UserController::class, 'index']);
     Route::post('/users', [UserController::class, 'store']);

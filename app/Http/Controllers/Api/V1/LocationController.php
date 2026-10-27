@@ -2,11 +2,15 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Domain\Activity\ActivityLogger;
+use App\Enums\ActivityAction;
+use App\Enums\ActivityModule;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreLocationRequest;
 use App\Http\Requests\UpdateLocationRequest;
 use App\Models\Location;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -27,9 +31,10 @@ class LocationController extends Controller
         ]);
     }
 
-    public function store(StoreLocationRequest $request): JsonResponse
+    public function store(StoreLocationRequest $request, ActivityLogger $activity): JsonResponse
     {
         $location = Location::query()->create($request->validated());
+        $activity->record($request->user(), ActivityModule::Location, ActivityAction::Added, $location->name);
         $location->loadCount('companies');
 
         return response()->json([
@@ -37,9 +42,14 @@ class LocationController extends Controller
         ], 201);
     }
 
-    public function update(UpdateLocationRequest $request, Location $location): JsonResponse
+    public function update(UpdateLocationRequest $request, Location $location, ActivityLogger $activity): JsonResponse
     {
         $location->update($request->validated());
+
+        if ($location->wasChanged()) {
+            $activity->record($request->user(), ActivityModule::Location, ActivityAction::Changed, $location->name);
+        }
+
         $location->loadCount('companies');
 
         return response()->json([
@@ -47,7 +57,7 @@ class LocationController extends Controller
         ]);
     }
 
-    public function destroy(Location $location): Response
+    public function destroy(Request $request, Location $location, ActivityLogger $activity): Response
     {
         $this->authorize('delete', $location);
 
@@ -57,7 +67,9 @@ class LocationController extends Controller
             ]);
         }
 
+        $name = $location->name;
         $location->delete();
+        $activity->record($request->user(), ActivityModule::Location, ActivityAction::Deleted, $name);
 
         return response()->noContent();
     }

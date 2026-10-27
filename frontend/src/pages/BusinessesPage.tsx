@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { api } from '../api'
+import { ActivityLogs } from '../components/ActivityLogs'
 import { useAuth } from '../auth'
 import type { Business } from '../types'
 import { readResource } from '../types'
@@ -74,6 +75,7 @@ export function BusinessesPage() {
         </table>
         {businesses.isLoading && <p className="hint">Loading businesses…</p>}
       </div>
+      <ActivityLogs module="business" />
     </div>
   )
 }

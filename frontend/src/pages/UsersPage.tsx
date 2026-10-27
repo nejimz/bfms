@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { api } from '../api'
+import { ActivityLogs } from '../components/ActivityLogs'
 import { useAuth } from '../auth'
 import { readResource, type DirectoryUser } from '../types'
 
@@ -74,6 +75,7 @@ export function UsersPage() {
           </table>
         </div>
       )}
+      <ActivityLogs module="user" />
     </div>
   )
 }

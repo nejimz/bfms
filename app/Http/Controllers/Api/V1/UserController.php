@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Domain\Activity\ActivityLogger;
+use App\Enums\ActivityAction;
+use App\Enums\ActivityModule;
 use App\Enums\CompanyRole;
 use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
@@ -27,7 +30,7 @@ class UserController extends Controller
         ]);
     }
 
-    public function store(StoreUserRequest $request): JsonResponse
+    public function store(StoreUserRequest $request, ActivityLogger $activity): JsonResponse
     {
         $data = $request->validated();
 
@@ -45,6 +48,8 @@ class UserController extends Controller
             return $user;
         });
 
+        $activity->record($request->user(), ActivityModule::User, ActivityAction::Added, $user->name);
+
         return response()->json(['data' => $this->userResource($user)], 201);
     }
 
@@ -55,9 +60,10 @@ class UserController extends Controller
         return response()->json(['data' => $this->userResource($user)]);
     }
 
-    public function update(UpdateUserRequest $request, User $user): JsonResponse
+    public function update(UpdateUserRequest $request, User $user, ActivityLogger $activity): JsonResponse
     {
         $data = $request->validated();
+        $companyIds = $this->assignedCompanyIds($user);
 
         DB::transaction(function () use ($data, $user): void {
             $attributes = [
@@ -78,10 +84,14 @@ class UserController extends Controller
             $this->syncCompanies($user, $data['company_ids'] ?? []);
         });
 
+        if ($user->wasChanged() || $companyIds !== $this->assignedCompanyIds($user)) {
+            $activity->record($request->user(), ActivityModule::User, ActivityAction::Changed, $user->name);
+        }
+
         return response()->json(['data' => $this->userResource($user->refresh())]);
     }
 
-    public function destroy(Request $request, User $user): JsonResponse
+    public function destroy(Request $request, User $user, ActivityLogger $activity): JsonResponse
     {
         $this->authorize('delete', $user);
 
@@ -98,8 +108,21 @@ class UserController extends Controller
         }
 
         $user->update(['is_active' => false]);
+        $activity->record($request->user(), ActivityModule::User, ActivityAction::Changed, $user->name);
 
         return response()->json(['data' => $this->userResource($user)]);
+    }
+
+    /**
+     * @return list<int>
+     */
+    private function assignedCompanyIds(User $user): array
+    {
+        return $user->companies()
+            ->orderBy('companies.id')
+            ->pluck('companies.id')
+            ->map(fn (int|string $id): int => (int) $id)
+            ->all();
     }
 
     /**

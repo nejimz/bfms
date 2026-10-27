@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { api } from '../api'
+import { ActivityLogs } from '../components/ActivityLogs'
 import { useAuth } from '../auth'
 import { readResource, type Location } from '../types'
 
@@ -112,6 +113,7 @@ export function LocationsPage() {
           ))}
         </div>
       )}
+      <ActivityLogs module="location" />
     </div>
   )
 }

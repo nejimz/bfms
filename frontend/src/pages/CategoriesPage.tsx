@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { api } from '../api'
+import { ActivityLogs } from '../components/ActivityLogs'
 import { useAuth } from '../auth'
 import { readResource, type Category } from '../types'
 
@@ -113,6 +114,7 @@ export function CategoriesPage() {
           ))}
         </div>
       )}
+      <ActivityLogs module="category" />
     </div>
   )
 }
