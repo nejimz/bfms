@@ -9,8 +9,11 @@ use App\Models\Category;
 use App\Models\ChartAccountEntry;
 use App\Models\Company;
 use App\Models\Journal;
+use App\Models\Location;
 use App\Models\User;
 use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Testing\TestResponse;
 use Symfony\Component\HttpFoundation\Cookie;
 
@@ -406,4 +409,260 @@ it('refuses to switch into a business the user does not belong to', function () 
     $this->actingAs($user)->postJson('/api/v1/current-company', [
         'company_id' => $other->id,
     ])->assertForbidden();
+});
+
+it('stores a location on a new business', function () {
+    $company = Company::factory()->create();
+    $owner = companyMember($company);
+    $location = Location::factory()->create(['name' => 'Cebu']);
+
+    $created = $this->actingAs($owner)->postJson('/api/v1/companies', [
+        'name' => 'Northwind',
+        'currency' => 'PHP',
+        'description' => 'Wholesale imports.',
+        'location_id' => $location->id,
+    ]);
+
+    $created->assertCreated()
+        ->assertJsonPath('data.attributes.location_id', (string) $location->id)
+        ->assertJsonPath('data.attributes.location_name', 'Cebu')
+        ->assertJsonPath('data.attributes.logo_url', null);
+
+    $this->assertDatabaseHas('companies', [
+        'id' => (int) $created->json('data.id'),
+        'location_id' => $location->id,
+        'logo_path' => null,
+    ]);
+});
+
+it('lists each business with its location', function () {
+    $location = Location::factory()->create(['name' => 'Cebu']);
+    $company = Company::factory()->create([
+        'name' => 'Harbor',
+        'location_id' => $location->id,
+    ]);
+    $owner = companyMember($company);
+
+    $this->actingAs($owner)->getJson('/api/v1/companies')
+        ->assertOk()
+        ->assertJsonPath('data.0.attributes.location_id', (string) $location->id)
+        ->assertJsonPath('data.0.attributes.location_name', 'Cebu')
+        ->assertJsonPath('data.0.attributes.logo_url', null);
+});
+
+it('lets an owner change or clear a business location', function () {
+    $cebu = Location::factory()->create(['name' => 'Cebu']);
+    $manila = Location::factory()->create(['name' => 'Manila']);
+    $company = Company::factory()->create([
+        'name' => 'Harbor Goods',
+        'description' => 'Retail goods and supplies.',
+        'currency' => 'PHP',
+        'location_id' => $cebu->id,
+    ]);
+    $owner = companyMember($company);
+    $payload = [
+        'name' => 'Harbor Goods',
+        'description' => 'Retail goods and supplies.',
+        'currency' => 'PHP',
+    ];
+
+    $this->actingAs($owner)->patchJson("/api/v1/companies/{$company->id}", [
+        ...$payload,
+        'location_id' => $manila->id,
+    ])->assertOk()
+        ->assertJsonPath('data.attributes.location_name', 'Manila');
+
+    $this->actingAs($owner)->patchJson("/api/v1/companies/{$company->id}", [
+        ...$payload,
+        'location_id' => null,
+    ])->assertOk()
+        ->assertJsonPath('data.attributes.location_id', null)
+        ->assertJsonPath('data.attributes.location_name', null);
+
+    expect($company->fresh()->location_id)->toBeNull();
+});
+
+it('keeps the location when a business edit omits it', function () {
+    $location = Location::factory()->create(['name' => 'Cebu']);
+    $company = Company::factory()->create([
+        'name' => 'Harbor Goods',
+        'description' => 'Retail goods and supplies.',
+        'currency' => 'PHP',
+        'location_id' => $location->id,
+    ]);
+    $owner = companyMember($company);
+
+    $this->actingAs($owner)->patchJson("/api/v1/companies/{$company->id}", [
+        'name' => 'Harbor Market',
+        'description' => 'Retail goods and supplies.',
+        'currency' => 'PHP',
+    ])->assertOk()
+        ->assertJsonPath('data.attributes.name', 'Harbor Market')
+        ->assertJsonPath('data.attributes.location_id', (string) $location->id);
+
+    expect($company->fresh()->location_id)->toBe($location->id);
+});
+
+it('rejects a business location that is not in the list', function () {
+    $company = Company::factory()->create([
+        'name' => 'Harbor Goods',
+        'description' => 'Retail goods and supplies.',
+        'currency' => 'PHP',
+    ]);
+    $owner = companyMember($company);
+
+    $this->actingAs($owner)->patchJson("/api/v1/companies/{$company->id}", [
+        'name' => 'Harbor Goods',
+        'description' => 'Retail goods and supplies.',
+        'currency' => 'PHP',
+        'location_id' => 9999,
+    ])->assertUnprocessable()
+        ->assertJsonPath('errors.location_id.0', 'Choose a location from the list.');
+
+    expect($company->fresh()->location_id)->toBeNull();
+});
+
+/**
+ * @return array<string, string>
+ */
+function businessFields(Company $company): array
+{
+    return [
+        'name' => $company->name,
+        'description' => (string) $company->description,
+        'currency' => $company->currency,
+    ];
+}
+
+it('stores a logo and keeps it when the business is renamed', function () {
+    Storage::fake('public');
+    $company = Company::factory()->create([
+        'name' => 'Harbor Goods',
+        'description' => 'Retail goods and supplies.',
+        'currency' => 'PHP',
+    ]);
+    $owner = companyMember($company);
+
+    $saved = $this->actingAs($owner)->post("/api/v1/companies/{$company->id}", [
+        '_method' => 'PATCH',
+        ...businessFields($company),
+        'logo' => UploadedFile::fake()->image('logo.png', 64, 64),
+    ]);
+
+    $saved->assertOk();
+    $path = $company->fresh()->logo_path;
+    expect($path)->toBeString()
+        ->and($saved->json('data.attributes.logo_url'))->toBe('/storage/'.$path);
+    Storage::disk('public')->assertExists($path);
+
+    $this->actingAs($owner)->patchJson("/api/v1/companies/{$company->id}", [
+        ...businessFields($company),
+        'name' => 'Harbor Market',
+    ])->assertOk()
+        ->assertJsonPath('data.attributes.name', 'Harbor Market')
+        ->assertJsonPath('data.attributes.logo_url', '/storage/'.$path);
+
+    Storage::disk('public')->assertExists($path);
+});
+
+it('replaces the business logo and deletes the previous file', function () {
+    Storage::fake('public');
+    $company = Company::factory()->create([
+        'name' => 'Harbor Goods',
+        'description' => 'Retail goods and supplies.',
+        'currency' => 'PHP',
+    ]);
+    $owner = companyMember($company);
+
+    $this->actingAs($owner)->post("/api/v1/companies/{$company->id}", [
+        '_method' => 'PATCH',
+        ...businessFields($company),
+        'logo' => UploadedFile::fake()->image('first.png', 64, 64),
+    ])->assertOk();
+
+    $previous = $company->fresh()->logo_path;
+
+    $replaced = $this->actingAs($owner)->post("/api/v1/companies/{$company->id}", [
+        '_method' => 'PATCH',
+        ...businessFields($company),
+        'logo' => UploadedFile::fake()->image('second.png', 64, 64),
+    ]);
+
+    $replaced->assertOk();
+    $current = $company->fresh()->logo_path;
+
+    expect($current)->not->toBe($previous)
+        ->and($replaced->json('data.attributes.logo_url'))->toBe('/storage/'.$current);
+    Storage::disk('public')->assertMissing($previous);
+    Storage::disk('public')->assertExists($current);
+});
+
+it('removes the business logo when asked and ignores a submitted file path', function () {
+    Storage::fake('public');
+    $company = Company::factory()->create([
+        'name' => 'Harbor Goods',
+        'description' => 'Retail goods and supplies.',
+        'currency' => 'PHP',
+    ]);
+    $owner = companyMember($company);
+
+    $this->actingAs($owner)->post("/api/v1/companies/{$company->id}", [
+        '_method' => 'PATCH',
+        ...businessFields($company),
+        'logo' => UploadedFile::fake()->image('logo.png', 64, 64),
+    ])->assertOk();
+
+    $path = $company->fresh()->logo_path;
+
+    $this->actingAs($owner)->post("/api/v1/companies/{$company->id}", [
+        '_method' => 'PATCH',
+        ...businessFields($company),
+        'remove_logo' => '1',
+        'logo_path' => 'companies/evil.php',
+    ])->assertOk()
+        ->assertJsonPath('data.attributes.logo_url', null);
+
+    expect($company->fresh()->logo_path)->toBeNull();
+    Storage::disk('public')->assertMissing($path);
+});
+
+it('rejects a business logo that is not a JPG, PNG, or WebP image', function (string $name, UploadedFile $logo) {
+    Storage::fake('public');
+    $company = Company::factory()->create([
+        'name' => 'Harbor Goods',
+        'description' => 'Retail goods and supplies.',
+        'currency' => 'PHP',
+    ]);
+    $owner = companyMember($company);
+
+    $this->actingAs($owner)->post("/api/v1/companies/{$company->id}", [
+        '_method' => 'PATCH',
+        ...businessFields($company),
+        'logo' => $logo,
+    ])->assertUnprocessable()
+        ->assertJsonPath('errors.logo.0', 'Use a JPG, PNG, or WebP logo.');
+
+    expect($company->fresh()->logo_path)->toBeNull();
+})->with([
+    'pdf' => ['pdf', UploadedFile::fake()->create('notes.pdf', 20, 'application/pdf')],
+    'gif' => ['gif', UploadedFile::fake()->image('mark.gif', 32, 32)],
+]);
+
+it('rejects a business logo larger than 2 MB', function () {
+    Storage::fake('public');
+    $company = Company::factory()->create([
+        'name' => 'Harbor Goods',
+        'description' => 'Retail goods and supplies.',
+        'currency' => 'PHP',
+    ]);
+    $owner = companyMember($company);
+
+    $this->actingAs($owner)->post("/api/v1/companies/{$company->id}", [
+        '_method' => 'PATCH',
+        ...businessFields($company),
+        'logo' => UploadedFile::fake()->image('logo.png')->size(2049),
+    ])->assertUnprocessable()
+        ->assertJsonPath('errors.logo.0', 'The logo must be 2 MB or smaller.');
+
+    expect($company->fresh()->logo_path)->toBeNull();
 });

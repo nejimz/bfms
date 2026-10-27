@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Storage;
 
-#[Fillable(['name', 'logo_path'])]
+#[Fillable(['name', 'logo_path', 'icon_path', 'banner_path'])]
 class Organization extends Model
 {
     /** @use HasFactory<OrganizationFactory> */
@@ -22,25 +22,40 @@ class Organization extends Model
         );
     }
 
-    public function deleteLogoFile(): void
+    public function deleteFile(?string $path): void
     {
-        if ($this->logo_path === null) {
+        if ($path === null || $path === '') {
             return;
         }
 
-        Storage::disk('public')->delete($this->logo_path);
+        Storage::disk('public')->delete($path);
+    }
+
+    public function logoUrl(): ?string
+    {
+        return $this->storedUrl($this->logo_path);
+    }
+
+    public function iconUrl(): ?string
+    {
+        return $this->storedUrl($this->icon_path);
+    }
+
+    public function bannerUrl(): ?string
+    {
+        return $this->storedUrl($this->banner_path);
     }
 
     /**
-     * A root-relative URL so the browser tab, login page, and Vite dev server
-     * load the file from the same origin as the API.
+     * A root-relative URL so the login page and Vite dev server load the file
+     * from the same origin as the API.
      */
-    public function logoUrl(): ?string
+    private function storedUrl(?string $path): ?string
     {
-        if ($this->logo_path === null || $this->logo_path === '') {
+        if ($path === null || $path === '') {
             return null;
         }
 
-        return '/storage/'.$this->logo_path;
+        return '/storage/'.$path;
     }
 }

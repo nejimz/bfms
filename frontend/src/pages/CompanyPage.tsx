@@ -1,38 +1,19 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { useEffect, useState, type FormEvent } from 'react'
 import { api, fieldErrors } from '../api'
+import { PictureField, appendPicture, choosePicture, emptyPicture, imageError, replacePicture, type Picture } from '../components/PictureField'
 import { useOrganization } from '../organization'
 
 const nameLimit = 255
-const logoLimit = 2 * 1024 * 1024
-const logoTypes = ['image/jpeg', 'image/png', 'image/webp']
-
-function clientErrors(name: string, logo: File | null): Record<string, string> {
-  const errors: Record<string, string> = {}
-
-  if (!name.trim()) {
-    errors.name = 'Enter a company name.'
-  } else if (name.trim().length > nameLimit) {
-    errors.name = 'The company name must be 255 characters or fewer.'
-  }
-
-  if (logo && !logoTypes.includes(logo.type)) {
-    errors.logo = 'Use a JPG, PNG, or WebP logo.'
-  } else if (logo && logo.size > logoLimit) {
-    errors.logo = 'The logo must be 2 MB or smaller.'
-  }
-
-  return errors
-}
 
 export function CompanyPage() {
   const queryClient = useQueryClient()
   const organization = useOrganization()
   const [name, setName] = useState('')
   const [filled, setFilled] = useState(false)
-  const [logoFile, setLogoFile] = useState<File | null>(null)
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
-  const [removeLogo, setRemoveLogo] = useState(false)
+  const [logo, setLogo] = useState<Picture>(emptyPicture)
+  const [icon, setIcon] = useState<Picture>(emptyPicture)
+  const [banner, setBanner] = useState<Picture>(emptyPicture)
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [pending, setPending] = useState(false)
 
@@ -47,27 +28,47 @@ export function CompanyPage() {
 
   useEffect(() => {
     return () => {
-      if (previewUrl) {
-        URL.revokeObjectURL(previewUrl)
+      if (logo.previewUrl) {
+        URL.revokeObjectURL(logo.previewUrl)
+      }
+      if (icon.previewUrl) {
+        URL.revokeObjectURL(icon.previewUrl)
+      }
+      if (banner.previewUrl) {
+        URL.revokeObjectURL(banner.previewUrl)
       }
     }
-  }, [previewUrl])
+  }, [logo.previewUrl, icon.previewUrl, banner.previewUrl])
 
-  function chooseLogo(file: File | null) {
-    setLogoFile(file)
-    setRemoveLogo(false)
-    setPreviewUrl((current) => {
-      if (current) {
-        URL.revokeObjectURL(current)
-      }
-
-      return file ? URL.createObjectURL(file) : null
-    })
+  function clearPictures() {
+    setLogo((current) => replacePicture(current, null))
+    setIcon((current) => replacePicture(current, null))
+    setBanner((current) => replacePicture(current, null))
   }
 
   async function submit(event: FormEvent) {
     event.preventDefault()
-    const nextErrors = clientErrors(name, logoFile)
+    const nextErrors: Record<string, string> = {}
+
+    if (!name.trim()) {
+      nextErrors.name = 'Enter a company name.'
+    } else if (name.trim().length > nameLimit) {
+      nextErrors.name = 'The company name must be 255 characters or fewer.'
+    }
+
+    const logoError = imageError(logo.file, 'logo')
+    const iconError = imageError(icon.file, 'icon')
+    const bannerError = imageError(banner.file, 'banner')
+    if (logoError) {
+      nextErrors.logo = logoError
+    }
+    if (iconError) {
+      nextErrors.icon = iconError
+    }
+    if (bannerError) {
+      nextErrors.banner = bannerError
+    }
+
     setErrors(nextErrors)
     if (Object.keys(nextErrors).length > 0) {
       return
@@ -78,14 +79,11 @@ export function CompanyPage() {
     try {
       const body = new FormData()
       body.append('name', name.trim())
-      if (logoFile) {
-        body.append('logo', logoFile)
-      } else if (removeLogo) {
-        body.append('remove_logo', '1')
-      }
+      appendPicture(body, 'logo', logo)
+      appendPicture(body, 'icon', icon)
+      appendPicture(body, 'banner', banner)
       await api.post('/api/v1/organization', body)
-      chooseLogo(null)
-      setRemoveLogo(false)
+      clearPictures()
       await queryClient.invalidateQueries({ queryKey: ['organization'] })
     } catch (caught) {
       setErrors(fieldErrors(caught))
@@ -94,16 +92,16 @@ export function CompanyPage() {
     }
   }
 
-  const savedLogo = organization.data?.logo_url
-  const shownLogo = removeLogo ? null : (previewUrl ?? savedLogo)
-
   return (
     <div className="page">
       <header className="page-header">
         <div>
           <p className="eyebrow">Settings</p>
           <h1>Company</h1>
-          <p className="hint">This name and logo appear in the sidebar, on the login page, in the browser tab, and on reports.</p>
+          <p className="hint">
+            The name and logo appear in the sidebar, on the login page, and on reports. The icon is the browser tab.
+            The banner is the wide image on the login page.
+          </p>
         </div>
       </header>
 
@@ -124,30 +122,39 @@ export function CompanyPage() {
             />
             {errors.name && <span className="form-error">{errors.name}</span>}
           </label>
-          <label>
-            Logo
-            <input
-              type="file"
-              accept="image/jpeg,image/png,image/webp"
-              onChange={(event) => chooseLogo(event.target.files?.[0] ?? null)}
-              aria-invalid={Boolean(errors.logo)}
-            />
-            <span className="hint">JPG, PNG, or WebP. 2 MB or smaller.</span>
-            {errors.logo && <span className="form-error">{errors.logo}</span>}
-          </label>
-          {shownLogo && <img className="logo-preview" src={shownLogo} alt="" />}
-          {savedLogo && !logoFile && (
-            <fieldset className="account-checklist">
-              <label>
-                <input
-                  type="checkbox"
-                  checked={removeLogo}
-                  onChange={(event) => setRemoveLogo(event.target.checked)}
-                />
-                Remove logo
-              </label>
-            </fieldset>
-          )}
+          <PictureField
+            label="Logo"
+            noun="logo"
+            hint="Shown in the sidebar, on the login page, and on reports. JPG, PNG, or WebP. 2 MB or smaller."
+            error={errors.logo}
+            savedUrl={organization.data?.logo_url ?? null}
+            picture={logo}
+            onChoose={(file) => choosePicture(setLogo, file)}
+            onRemove={(remove) => setLogo((current) => ({ ...current, remove }))}
+            previewClass="logo-preview"
+          />
+          <PictureField
+            label="Icon"
+            noun="icon"
+            hint="Optional. Used as the browser-tab icon. Leave this empty to keep the default icon. JPG, PNG, or WebP. 2 MB or smaller."
+            error={errors.icon}
+            savedUrl={organization.data?.icon_url ?? null}
+            picture={icon}
+            onChoose={(file) => choosePicture(setIcon, file)}
+            onRemove={(remove) => setIcon((current) => ({ ...current, remove }))}
+            previewClass="logo-preview"
+          />
+          <PictureField
+            label="Banner"
+            noun="banner"
+            hint="Optional. Shown above the company name on the login page. JPG, PNG, or WebP. 2 MB or smaller."
+            error={errors.banner}
+            savedUrl={organization.data?.banner_url ?? null}
+            picture={banner}
+            onChoose={(file) => choosePicture(setBanner, file)}
+            onRemove={(remove) => setBanner((current) => ({ ...current, remove }))}
+            previewClass="banner-preview"
+          />
           <div className="actions">
             <button type="submit" className="primary" disabled={pending || !filled}>
               {pending ? 'Saving…' : 'Save'}

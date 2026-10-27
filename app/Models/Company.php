@@ -9,8 +9,9 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Storage;
 
-#[Fillable(['name', 'description', 'currency', 'category_id'])]
+#[Fillable(['name', 'description', 'currency', 'category_id', 'location_id', 'logo_path'])]
 class Company extends Model
 {
     /** @use HasFactory<CompanyFactory> */
@@ -19,6 +20,29 @@ class Company extends Model
     public function category(): BelongsTo
     {
         return $this->belongsTo(Category::class);
+    }
+
+    public function location(): BelongsTo
+    {
+        return $this->belongsTo(Location::class);
+    }
+
+    public function deleteFile(?string $path): void
+    {
+        if ($path === null || $path === '') {
+            return;
+        }
+
+        Storage::disk('public')->delete($path);
+    }
+
+    public function logoUrl(): ?string
+    {
+        if ($this->logo_path === null || $this->logo_path === '') {
+            return null;
+        }
+
+        return '/storage/'.$this->logo_path;
     }
 
     public function users(): BelongsToMany

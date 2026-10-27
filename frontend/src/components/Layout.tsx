@@ -6,7 +6,7 @@ import { chartAccountModuleList } from '../chartAccountModules'
 import { OrganizationMark } from '../organization'
 import { canViewDashboard } from '../types'
 
-type MenuIcon = 'dashboard' | 'chart' | 'summary' | 'company' | 'businesses' | 'categories' | 'accounts' | 'entry' | 'journals' | 'balance' | 'users'
+type MenuIcon = 'dashboard' | 'chart' | 'summary' | 'company' | 'businesses' | 'categories' | 'locations' | 'accounts' | 'entry' | 'journals' | 'balance' | 'users'
 
 type MenuItem = {
   to: string
@@ -19,6 +19,7 @@ const settingsLinks: MenuItem[] = [
   { to: '/businesses', label: 'Businesses', icon: 'businesses' },
   { to: '/users', label: 'Users', icon: 'users' },
   { to: '/categories', label: 'Categories', icon: 'categories' },
+  { to: '/locations', label: 'Locations', icon: 'locations' },
   { to: '/chart-account-columns', label: 'Account Columns', icon: 'entry' },
   { to: '/chart-account-entries', label: 'Chart Account Entry', icon: 'entry' },
   { to: '/accounts', label: 'Chart Of Accounts', icon: 'accounts' },
@@ -162,6 +163,12 @@ function NavIcon({ name }: { name: MenuIcon | 'settings' }) {
         <>
           <path d="M4 10.5 10.5 4H20v9.5L13.5 20a2 2 0 0 1-2.8 0z" />
           <circle cx="9" cy="9" r="1" />
+        </>
+      )}
+      {name === 'locations' && (
+        <>
+          <path d="M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11z" />
+          <circle cx="12" cy="10" r="2.25" />
         </>
       )}
       {name === 'accounts' && (

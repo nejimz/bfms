@@ -109,6 +109,14 @@ a { color: var(--green-dark); }
   background: #fff;
   flex: none;
 }
+.login-banner {
+  display: block;
+  width: 100%;
+  max-height: 16rem;
+  object-fit: cover;
+  border-radius: 16px;
+  margin-bottom: 1.25rem;
+}
 .login-brand { margin-bottom: 1rem; color: var(--ink); }
 .login-brand .brand-mark { border-color: var(--line); }
 .login-brand small { color: var(--muted); }
@@ -128,10 +136,32 @@ a { color: var(--green-dark); }
   background: white;
   border: 1px solid var(--line);
 }
+.business-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+.business-logo {
+  width: 2.25rem;
+  height: 2.25rem;
+  object-fit: contain;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: white;
+  flex: none;
+}
 .logo-preview {
   width: 4.5rem;
   height: 4.5rem;
   object-fit: contain;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: white;
+}
+.banner-preview {
+  width: min(100%, 28rem);
+  max-height: 8rem;
+  object-fit: cover;
   border: 1px solid var(--line);
   border-radius: 12px;
   background: white;

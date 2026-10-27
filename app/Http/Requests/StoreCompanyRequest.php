@@ -25,6 +25,11 @@ class StoreCompanyRequest extends FormRequest
             $fields['category_id'] = $categoryId === '' || $categoryId === null ? null : $categoryId;
         }
 
+        if ($this->exists('location_id')) {
+            $locationId = $this->input('location_id');
+            $fields['location_id'] = $locationId === '' || $locationId === null ? null : $locationId;
+        }
+
         $this->merge($fields);
     }
 
@@ -38,6 +43,9 @@ class StoreCompanyRequest extends FormRequest
             'description' => ['required', 'string', 'max:1000'],
             'currency' => ['required', 'string', 'regex:/^[A-Z]{3}$/'],
             'category_id' => ['sometimes', 'nullable', 'integer', 'exists:categories,id'],
+            'location_id' => ['sometimes', 'nullable', 'integer', 'exists:locations,id'],
+            'logo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+            'remove_logo' => ['sometimes', 'boolean'],
         ];
     }
 
@@ -54,6 +62,10 @@ class StoreCompanyRequest extends FormRequest
             'currency.required' => 'Enter a currency code.',
             'currency.regex' => 'Use a 3-letter currency code, such as PHP.',
             'category_id.exists' => 'Choose a category from the list.',
+            'location_id.exists' => 'Choose a location from the list.',
+            'logo.image' => 'Use a JPG, PNG, or WebP logo.',
+            'logo.mimes' => 'Use a JPG, PNG, or WebP logo.',
+            'logo.max' => 'The logo must be 2 MB or smaller.',
         ];
     }
 }

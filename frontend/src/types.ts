@@ -302,6 +302,12 @@ export type Category = {
   businesses_count: number
 }
 
+export type Location = {
+  id: string
+  name: string
+  businesses_count: number
+}
+
 export type DirectoryUser = {
   id: string
   name: string
@@ -316,6 +322,9 @@ export type Business = Membership & {
   journals_count: number
   category_id: string | null
   category_name: string | null
+  location_id: string | null
+  location_name: string | null
+  logo_url: string | null
 }
 
 export type Session = {

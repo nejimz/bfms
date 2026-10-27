@@ -7,6 +7,8 @@ export type Organization = {
   id: string
   name: string
   logo_url: string | null
+  icon_url: string | null
+  banner_url: string | null
 }
 
 const defaultName = 'BFMS'
@@ -84,10 +86,21 @@ function iconType(url: string): string {
   return 'image/png'
 }
 
+export function LoginBanner() {
+  const organization = useOrganization()
+  const bannerUrl = organization.data?.banner_url
+
+  if (!bannerUrl) {
+    return null
+  }
+
+  return <img className="login-banner" src={bannerUrl} alt="" />
+}
+
 export function OrganizationEffects() {
   const organization = useOrganization()
   const name = organization.data?.name
-  const logoUrl = organization.data?.logo_url
+  const iconUrl = organization.data?.icon_url
 
   useEffect(() => {
     if (!name) {
@@ -101,15 +114,15 @@ export function OrganizationEffects() {
       return
     }
 
-    if (logoUrl) {
-      icon.href = logoUrl
-      icon.type = iconType(logoUrl)
+    if (iconUrl) {
+      icon.href = iconUrl
+      icon.type = iconType(iconUrl)
       return
     }
 
     icon.href = defaultIcon
     icon.type = 'image/svg+xml'
-  }, [name, logoUrl])
+  }, [name, iconUrl])
 
   return null
 }

@@ -28,6 +28,10 @@ class UpdateOrganizationRequest extends FormRequest
             'name' => ['required', 'string', 'max:255'],
             'logo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
             'remove_logo' => ['sometimes', 'boolean'],
+            'icon' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+            'remove_icon' => ['sometimes', 'boolean'],
+            'banner' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+            'remove_banner' => ['sometimes', 'boolean'],
         ];
     }
 
@@ -42,6 +46,12 @@ class UpdateOrganizationRequest extends FormRequest
             'logo.image' => 'Use a JPG, PNG, or WebP logo.',
             'logo.mimes' => 'Use a JPG, PNG, or WebP logo.',
             'logo.max' => 'The logo must be 2 MB or smaller.',
+            'icon.image' => 'Use a JPG, PNG, or WebP icon.',
+            'icon.mimes' => 'Use a JPG, PNG, or WebP icon.',
+            'icon.max' => 'The icon must be 2 MB or smaller.',
+            'banner.image' => 'Use a JPG, PNG, or WebP banner.',
+            'banner.mimes' => 'Use a JPG, PNG, or WebP banner.',
+            'banner.max' => 'The banner must be 2 MB or smaller.',
         ];
     }
 }

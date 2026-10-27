@@ -23,23 +23,9 @@ class OrganizationController extends Controller
         $organization = Organization::current();
         $organization->name = $request->string('name')->toString();
 
-        $logo = $request->file('logo');
-
-        if ($logo instanceof UploadedFile) {
-            $path = $logo->store('organization', 'public');
-
-            if (! is_string($path)) {
-                throw ValidationException::withMessages([
-                    'logo' => 'The logo could not be saved.',
-                ]);
-            }
-
-            $organization->deleteLogoFile();
-            $organization->logo_path = $path;
-        } elseif ($request->boolean('remove_logo')) {
-            $organization->deleteLogoFile();
-            $organization->logo_path = null;
-        }
+        $this->applyUpload($organization, 'logo_path', 'logo', $request->file('logo'), $request->boolean('remove_logo'), 'The logo could not be saved.');
+        $this->applyUpload($organization, 'icon_path', 'icon', $request->file('icon'), $request->boolean('remove_icon'), 'The icon could not be saved.');
+        $this->applyUpload($organization, 'banner_path', 'banner', $request->file('banner'), $request->boolean('remove_banner'), 'The banner could not be saved.');
 
         $organization->save();
 
@@ -59,7 +45,40 @@ class OrganizationController extends Controller
             'attributes' => [
                 'name' => $organization->name,
                 'logo_url' => $organization->logoUrl(),
+                'icon_url' => $organization->iconUrl(),
+                'banner_url' => $organization->bannerUrl(),
             ],
         ];
+    }
+
+    private function applyUpload(
+        Organization $organization,
+        string $column,
+        string $field,
+        mixed $file,
+        bool $remove,
+        string $failureMessage,
+    ): void {
+        if ($file instanceof UploadedFile) {
+            $path = $file->store('organization', 'public');
+
+            if (! is_string($path)) {
+                throw ValidationException::withMessages([
+                    $field => $failureMessage,
+                ]);
+            }
+
+            $current = $organization->getAttribute($column);
+            $organization->deleteFile(is_string($current) ? $current : null);
+            $organization->setAttribute($column, $path);
+
+            return;
+        }
+
+        if ($remove) {
+            $current = $organization->getAttribute($column);
+            $organization->deleteFile(is_string($current) ? $current : null);
+            $organization->setAttribute($column, null);
+        }
     }
 }

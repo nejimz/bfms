@@ -27,7 +27,9 @@ it('shows the default company name before anyone saves a profile', function () {
     $this->getJson('/api/v1/organization')
         ->assertOk()
         ->assertJsonPath('data.attributes.name', 'BFMS')
-        ->assertJsonPath('data.attributes.logo_url', null);
+        ->assertJsonPath('data.attributes.logo_url', null)
+        ->assertJsonPath('data.attributes.icon_url', null)
+        ->assertJsonPath('data.attributes.banner_url', null);
 });
 
 it('returns 401 when a guest saves the company profile', function () {
@@ -57,12 +59,16 @@ it('saves a trimmed company name', function () {
         'name' => '  Northwind  ',
     ])->assertOk()
         ->assertJsonPath('data.attributes.name', 'Northwind')
-        ->assertJsonPath('data.attributes.logo_url', null);
+        ->assertJsonPath('data.attributes.logo_url', null)
+        ->assertJsonPath('data.attributes.icon_url', null)
+        ->assertJsonPath('data.attributes.banner_url', null);
 
     $this->assertDatabaseHas('organizations', [
         'id' => 1,
         'name' => 'Northwind',
         'logo_path' => null,
+        'icon_path' => null,
+        'banner_path' => null,
     ]);
 });
 
@@ -188,3 +194,100 @@ it('rejects a logo larger than 2 MB', function () {
 
     expect(Organization::current()->logo_path)->toBeNull();
 });
+
+it('stores an icon and a banner without replacing the logo', function () {
+    Storage::fake('public');
+    $company = Company::factory()->create();
+    $admin = memberWithRole($company);
+
+    $this->actingAs($admin)->post('/api/v1/organization', [
+        'name' => 'Northwind',
+        'logo' => UploadedFile::fake()->image('logo.png', 64, 64),
+    ])->assertOk();
+
+    $logoPath = Organization::current()->logo_path;
+
+    $saved = $this->actingAs($admin)->post('/api/v1/organization', [
+        'name' => 'Northwind',
+        'icon' => UploadedFile::fake()->image('icon.png', 32, 32),
+        'banner' => UploadedFile::fake()->image('banner.png', 640, 200),
+    ]);
+
+    $saved->assertOk();
+    $organization = Organization::current();
+
+    expect($organization->logo_path)->toBe($logoPath)
+        ->and($organization->icon_path)->toBeString()
+        ->and($organization->banner_path)->toBeString()
+        ->and($organization->icon_path)->not->toBe($organization->banner_path)
+        ->and($saved->json('data.attributes.icon_url'))->toBe('/storage/'.$organization->icon_path)
+        ->and($saved->json('data.attributes.banner_url'))->toBe('/storage/'.$organization->banner_path)
+        ->and($saved->json('data.attributes.logo_url'))->toBe('/storage/'.$logoPath);
+    Storage::disk('public')->assertExists($logoPath);
+    Storage::disk('public')->assertExists($organization->icon_path);
+    Storage::disk('public')->assertExists($organization->banner_path);
+});
+
+it('removes the icon and leaves the banner in place', function () {
+    Storage::fake('public');
+    $company = Company::factory()->create();
+    $admin = memberWithRole($company);
+
+    $this->actingAs($admin)->post('/api/v1/organization', [
+        'name' => 'Northwind',
+        'icon' => UploadedFile::fake()->image('icon.png', 32, 32),
+        'banner' => UploadedFile::fake()->image('banner.png', 640, 200),
+    ])->assertOk();
+
+    $bannerPath = Organization::current()->banner_path;
+    $iconPath = Organization::current()->icon_path;
+
+    $this->actingAs($admin)->post('/api/v1/organization', [
+        'name' => 'Northwind',
+        'remove_icon' => '1',
+        'icon_path' => 'organization/evil.php',
+    ])->assertOk()
+        ->assertJsonPath('data.attributes.icon_url', null)
+        ->assertJsonPath('data.attributes.banner_url', '/storage/'.$bannerPath);
+
+    expect(Organization::current()->icon_path)->toBeNull()
+        ->and(Organization::current()->banner_path)->toBe($bannerPath);
+    Storage::disk('public')->assertMissing($iconPath);
+    Storage::disk('public')->assertExists($bannerPath);
+});
+
+it('rejects an icon or banner that is not a JPG, PNG, or WebP image', function (string $field, string $message) {
+    Storage::fake('public');
+    $company = Company::factory()->create();
+    $admin = memberWithRole($company);
+
+    $this->actingAs($admin)->post('/api/v1/organization', [
+        'name' => 'Northwind',
+        $field => UploadedFile::fake()->create($field.'.pdf', 20, 'application/pdf'),
+    ])->assertUnprocessable()
+        ->assertJsonPath('errors.'.$field.'.0', $message);
+
+    expect(Organization::current()->icon_path)->toBeNull()
+        ->and(Organization::current()->banner_path)->toBeNull();
+})->with([
+    'icon' => ['icon', 'Use a JPG, PNG, or WebP icon.'],
+    'banner' => ['banner', 'Use a JPG, PNG, or WebP banner.'],
+]);
+
+it('rejects an icon or banner larger than 2 MB', function (string $field, string $message) {
+    Storage::fake('public');
+    $company = Company::factory()->create();
+    $admin = memberWithRole($company);
+
+    $this->actingAs($admin)->post('/api/v1/organization', [
+        'name' => 'Northwind',
+        $field => UploadedFile::fake()->image($field.'.png')->size(2049),
+    ])->assertUnprocessable()
+        ->assertJsonPath('errors.'.$field.'.0', $message);
+
+    expect(Organization::current()->icon_path)->toBeNull()
+        ->and(Organization::current()->banner_path)->toBeNull();
+})->with([
+    'icon' => ['icon', 'The icon must be 2 MB or smaller.'],
+    'banner' => ['banner', 'The banner must be 2 MB or smaller.'],
+]);

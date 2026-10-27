@@ -19,6 +19,8 @@ import { YearlySummaryPage } from './pages/YearlySummaryPage'
 import { ItemActivityPage } from './pages/ItemActivityPage'
 import { CategoriesPage } from './pages/CategoriesPage'
 import { CategoryFormPage } from './pages/CategoryFormPage'
+import { LocationFormPage } from './pages/LocationFormPage'
+import { LocationsPage } from './pages/LocationsPage'
 import { JournalFormPage } from './pages/JournalFormPage'
 import { JournalsPage } from './pages/JournalsPage'
 import { LoginPage } from './pages/LoginPage'
@@ -101,6 +103,9 @@ export default function App() {
                 <Route path="/categories" element={<CategoriesPage />} />
                 <Route path="/categories/new" element={<CategoryFormPage />} />
                 <Route path="/categories/:id/edit" element={<CategoryFormPage />} />
+                <Route path="/locations" element={<LocationsPage />} />
+                <Route path="/locations/new" element={<LocationFormPage />} />
+                <Route path="/locations/:id/edit" element={<LocationFormPage />} />
                 <Route path="/users" element={<UsersPage />} />
                 <Route path="/users/new" element={<UserFormPage />} />
                 <Route path="/users/:id" element={<UserFormPage />} />

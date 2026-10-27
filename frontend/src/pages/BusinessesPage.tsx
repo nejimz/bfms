@@ -40,6 +40,7 @@ export function BusinessesPage() {
               <th>Name</th>
               <th>Description</th>
               <th className="center">Category</th>
+              <th className="center">Location</th>
               <th className="center">Currency</th>
               <th />
             </tr>
@@ -48,11 +49,17 @@ export function BusinessesPage() {
             {businesses.data?.map((business) => (
               <tr key={business.id}>
                 <td>
-                  {business.name}
-                  {business.id === user?.company.id && <span className="status">Current</span>}
+                  <span className="business-name">
+                    {business.logo_url && <img className="business-logo" src={business.logo_url} alt="" />}
+                    <span>
+                      {business.name}
+                      {business.id === user?.company.id && <span className="status">Current</span>}
+                    </span>
+                  </span>
                 </td>
                 <td>{business.description || 'No description'}</td>
                 <td className="center">{business.category_name || 'No category'}</td>
+                <td className="center">{business.location_name || 'No location'}</td>
                 <td className="num center">{business.currency}</td>
                 <td>
                   <div className="actions">
