@@ -295,6 +295,15 @@ a.category-row:focus-visible { outline: 2px solid var(--green); outline-offset: 
   font-size: 1.1rem;
   line-height: 1;
 }
+.item-copy { min-width: 0; }
+.item-meta {
+  margin: 0.15rem 0 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .category-row h2 {
   margin: 0;
   min-width: 0;

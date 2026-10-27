@@ -6,7 +6,7 @@ import { useAuth } from '../auth'
 import { chartAccountModule, type ChartAccountModule, type ChartAccountModuleKey } from '../chartAccountModules'
 import { BusinessSelect } from '../components/BusinessSelect'
 import { formatDecimal, formatMinor, normalizeDecimal, toMinor } from '../money'
-import type { Account, ChartAccountEntry } from '../types'
+import type { Account, ChartAccountEntry, Item } from '../types'
 import { readChartAccountEntry, readResource } from '../types'
 
 function formatEntryDate(iso: string): string {
@@ -32,13 +32,13 @@ function localDate(): string {
 
 type DraftItem = {
   key: string
-  name: string
+  itemId: string
   quantity: string
   amount: string
 }
 
 function blankItem(): DraftItem {
-  return { key: crypto.randomUUID(), name: '', quantity: '1', amount: '' }
+  return { key: crypto.randomUUID(), itemId: '', quantity: '1', amount: '' }
 }
 
 function normalizeQuantity(value: string): string | null {
@@ -142,9 +142,8 @@ function buildItemPayload(
   }
 
   const lines = items.map((item) => {
-    const name = item.name.trim()
-    if (name === '') {
-      throw new Error(`Enter the ${itemLabel.toLowerCase()}.`)
+    if (!item.itemId) {
+      throw new Error(`Choose the ${itemLabel.toLowerCase()}.`)
     }
 
     const quantity = normalizeQuantity(item.quantity)
@@ -161,7 +160,7 @@ function buildItemPayload(
       throw new Error('Enter an amount greater than zero.')
     }
 
-    return { name, quantity, amount }
+    return { item_id: Number(item.itemId), quantity, amount }
   })
 
   const totalMinor = lines.reduce((sum, line) => sum + (toMinor(line.amount) ?? 0), 0)
@@ -185,6 +184,16 @@ export function ChartAccountEntryFormPage({ moduleKey }: { moduleKey?: ChartAcco
   const queryClient = useQueryClient()
   const { user } = useAuth()
   const companyId = user?.company?.id
+  const catalog = useQuery({
+    queryKey: ['items'],
+    enabled: Boolean(user),
+    queryFn: async () => {
+      const response = await api.get('/api/v1/items')
+      return (response.data.data as Array<{ id: string; attributes: Omit<Item, 'id'> }>).map((resource) =>
+        readResource(resource),
+      )
+    },
+  })
   const accounts = useQuery({
     queryKey: ['accounts', companyId],
     enabled: Boolean(companyId),
@@ -241,7 +250,7 @@ export function ChartAccountEntryFormPage({ moduleKey }: { moduleKey?: ChartAcco
         entry.lines.length > 0
           ? entry.lines.map((line) => ({
               key: line.id,
-              name: line.name,
+              itemId: line.item_id ?? '',
               quantity: line.quantity,
               amount: line.amount,
             }))
@@ -375,7 +384,7 @@ export function ChartAccountEntryFormPage({ moduleKey }: { moduleKey?: ChartAcco
     items !== null &&
     items.length > 0 &&
     items.every(
-      (item) => item.name.trim() !== '' && normalizeQuantity(item.quantity) !== null && (toMinor(item.amount) ?? 0) > 0,
+      (item) => item.itemId !== '' && normalizeQuantity(item.quantity) !== null && (toMinor(item.amount) ?? 0) > 0,
     )
   const cashMinor = cashValue.trim() === '' ? null : toMinor(cashValue)
   const creditMinor = creditValue.trim() === '' ? null : toMinor(creditValue)
@@ -461,15 +470,20 @@ export function ChartAccountEntryFormPage({ moduleKey }: { moduleKey?: ChartAcco
               </div>
               {items.map((item) => (
                 <div className="entry-item-row" key={item.key}>
-                  <input
+                  <select
                     aria-label={moduleConfig?.itemLabel ?? 'Item'}
-                    value={item.name}
-                    placeholder={moduleConfig?.itemPlaceholder ?? 'Item name'}
-                    maxLength={255}
+                    value={item.itemId}
                     onChange={(event) =>
-                      setItems(items.map((row) => (row.key === item.key ? { ...row, name: event.target.value } : row)))
+                      setItems(items.map((row) => (row.key === item.key ? { ...row, itemId: event.target.value } : row)))
                     }
-                  />
+                  >
+                    <option value="">Select item</option>
+                    {catalog.data?.map((catalogItem) => (
+                      <option key={catalogItem.id} value={catalogItem.id}>
+                        {catalogItem.name} ({catalogItem.unit})
+                      </option>
+                    ))}
+                  </select>
                   <input
                     aria-label="Quantity"
                     inputMode="decimal"
@@ -504,6 +518,10 @@ export function ChartAccountEntryFormPage({ moduleKey }: { moduleKey?: ChartAcco
               <button type="button" onClick={() => setItems([...items, blankItem()])}>
                 Add item
               </button>
+              {catalog.isError && <p className="form-error">The items could not be opened.</p>}
+              {catalog.isSuccess && catalog.data.length === 0 && (
+                <p className="hint">No items yet. Add them under Settings, then choose one here.</p>
+              )}
             </div>
           )}
         </div>

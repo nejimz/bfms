@@ -29,6 +29,7 @@ export type Journal = {
 
 export type ChartAccountEntryLine = {
   id: string
+  item_id: string | null
   name: string
   quantity: string
   amount: string
@@ -319,6 +320,14 @@ export type Location = {
   id: string
   name: string
   businesses_count: number
+}
+
+export type Item = {
+  id: string
+  name: string
+  unit: string
+  description: string | null
+  entries_count: number
 }
 
 export type DirectoryUser = {

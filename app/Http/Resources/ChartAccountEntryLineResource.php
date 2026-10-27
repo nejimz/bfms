@@ -19,6 +19,7 @@ class ChartAccountEntryLineResource extends JsonApiResource
     public function toAttributes(Request $request): array
     {
         return [
+            'item_id' => $this->item_id === null ? null : (string) $this->item_id,
             'name' => $this->name,
             'quantity' => $this->quantityDecimal(),
             'amount' => Money::ofMinor((int) $this->amount_cents)->toDecimal(),

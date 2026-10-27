@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { api } from '../api'
 import { readResource, type ActivityLog } from '../types'
 
-export type ActivityModuleName = 'company' | 'business' | 'classification' | 'category' | 'location' | 'user'
+export type ActivityModuleName = 'company' | 'business' | 'classification' | 'category' | 'location' | 'item' | 'user'
 
 type ActivityLogPage = {
   rows: ActivityLog[]

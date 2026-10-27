@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Validation\ValidationException;
 
 #[Fillable(['company_id', 'account_id', 'date', 'particulars', 'reference', 'amount_cents', 'cash_cents', 'credit_cents', 'currency', 'status', 'posted_at', 'created_by', 'posted_by'])]
 class ChartAccountEntry extends Model
@@ -48,22 +49,38 @@ class ChartAccountEntry extends Model
     /**
      * Replace the item lines and set the entry amount to their sum.
      *
-     * @param  list<array{name: string, quantity: string, amount: string}>  $lines
+     * The stored name is the catalog name, so a name sent with the line is ignored.
+     *
+     * @param  list<array{item_id: int|string, quantity: string, amount: string}>  $lines
      */
     public function replaceLines(array $lines): void
     {
+        $catalog = Item::query()
+            ->whereIn('id', array_column($lines, 'item_id'))
+            ->get()
+            ->keyBy('id');
+
         $this->lines()->delete();
 
         $total = Money::zero();
 
         foreach (array_values($lines) as $position => $line) {
+            $item = $catalog->get((int) $line['item_id']);
+
+            if (! $item instanceof Item) {
+                throw ValidationException::withMessages([
+                    "lines.$position.item_id" => 'Choose an item.',
+                ]);
+            }
+
             $amount = Money::fromDecimal($line['amount']);
             $total = $total->plus($amount);
 
             $this->lines()->create([
                 'company_id' => $this->company_id,
                 'position' => $position,
-                'name' => $line['name'],
+                'item_id' => $item->id,
+                'name' => $item->name,
                 'quantity' => $line['quantity'],
                 'amount_cents' => $amount->minor,
             ]);

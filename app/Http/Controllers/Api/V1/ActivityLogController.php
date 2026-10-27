@@ -8,6 +8,7 @@ use App\Models\ActivityLog;
 use App\Models\Category;
 use App\Models\Classification;
 use App\Models\Company;
+use App\Models\Item;
 use App\Models\Location;
 use App\Models\Organization;
 use App\Models\User;
@@ -69,6 +70,7 @@ class ActivityLogController extends Controller
             ActivityModule::Classification => $this->authorize('viewAny', Classification::class),
             ActivityModule::Category => $this->authorize('viewAny', Category::class),
             ActivityModule::Location => $this->authorize('viewAny', Location::class),
+            ActivityModule::Item => $this->authorize('create', Item::class),
             ActivityModule::User => $this->authorize('viewAny', User::class),
         };
     }

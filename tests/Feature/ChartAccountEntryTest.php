@@ -6,6 +6,7 @@ use App\Enums\CompanyRole;
 use App\Models\Account;
 use App\Models\ChartAccountEntry;
 use App\Models\Company;
+use App\Models\Item;
 use App\Models\User;
 
 function chartMember(Company $company, string $role = CompanyRole::Owner->value): User
@@ -374,10 +375,13 @@ it('lets a manager post an entry without a business assignment', function () {
 });
 
 /**
- * @return array{date: string, account_id: int, particulars: string, cash: string, credit: string, lines: list<array{name: string, quantity: string, amount: string}>}
+ * @return array{date: string, account_id: int, particulars: string, cash: string, credit: string, lines: list<array{item_id: int, name?: string, quantity: string, amount: string}>}
  */
 function chartEntryWithLines(Account $account): array
 {
+    $rice = Item::factory()->create(['name' => 'Rice', 'unit' => 'kg']);
+    $sugar = Item::factory()->create(['name' => 'Sugar', 'unit' => 'kg']);
+
     return [
         'date' => '2026-10-15',
         'account_id' => $account->id,
@@ -385,8 +389,8 @@ function chartEntryWithLines(Account $account): array
         'cash' => '145.25',
         'credit' => '0.00',
         'lines' => [
-            ['name' => 'Rice', 'quantity' => '2', 'amount' => '100.00'],
-            ['name' => 'Sugar', 'quantity' => '1.5', 'amount' => '45.25'],
+            ['item_id' => $rice->id, 'name' => 'Not Rice', 'quantity' => '2', 'amount' => '100.00'],
+            ['item_id' => $sugar->id, 'quantity' => '1.5', 'amount' => '45.25'],
         ],
     ];
 }
@@ -422,6 +426,7 @@ it('stores item lines and sets the amount to their sum', function () {
     $this->assertDatabaseHas('chart_account_entry_lines', [
         'chart_account_entry_id' => $id,
         'position' => 0,
+        'item_id' => Item::query()->where('name', 'Rice')->value('id'),
         'name' => 'Rice',
         'quantity' => '2.000',
         'amount_cents' => 10000,
@@ -456,7 +461,7 @@ it('replaces item lines when a draft is updated', function () {
             'cash' => '80.00',
             'credit' => '0.00',
             'lines' => [
-                ['name' => 'Oil', 'quantity' => '1', 'amount' => '80.00'],
+                ['item_id' => Item::factory()->create(['name' => 'Oil', 'unit' => 'liter'])->id, 'quantity' => '1', 'amount' => '80.00'],
             ],
         ])
         ->assertOk()
@@ -474,10 +479,17 @@ it('replaces item lines when a draft is updated', function () {
     ]);
 });
 
-it('rejects an item line that has no name or no positive quantity or amount', function (array $line, string $error, string $message) {
+it('rejects an item line that has no item or no positive quantity or amount', function (string $case, string $error, string $message) {
     $company = Company::factory()->create();
     $user = chartMember($company);
     $purchases = Account::factory()->create(['company_id' => $company->id, 'type' => AccountType::Expense]);
+    $rice = Item::factory()->create(['name' => 'Rice', 'unit' => 'kg']);
+    $line = match ($case) {
+        'missing' => ['quantity' => '1', 'amount' => '10.00'],
+        'unknown' => ['item_id' => $rice->id + 1000, 'quantity' => '1', 'amount' => '10.00'],
+        'quantity' => ['item_id' => $rice->id, 'quantity' => '0', 'amount' => '10.00'],
+        default => ['item_id' => $rice->id, 'quantity' => '1', 'amount' => '0.00'],
+    };
 
     $response = $this->actingAs($user)->postJson('/api/v1/chart-account-entries', [
         'date' => '2026-10-15',
@@ -491,9 +503,10 @@ it('rejects an item line that has no name or no positive quantity or amount', fu
     $response->assertUnprocessable();
     expect($response->json('errors')[$error][0])->toBe($message);
 })->with([
-    [['name' => ' ', 'quantity' => '1', 'amount' => '10.00'], 'lines.0.name', 'Enter the item name.'],
-    [['name' => 'Rice', 'quantity' => '0', 'amount' => '10.00'], 'lines.0.quantity', 'Enter a quantity greater than zero.'],
-    [['name' => 'Rice', 'quantity' => '1', 'amount' => '0.00'], 'lines.0.amount', 'Enter an amount greater than zero.'],
+    'missing item' => ['missing', 'lines.0.item_id', 'Choose an item.'],
+    'unknown item' => ['unknown', 'lines.0.item_id', 'Choose an item.'],
+    'quantity' => ['quantity', 'lines.0.quantity', 'Enter a quantity greater than zero.'],
+    'amount' => ['amount', 'lines.0.amount', 'Enter an amount greater than zero.'],
 ]);
 
 it('stores a reference and a partial cash and credit split', function () {

@@ -9,6 +9,7 @@ use App\Models\ChartAccountEntry;
 use App\Support\CurrentCompany;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
 
 class ChartAccountEntryRequest extends FormRequest
@@ -48,7 +49,7 @@ class ChartAccountEntryRequest extends FormRequest
             'cash' => ['required', 'string'],
             'credit' => ['required', 'string'],
             'lines' => ['sometimes', 'array', 'min:1', 'max:30'],
-            'lines.*.name' => ['required', 'string', 'max:255'],
+            'lines.*.item_id' => ['required', 'integer', Rule::exists('items', 'id')],
             'lines.*.quantity' => ['required', 'string'],
             'lines.*.amount' => ['required', 'string'],
         ];
@@ -66,7 +67,9 @@ class ChartAccountEntryRequest extends FormRequest
             'credit.required' => 'Enter the credit amount.',
             'lines.min' => 'Add an item.',
             'lines.max' => 'An entry can have at most 30 items.',
-            'lines.*.name.required' => 'Enter the item name.',
+            'lines.*.item_id.required' => 'Choose an item.',
+            'lines.*.item_id.integer' => 'Choose an item.',
+            'lines.*.item_id.exists' => 'Choose an item.',
         ];
     }
 
@@ -105,10 +108,6 @@ class ChartAccountEntryRequest extends FormRequest
                 $lines[] = $line;
 
                 continue;
-            }
-
-            if (array_key_exists('name', $line)) {
-                $line['name'] = trim((string) $line['name']);
             }
 
             $lines[] = $line;
@@ -260,7 +259,7 @@ class ChartAccountEntryRequest extends FormRequest
             }
 
             $normalized[] = [
-                'name' => $line['name'],
+                'item_id' => (int) $line['item_id'],
                 'quantity' => $quantity,
                 'amount' => $amount->toDecimal(),
             ];

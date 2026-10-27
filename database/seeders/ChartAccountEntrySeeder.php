@@ -9,6 +9,7 @@ use App\Models\Account;
 use App\Models\ChartAccountEntry;
 use App\Models\Classification;
 use App\Models\Company;
+use App\Models\Item;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
@@ -128,8 +129,12 @@ class ChartAccountEntrySeeder extends Seeder
 
         foreach (range(0, $slot === 0 ? 1 : 0) as $offset) {
             $item = $book['items'][($month + $slot + $offset) % count($book['items'])];
+            $catalogItem = Item::query()->firstOrCreate(
+                ['name' => $item['name']],
+                ['unit' => 'piece'],
+            );
             $lines[] = [
-                'name' => $item['name'],
+                'item_id' => $catalogItem->id,
                 'quantity' => (string) $quantity,
                 'amount' => Money::ofMinor($quantity * ($item['unit_cents'] + ($month * $item['step'])))->toDecimal(),
             ];

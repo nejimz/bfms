@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['company_id', 'chart_account_entry_id', 'position', 'name', 'quantity', 'amount_cents'])]
+#[Fillable(['company_id', 'chart_account_entry_id', 'position', 'item_id', 'name', 'quantity', 'amount_cents'])]
 class ChartAccountEntryLine extends Model
 {
     /** @use HasFactory<ChartAccountEntryLineFactory> */
@@ -34,6 +34,11 @@ class ChartAccountEntryLine extends Model
     public function entry(): BelongsTo
     {
         return $this->belongsTo(ChartAccountEntry::class, 'chart_account_entry_id');
+    }
+
+    public function item(): BelongsTo
+    {
+        return $this->belongsTo(Item::class);
     }
 
     public function quantityDecimal(): string

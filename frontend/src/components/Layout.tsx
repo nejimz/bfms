@@ -6,7 +6,7 @@ import { chartAccountModuleList } from '../chartAccountModules'
 import { OrganizationMark } from '../organization'
 import { canViewDashboard } from '../types'
 
-type MenuIcon = 'dashboard' | 'chart' | 'summary' | 'company' | 'businesses' | 'classifications' | 'categories' | 'locations' | 'accounts' | 'entry' | 'journals' | 'balance' | 'users'
+type MenuIcon = 'dashboard' | 'chart' | 'summary' | 'company' | 'businesses' | 'classifications' | 'categories' | 'locations' | 'items' | 'accounts' | 'entry' | 'journals' | 'balance' | 'users'
 
 type MenuItem = {
   to: string
@@ -30,6 +30,7 @@ const settingsLinks: MenuItem[] = [
   businessesLink,
   ...businessDirectoryLinks,
   { to: '/users', label: 'Users', icon: 'users' },
+  { to: '/items', label: 'Items', icon: 'items' },
   { to: '/chart-account-columns', label: 'Account Columns', icon: 'entry' },
   { to: '/chart-account-entries', label: 'Chart Account Entry', icon: 'entry' },
   { to: '/accounts', label: 'Chart Of Accounts', icon: 'accounts' },
@@ -45,7 +46,7 @@ const dashboardLink: MenuItem = { to: '/dashboard', label: 'Dashboard', icon: 'd
 const incomeExpenseLink: MenuItem = { to: '/income-expense', label: 'Income & Expenses', icon: 'chart' }
 const yearlySummaryLink: MenuItem = { to: '/yearly-summary', label: 'Yearly Summary', icon: 'summary' }
 
-const openWithoutBusiness = ['/businesses', '/classifications', '/categories', '/locations', '/users', '/company', '/password']
+const openWithoutBusiness = ['/businesses', '/classifications', '/categories', '/locations', '/items', '/users', '/company', '/password']
 
 function canOpenWithoutBusiness(pathname: string): boolean {
   return openWithoutBusiness.some((path) => pathname === path || pathname.startsWith(`${path}/`))
@@ -229,6 +230,13 @@ function NavIcon({ name }: { name: MenuIcon | 'settings' }) {
         <>
           <path d="M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11z" />
           <circle cx="12" cy="10" r="2.25" />
+        </>
+      )}
+      {name === 'items' && (
+        <>
+          <path d="M21 8 12 3 3 8l9 5 9-5z" />
+          <path d="M3 8v8l9 5 9-5V8" />
+          <path d="M12 13v8" />
         </>
       )}
       {name === 'accounts' && (

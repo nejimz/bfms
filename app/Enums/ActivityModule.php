@@ -9,5 +9,6 @@ enum ActivityModule: string
     case Classification = 'classification';
     case Category = 'category';
     case Location = 'location';
+    case Item = 'item';
     case User = 'user';
 }
