@@ -142,7 +142,7 @@ export function BusinessFormPage() {
       await queryClient.invalidateQueries({
         predicate: (query) => query.queryKey[0] !== 'user',
       })
-      navigate(editing ? '/businesses' : '/accounts')
+      navigate('/businesses')
     } catch (caught) {
       setErrors(fieldErrors(caught))
     } finally {
