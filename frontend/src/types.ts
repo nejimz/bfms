@@ -308,6 +308,7 @@ export type Classification = {
   businesses_count: number
   category_id: string | null
   category_name: string | null
+  logo_url: string | null
 }
 
 export type Location = {

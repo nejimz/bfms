@@ -19,9 +19,13 @@ function initial(name: string): string {
 function ClassificationRow({ classification, editable }: { classification: Classification; editable: boolean }) {
   const body = (
     <>
-      <span className="category-mark" aria-hidden="true">
-        {initial(classification.name)}
-      </span>
+      {classification.logo_url ? (
+        <img className="business-logo" src={classification.logo_url} alt="" />
+      ) : (
+        <span className="category-mark" aria-hidden="true">
+          {initial(classification.name)}
+        </span>
+      )}
       <h2>{classification.name}</h2>
       <p className="category-count">
         {classification.category_name && (

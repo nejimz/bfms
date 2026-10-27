@@ -44,6 +44,8 @@ class StoreClassificationRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'max:255', $unique],
             'category_id' => ['sometimes', 'nullable', 'integer', 'exists:categories,id'],
+            'logo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+            'remove_logo' => ['sometimes', 'boolean'],
         ];
     }
 
@@ -57,6 +59,9 @@ class StoreClassificationRequest extends FormRequest
             'name.max' => 'The classification name must be 255 characters or fewer.',
             'name.unique' => 'A classification with this name already exists.',
             'category_id.exists' => 'Choose a category from the list.',
+            'logo.image' => 'Use a JPG, PNG, or WebP logo.',
+            'logo.mimes' => 'Use a JPG, PNG, or WebP logo.',
+            'logo.max' => 'The logo must be 2 MB or smaller.',
         ];
     }
 

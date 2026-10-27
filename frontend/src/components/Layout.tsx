@@ -16,9 +16,12 @@ type MenuItem = {
 
 const businessesLink: MenuItem = { to: '/businesses', label: 'Businesses', icon: 'businesses' }
 
+const classificationChildren: MenuItem[] = [
+  { to: '/categories', label: 'Categories', icon: 'categories' },
+]
+
 const businessDirectoryLinks: MenuItem[] = [
   { to: '/classifications', label: 'Classifications', icon: 'classifications' },
-  { to: '/categories', label: 'Categories', icon: 'categories' },
   { to: '/locations', label: 'Locations', icon: 'locations' },
 ]
 
@@ -48,7 +51,9 @@ const linksAfterSettings: MenuItem[] = [
 ]
 
 function settingsRouteActive(pathname: string): boolean {
-  return settingsLinks.some((link) => pathname === link.to || pathname.startsWith(`${link.to}/`))
+  return [...settingsLinks, ...classificationChildren].some(
+    (link) => pathname === link.to || pathname.startsWith(`${link.to}/`),
+  )
 }
 
 function SettingsMenu() {
@@ -92,9 +97,22 @@ function SettingsMenu() {
               <div className="nav-group" key={link.to}>
                 <MenuLink item={link} />
                 <div className="nav-sub" id="business-menu">
-                  {businessDirectoryLinks.map((child) => (
-                    <MenuLink key={child.to} item={child} />
-                  ))}
+                  {businessDirectoryLinks.map((child) => {
+                    if (child.to !== '/classifications') {
+                      return <MenuLink key={child.to} item={child} />
+                    }
+
+                    return (
+                      <div className="nav-group" key={child.to}>
+                        <MenuLink item={child} />
+                        <div className="nav-sub" id="classification-menu">
+                          {classificationChildren.map((nested) => (
+                            <MenuLink key={nested.to} item={nested} />
+                          ))}
+                        </div>
+                      </div>
+                    )
+                  })}
                 </div>
               </div>
             )

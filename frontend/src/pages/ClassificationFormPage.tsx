@@ -3,17 +3,23 @@ import { useEffect, useState, type FormEvent } from 'react'
 import { Link, Navigate, useNavigate, useParams } from 'react-router-dom'
 import { api, errorMessage, fieldErrors } from '../api'
 import { useAuth } from '../auth'
+import { PictureField, appendPicture, choosePicture, emptyPicture, imageError, replacePicture, type Picture } from '../components/PictureField'
 import { readResource, type Category, type Classification } from '../types'
 
 const nameLimit = 255
 
-function clientErrors(name: string): Record<string, string> {
+function clientErrors(name: string, logo: Picture): Record<string, string> {
   const errors: Record<string, string> = {}
 
   if (!name.trim()) {
     errors.name = 'Enter a classification name.'
   } else if (name.trim().length > nameLimit) {
     errors.name = 'The classification name must be 255 characters or fewer.'
+  }
+
+  const logoError = imageError(logo.file, 'logo')
+  if (logoError) {
+    errors.logo = logoError
   }
 
   return errors
@@ -48,6 +54,7 @@ export function ClassificationFormPage() {
   })
   const [name, setName] = useState('')
   const [categoryId, setCategoryId] = useState('')
+  const [logo, setLogo] = useState<Picture>(emptyPicture)
   const [filled, setFilled] = useState(!editing)
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [formError, setFormError] = useState<string | null>(null)
@@ -63,6 +70,14 @@ export function ClassificationFormPage() {
     setFilled(true)
   }, [classification, filled])
 
+  useEffect(() => {
+    return () => {
+      if (logo.previewUrl) {
+        URL.revokeObjectURL(logo.previewUrl)
+      }
+    }
+  }, [logo.previewUrl])
+
   if (user && user.role !== 'admin') {
     return <Navigate to="/classifications" replace />
   }
@@ -73,7 +88,7 @@ export function ClassificationFormPage() {
 
   async function submit(event: FormEvent) {
     event.preventDefault()
-    const nextErrors = clientErrors(name)
+    const nextErrors = clientErrors(name, logo)
     setErrors(nextErrors)
     setFormError(null)
     if (Object.keys(nextErrors).length > 0) {
@@ -83,11 +98,16 @@ export function ClassificationFormPage() {
     setPending(true)
 
     try {
-      const payload = { name: name.trim(), category_id: categoryId }
+      const body = new FormData()
+      body.append('name', name.trim())
+      body.append('category_id', categoryId)
+      appendPicture(body, 'logo', logo)
       if (editing) {
-        await api.patch(`/api/v1/classifications/${id}`, payload)
+        body.append('_method', 'PATCH')
+        await api.post(`/api/v1/classifications/${id}`, body)
+        setLogo((current) => replacePicture(current, null))
       } else {
-        await api.post('/api/v1/classifications', payload)
+        await api.post('/api/v1/classifications', body)
       }
       await queryClient.invalidateQueries({ queryKey: ['classifications'] })
       await queryClient.invalidateQueries({ queryKey: ['categories'] })
@@ -166,6 +186,17 @@ export function ClassificationFormPage() {
             {categories.isError && <span className="form-error">The categories could not be opened.</span>}
             {errors.category_id && <span className="form-error">{errors.category_id}</span>}
           </label>
+          <PictureField
+            label="Logo"
+            noun="logo"
+            hint="Shown on this form and in the classifications list. JPG, PNG, or WebP. 2 MB or smaller."
+            error={errors.logo}
+            savedUrl={classification?.logo_url ?? null}
+            picture={logo}
+            onChoose={(file) => choosePicture(setLogo, file)}
+            onRemove={(remove) => setLogo((current) => ({ ...current, remove }))}
+            previewClass="logo-preview"
+          />
           {editing && (classification?.businesses_count ?? 0) > 0 && !formError && (
             <p className="hint">Remove this classification from its businesses before deleting it.</p>
           )}

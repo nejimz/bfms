@@ -7,6 +7,7 @@ use App\Http\Requests\StoreClassificationRequest;
 use App\Http\Requests\UpdateClassificationRequest;
 use App\Models\Classification;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -30,7 +31,9 @@ class ClassificationController extends Controller
 
     public function store(StoreClassificationRequest $request): JsonResponse
     {
-        $classification = Classification::query()->create($request->validated());
+        $classification = Classification::query()->create($request->safe()->except(['logo', 'remove_logo']));
+        $this->applyLogo($classification, $request);
+        $classification->save();
         $classification->load('category')->loadCount('companies');
 
         return response()->json([
@@ -40,7 +43,9 @@ class ClassificationController extends Controller
 
     public function update(UpdateClassificationRequest $request, Classification $classification): JsonResponse
     {
-        $classification->update($request->validated());
+        $classification->update($request->safe()->except(['logo', 'remove_logo']));
+        $this->applyLogo($classification, $request);
+        $classification->save();
         $classification->load('category')->loadCount('companies');
 
         return response()->json([
@@ -58,9 +63,38 @@ class ClassificationController extends Controller
             ]);
         }
 
+        $path = $classification->logo_path;
         $classification->delete();
+        $classification->deleteFile(is_string($path) ? $path : null);
 
         return response()->noContent();
+    }
+
+    private function applyLogo(Classification $classification, StoreClassificationRequest $request): void
+    {
+        $file = $request->file('logo');
+
+        if ($file instanceof UploadedFile) {
+            $path = $file->store('classifications', 'public');
+
+            if (! is_string($path)) {
+                throw ValidationException::withMessages([
+                    'logo' => 'The logo could not be saved.',
+                ]);
+            }
+
+            $current = $classification->logo_path;
+            $classification->deleteFile(is_string($current) ? $current : null);
+            $classification->logo_path = $path;
+
+            return;
+        }
+
+        if ($request->boolean('remove_logo')) {
+            $current = $classification->logo_path;
+            $classification->deleteFile(is_string($current) ? $current : null);
+            $classification->logo_path = null;
+        }
     }
 
     private function categoryId(Classification $classification): ?string
@@ -80,6 +114,7 @@ class ClassificationController extends Controller
                 'name' => $classification->name,
                 'category_id' => $this->categoryId($classification),
                 'category_name' => $classification->category?->name,
+                'logo_url' => $classification->logoUrl(),
                 'businesses_count' => (int) $classification->companies_count,
             ],
         ];
