@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 #[Fillable(['name', 'unit', 'description'])]
 class Item extends Model
@@ -20,5 +21,10 @@ class Item extends Model
     public function lines(): HasMany
     {
         return $this->hasMany(ChartAccountEntryLine::class)->withoutGlobalScope('company');
+    }
+
+    public function inventory(): HasOne
+    {
+        return $this->hasOne(Inventory::class);
     }
 }

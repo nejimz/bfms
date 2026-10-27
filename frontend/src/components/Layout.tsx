@@ -6,7 +6,7 @@ import { chartAccountModuleList } from '../chartAccountModules'
 import { OrganizationMark } from '../organization'
 import { canViewDashboard } from '../types'
 
-type MenuIcon = 'dashboard' | 'chart' | 'summary' | 'company' | 'businesses' | 'classifications' | 'categories' | 'locations' | 'items' | 'accounts' | 'entry' | 'journals' | 'balance' | 'users'
+type MenuIcon = 'dashboard' | 'chart' | 'summary' | 'company' | 'businesses' | 'classifications' | 'categories' | 'locations' | 'items' | 'inventory' | 'accounts' | 'entry' | 'journals' | 'balance' | 'users'
 
 type MenuItem = {
   to: string
@@ -18,6 +18,10 @@ const businessesLink: MenuItem = { to: '/businesses', label: 'Businesses', icon:
 
 const classificationChildren: MenuItem[] = [
   { to: '/categories', label: 'Categories', icon: 'categories' },
+]
+
+const itemChildren: MenuItem[] = [
+  { to: '/inventories', label: 'Inventory', icon: 'inventory' },
 ]
 
 const businessDirectoryLinks: MenuItem[] = [
@@ -46,7 +50,7 @@ const dashboardLink: MenuItem = { to: '/dashboard', label: 'Dashboard', icon: 'd
 const incomeExpenseLink: MenuItem = { to: '/income-expense', label: 'Income & Expenses', icon: 'chart' }
 const yearlySummaryLink: MenuItem = { to: '/yearly-summary', label: 'Yearly Summary', icon: 'summary' }
 
-const openWithoutBusiness = ['/businesses', '/classifications', '/categories', '/locations', '/items', '/users', '/company', '/password']
+const openWithoutBusiness = ['/businesses', '/classifications', '/categories', '/locations', '/items', '/inventories', '/users', '/company', '/password']
 
 function canOpenWithoutBusiness(pathname: string): boolean {
   return openWithoutBusiness.some((path) => pathname === path || pathname.startsWith(`${path}/`))
@@ -58,7 +62,7 @@ const linksAfterSettings: MenuItem[] = [
 ]
 
 function settingsRouteActive(pathname: string): boolean {
-  return [...settingsLinks, ...classificationChildren].some(
+  return [...settingsLinks, ...classificationChildren, ...itemChildren].some(
     (link) => pathname === link.to || pathname.startsWith(`${link.to}/`),
   )
 }
@@ -98,6 +102,19 @@ function SettingsMenu() {
           {links.map((link) => {
             if (businessDirectoryLinks.some((child) => child.to === link.to)) {
               return null
+            }
+
+            if (link.to === '/items') {
+              return (
+                <div className="nav-group" key={link.to}>
+                  <MenuLink item={link} />
+                  <div className="nav-sub" id="item-menu">
+                    {itemChildren.map((child) => (
+                      <MenuLink key={child.to} item={child} />
+                    ))}
+                  </div>
+                </div>
+              )
             }
 
             if (link.to !== businessesLink.to) {
@@ -237,6 +254,14 @@ function NavIcon({ name }: { name: MenuIcon | 'settings' }) {
           <path d="M21 8 12 3 3 8l9 5 9-5z" />
           <path d="M3 8v8l9 5 9-5V8" />
           <path d="M12 13v8" />
+        </>
+      )}
+      {name === 'inventory' && (
+        <>
+          <path d="M4 8h16v11H4z" />
+          <path d="M4 13h16" />
+          <path d="M12 8v11" />
+          <path d="M8 8V6h8v2" />
         </>
       )}
       {name === 'accounts' && (

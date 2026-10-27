@@ -328,6 +328,16 @@ export type Item = {
   unit: string
   description: string | null
   entries_count: number
+  inventory_count: number
+}
+
+export type Inventory = {
+  id: string
+  item_id: string
+  item_name: string
+  unit: string
+  quantity: string
+  note: string | null
 }
 
 export type DirectoryUser = {

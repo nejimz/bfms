@@ -179,6 +179,9 @@ export function ItemFormPage() {
           {editing && (item?.entries_count ?? 0) > 0 && !formError && (
             <p className="hint">Remove this item from its entries before deleting it.</p>
           )}
+          {editing && (item?.inventory_count ?? 0) > 0 && !formError && (
+            <p className="hint">Remove this item from inventory before deleting it.</p>
+          )}
           {formError && <p className="form-error">{formError}</p>}
           <div className="actions">
             <button type="submit" className="primary" disabled={pending || (editing && !filled)}>

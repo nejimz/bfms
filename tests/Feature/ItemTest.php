@@ -6,6 +6,7 @@ use App\Enums\CompanyRole;
 use App\Models\ActivityLog;
 use App\Models\ChartAccountEntryLine;
 use App\Models\Company;
+use App\Models\Inventory;
 use App\Models\Item;
 use App\Models\User;
 
@@ -169,6 +170,20 @@ it('deletes an item that no entry uses', function () {
         ->assertNoContent();
 
     $this->assertDatabaseMissing('items', ['id' => $item->id]);
+});
+
+it('refuses to delete an item that inventory still holds', function () {
+    $item = Item::factory()->create(['name' => 'Rice', 'unit' => 'kg']);
+    $inventory = Inventory::factory()->create(['item_id' => $item->id, 'quantity' => '4']);
+    $company = Company::factory()->create();
+    $owner = itemMember($company);
+
+    $this->actingAs($owner)->deleteJson("/api/v1/items/{$item->id}")
+        ->assertUnprocessable()
+        ->assertJsonPath('errors.item.0', 'Remove this item from inventory before deleting it.');
+
+    $this->assertDatabaseHas('items', ['id' => $item->id, 'name' => 'Rice']);
+    expect($inventory->fresh()->item_id)->toBe($item->id);
 });
 
 it('refuses to delete an item that an entry line still uses', function () {

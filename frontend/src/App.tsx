@@ -21,6 +21,8 @@ import { CategoriesPage } from './pages/CategoriesPage'
 import { CategoryFormPage } from './pages/CategoryFormPage'
 import { ClassificationsPage } from './pages/ClassificationsPage'
 import { ClassificationFormPage } from './pages/ClassificationFormPage'
+import { InventoriesPage } from './pages/InventoriesPage'
+import { InventoryFormPage } from './pages/InventoryFormPage'
 import { ItemFormPage } from './pages/ItemFormPage'
 import { ItemsPage } from './pages/ItemsPage'
 import { LocationFormPage } from './pages/LocationFormPage'
@@ -116,6 +118,9 @@ export default function App() {
                 <Route path="/items" element={<ItemsPage />} />
                 <Route path="/items/new" element={<ItemFormPage />} />
                 <Route path="/items/:id/edit" element={<ItemFormPage />} />
+                <Route path="/inventories" element={<InventoriesPage />} />
+                <Route path="/inventories/new" element={<InventoryFormPage />} />
+                <Route path="/inventories/:id/edit" element={<InventoryFormPage />} />
                 <Route path="/users" element={<UsersPage />} />
                 <Route path="/users/new" element={<UserFormPage />} />
                 <Route path="/users/:id" element={<UserFormPage />} />

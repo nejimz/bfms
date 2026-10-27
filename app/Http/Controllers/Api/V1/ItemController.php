@@ -21,7 +21,7 @@ class ItemController extends Controller
         $this->authorize('viewAny', Item::class);
 
         $items = Item::query()
-            ->withCount('lines')
+            ->withCount(['lines', 'inventory'])
             ->orderBy('name')
             ->orderBy('id')
             ->get();
@@ -35,7 +35,7 @@ class ItemController extends Controller
     {
         $item = Item::query()->create($request->validated());
         $activity->record($request->user(), ActivityModule::Item, ActivityAction::Added, $item->name);
-        $item->loadCount('lines');
+        $item->loadCount(['lines', 'inventory']);
 
         return response()->json([
             'data' => $this->resource($item),
@@ -52,7 +52,7 @@ class ItemController extends Controller
             $activity->record($request->user(), ActivityModule::Item, ActivityAction::Changed, $item->name, $changes);
         }
 
-        $item->loadCount('lines');
+        $item->loadCount(['lines', 'inventory']);
 
         return response()->json([
             'data' => $this->resource($item),
@@ -66,6 +66,12 @@ class ItemController extends Controller
         if ($item->lines()->exists()) {
             throw ValidationException::withMessages([
                 'item' => 'Remove this item from its entries before deleting it.',
+            ]);
+        }
+
+        if ($item->inventory()->exists()) {
+            throw ValidationException::withMessages([
+                'item' => 'Remove this item from inventory before deleting it.',
             ]);
         }
 
@@ -101,6 +107,7 @@ class ItemController extends Controller
                 'unit' => $item->unit,
                 'description' => $item->description,
                 'entries_count' => (int) $item->lines_count,
+                'inventory_count' => (int) $item->inventory_count,
             ],
         ];
     }
