@@ -7,7 +7,7 @@ import { homePath } from '../types'
 
 export function LoginPage() {
   const { user, isLoading, refresh } = useAuth()
-  const [email, setEmail] = useState('owner@bfms.test')
+  const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [pending, setPending] = useState(false)
@@ -69,7 +69,6 @@ export function LoginPage() {
         <button type="submit" className="primary" disabled={pending}>
           {pending ? 'Signing in…' : 'Sign in'}
         </button>
-        <p className="hint">Demo admin: owner@bfms.test / password</p>
       </form>
     </div>
   )
