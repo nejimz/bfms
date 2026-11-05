@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['item_id', 'quantity', 'note'])]
+#[Fillable(['item_id', 'date', 'quantity', 'note'])]
 class Inventory extends Model
 {
     /** @use HasFactory<InventoryFactory> */
@@ -20,6 +20,7 @@ class Inventory extends Model
     protected function casts(): array
     {
         return [
+            'date' => 'date',
             'quantity' => 'decimal:3',
         ];
     }
@@ -31,9 +32,7 @@ class Inventory extends Model
 
     public function quantityLabel(): string
     {
-        $quantity = rtrim(rtrim((string) $this->quantity, '0'), '.');
-
-        return $quantity === '' ? '0' : $quantity;
+        return InventoryAdjustment::label((string) $this->quantity);
     }
 
     public function recordName(): string

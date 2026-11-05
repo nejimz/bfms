@@ -21,6 +21,7 @@ it('creates inventory and trims the quantity and note', function () {
 
     $created = $this->actingAs($owner)->postJson('/api/v1/inventories', [
         'item_id' => $item->id,
+        'date' => '2026-01-01',
         'quantity' => '  12.50  ',
         'note' => '  Cold room  ',
     ]);
@@ -29,6 +30,7 @@ it('creates inventory and trims the quantity and note', function () {
         ->assertJsonPath('data.attributes.item_id', (string) $item->id)
         ->assertJsonPath('data.attributes.item_name', 'Rice')
         ->assertJsonPath('data.attributes.unit', 'kg')
+        ->assertJsonPath('data.attributes.date', '2026-01-01')
         ->assertJsonPath('data.attributes.quantity', '12.5')
         ->assertJsonPath('data.attributes.note', 'Cold room');
 
@@ -47,6 +49,7 @@ it('stores inventory without a note and accepts a leading decimal', function () 
 
     $created = $this->actingAs($owner)->postJson('/api/v1/inventories', [
         'item_id' => $item->id,
+        'date' => '2026-01-01',
         'quantity' => '.5',
         'note' => '   ',
     ]);
@@ -69,6 +72,7 @@ it('stores a quantity of zero', function () {
 
     $this->actingAs($owner)->postJson('/api/v1/inventories', [
         'item_id' => $item->id,
+        'date' => '2026-01-01',
         'quantity' => '0',
     ])->assertCreated()
         ->assertJsonPath('data.attributes.quantity', '0');
@@ -121,6 +125,13 @@ it('rejects inventory without an item, with a bad quantity, or with a note that 
     ])->assertUnprocessable()
         ->assertJsonPath('errors.note.0', 'The note must be 1000 characters or fewer.');
 
+    $this->actingAs($owner)->postJson('/api/v1/inventories', [
+        'item_id' => $item->id,
+        'date' => 'yesterday',
+        'quantity' => '1',
+    ])->assertUnprocessable()
+        ->assertJsonPath('errors.date.0', 'Enter the date.');
+
     expect(Inventory::query()->count())->toBe(0);
 });
 
@@ -132,6 +143,7 @@ it('rejects a second inventory row for the same item', function () {
 
     $this->actingAs($owner)->postJson('/api/v1/inventories', [
         'item_id' => $item->id,
+        'date' => '2026-01-01',
         'quantity' => '8',
     ])->assertUnprocessable()
         ->assertJsonPath('errors.item_id.0', 'This item already has inventory.');
@@ -171,6 +183,7 @@ it('lets an owner change the item, quantity, and note', function () {
 
     $this->actingAs($owner)->patchJson("/api/v1/inventories/{$inventory->id}", [
         'item_id' => $sugar->id,
+        'date' => '2026-01-01',
         'quantity' => '  3  ',
         'note' => '  Dry store  ',
     ])->assertOk()
@@ -194,6 +207,7 @@ it('keeps the same item when an owner saves that inventory again', function () {
 
     $this->actingAs($owner)->patchJson("/api/v1/inventories/{$inventory->id}", [
         'item_id' => $item->id,
+        'date' => '2026-01-01',
         'quantity' => '4',
         'note' => null,
     ])->assertOk()
@@ -210,6 +224,7 @@ it('refuses to move inventory onto an item that already has a row', function () 
 
     $this->actingAs($owner)->patchJson("/api/v1/inventories/{$inventory->id}", [
         'item_id' => $sugar->id,
+        'date' => '2026-01-01',
         'quantity' => '1',
     ])->assertUnprocessable()
         ->assertJsonPath('errors.item_id.0', 'This item already has inventory.');
@@ -242,6 +257,7 @@ it('records who added, changed, and deleted inventory', function () {
 
     $created = $this->actingAs($admin)->postJson('/api/v1/inventories', [
         'item_id' => $rice->id,
+        'date' => '2026-01-01',
         'quantity' => '10',
         'note' => '',
     ])->assertCreated();
@@ -258,12 +274,14 @@ it('records who added, changed, and deleted inventory', function () {
 
     $this->actingAs($admin)->patchJson("/api/v1/inventories/{$id}", [
         'item_id' => $sugar->id,
+        'date' => '2026-01-01',
         'quantity' => '12.5',
         'note' => 'Dry store',
     ])->assertOk();
 
     $this->actingAs($admin)->patchJson("/api/v1/inventories/{$id}", [
         'item_id' => $sugar->id,
+        'date' => '2026-01-01',
         'quantity' => '12.5',
         'note' => 'Dry store',
     ])->assertOk();

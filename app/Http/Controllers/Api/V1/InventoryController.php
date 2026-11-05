@@ -79,6 +79,7 @@ class InventoryController extends Controller
 
         return [
             'Item' => $activity->label($inventory->item?->name),
+            'Date' => $activity->label($inventory->date?->toDateString()),
             'Quantity' => $inventory->quantityLabel(),
             'Note' => $activity->label($inventory->note),
         ];
@@ -98,6 +99,7 @@ class InventoryController extends Controller
                 'item_id' => (string) $inventory->item_id,
                 'item_name' => $inventory->item?->name,
                 'unit' => $inventory->item?->unit,
+                'date' => $inventory->date?->toDateString(),
                 'quantity' => $inventory->quantityLabel(),
                 'note' => $inventory->note,
             ],

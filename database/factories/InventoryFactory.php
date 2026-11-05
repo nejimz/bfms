@@ -18,6 +18,7 @@ class InventoryFactory extends Factory
     {
         return [
             'item_id' => Item::factory(),
+            'date' => '2026-01-01',
             'quantity' => '1',
             'note' => fake()->optional()->sentence(),
         ];

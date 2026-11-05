@@ -24,11 +24,21 @@ function quantityError(value: string): string | null {
   return null
 }
 
-function clientErrors(itemId: string, quantity: string, note: string): Record<string, string> {
+function today(): string {
+  const now = new Date()
+
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
+}
+
+function clientErrors(itemId: string, date: string, quantity: string, note: string): Record<string, string> {
   const errors: Record<string, string> = {}
 
   if (!itemId) {
     errors.item_id = 'Choose an item.'
+  }
+
+  if (!date) {
+    errors.date = 'Enter the date.'
   }
 
   const quantityProblem = quantityError(quantity)
@@ -75,6 +85,7 @@ export function InventoryFormPage() {
   )
   const choices = (items.data ?? []).filter((item) => !taken.has(item.id))
   const [itemId, setItemId] = useState('')
+  const [date, setDate] = useState(today)
   const [quantity, setQuantity] = useState('')
   const [note, setNote] = useState('')
   const [filled, setFilled] = useState(!editing)
@@ -89,6 +100,7 @@ export function InventoryFormPage() {
     }
 
     setItemId(inventory.item_id)
+    setDate(inventory.date ?? today())
     setQuantity(inventory.quantity)
     setNote(inventory.note ?? '')
     setFilled(true)
@@ -104,7 +116,7 @@ export function InventoryFormPage() {
 
   async function submit(event: FormEvent) {
     event.preventDefault()
-    const nextErrors = clientErrors(itemId, quantity, note)
+    const nextErrors = clientErrors(itemId, date, quantity, note)
     setErrors(nextErrors)
     setFormError(null)
     if (Object.keys(nextErrors).length > 0) {
@@ -117,6 +129,7 @@ export function InventoryFormPage() {
     try {
       const payload = {
         item_id: Number(itemId),
+        date,
         quantity: normalized,
         note: note.trim() === '' ? null : note.trim(),
       }
@@ -166,7 +179,7 @@ export function InventoryFormPage() {
         <div>
           <p className="eyebrow">Directory</p>
           <h1>{editing ? 'Edit inventory' : 'Add inventory'}</h1>
-          <p className="hint">One quantity on hand for each item.</p>
+          <p className="hint">The starting quantity already on hand on this date.</p>
         </div>
       </header>
 
@@ -199,7 +212,18 @@ export function InventoryFormPage() {
             {errors.item_id && <span className="form-error">{errors.item_id}</span>}
           </label>
           <label>
-            Quantity{selected ? ` (${selected.unit})` : ''}
+            Date
+            <input
+              type="date"
+              value={date}
+              onChange={(event) => setDate(event.target.value)}
+              required
+              aria-invalid={Boolean(errors.date)}
+            />
+            {errors.date && <span className="form-error">{errors.date}</span>}
+          </label>
+          <label>
+            Starting quantity{selected ? ` (${selected.unit})` : ''}
             <input
               value={quantity}
               onChange={(event) => setQuantity(event.target.value)}

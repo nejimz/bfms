@@ -43,6 +43,7 @@ class StoreInventoryRequest extends FormRequest
 
         return [
             'item_id' => ['required', 'integer', Rule::exists('items', 'id'), $unique],
+            'date' => ['required', 'date'],
             'quantity' => ['required', 'string'],
             'note' => ['nullable', 'string', 'max:1000'],
         ];
@@ -58,6 +59,8 @@ class StoreInventoryRequest extends FormRequest
             'item_id.integer' => 'Choose an item.',
             'item_id.exists' => 'Choose an item.',
             'item_id.unique' => 'This item already has inventory.',
+            'date.required' => 'Enter the date.',
+            'date.date' => 'Enter the date.',
             'quantity.required' => 'Enter a quantity of zero or more, with up to 3 decimal places.',
             'note.max' => 'The note must be 1000 characters or fewer.',
         ];

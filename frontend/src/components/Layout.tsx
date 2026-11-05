@@ -22,6 +22,7 @@ const classificationChildren: MenuItem[] = [
 
 const itemChildren: MenuItem[] = [
   { to: '/inventories', label: 'Inventory', icon: 'inventory' },
+  { to: '/inventories/stock-card', label: 'Stock card', icon: 'inventory' },
 ]
 
 const businessDirectoryLinks: MenuItem[] = [

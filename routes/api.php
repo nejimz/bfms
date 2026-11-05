@@ -11,12 +11,14 @@ use App\Http\Controllers\Api\V1\ClassificationController;
 use App\Http\Controllers\Api\V1\CompanyController;
 use App\Http\Controllers\Api\V1\CurrentUserController;
 use App\Http\Controllers\Api\V1\IncomeExpenseChartController;
+use App\Http\Controllers\Api\V1\InventoryAdjustmentController;
 use App\Http\Controllers\Api\V1\InventoryController;
 use App\Http\Controllers\Api\V1\ItemActivityReportController;
 use App\Http\Controllers\Api\V1\ItemController;
 use App\Http\Controllers\Api\V1\JournalController;
 use App\Http\Controllers\Api\V1\LocationController;
 use App\Http\Controllers\Api\V1\OrganizationController;
+use App\Http\Controllers\Api\V1\StockCardReportController;
 use App\Http\Controllers\Api\V1\TrialBalanceController;
 use App\Http\Controllers\Api\V1\UserController;
 use App\Http\Controllers\Api\V1\YearlySummaryController;
@@ -64,6 +66,10 @@ Route::middleware(['auth:sanctum', SetCurrentCompany::class])->prefix('v1')->gro
     Route::post('/inventories', [InventoryController::class, 'store']);
     Route::patch('/inventories/{inventory}', [InventoryController::class, 'update']);
     Route::delete('/inventories/{inventory}', [InventoryController::class, 'destroy']);
+
+    Route::get('/reports/stock-card', [StockCardReportController::class, 'show']);
+    Route::post('/inventory-adjustments', [InventoryAdjustmentController::class, 'store']);
+    Route::delete('/inventory-adjustments/{inventoryAdjustment}', [InventoryAdjustmentController::class, 'destroy']);
 
     Route::get('/locations', [LocationController::class, 'index']);
     Route::post('/locations', [LocationController::class, 'store']);

@@ -23,6 +23,7 @@ import { ClassificationsPage } from './pages/ClassificationsPage'
 import { ClassificationFormPage } from './pages/ClassificationFormPage'
 import { InventoriesPage } from './pages/InventoriesPage'
 import { InventoryFormPage } from './pages/InventoryFormPage'
+import { StockCardPage } from './pages/StockCardPage'
 import { ItemFormPage } from './pages/ItemFormPage'
 import { ItemsPage } from './pages/ItemsPage'
 import { LocationFormPage } from './pages/LocationFormPage'
@@ -120,6 +121,7 @@ export default function App() {
                 <Route path="/items/:id/edit" element={<ItemFormPage />} />
                 <Route path="/inventories" element={<InventoriesPage />} />
                 <Route path="/inventories/new" element={<InventoryFormPage />} />
+                <Route path="/inventories/stock-card" element={<StockCardPage />} />
                 <Route path="/inventories/:id/edit" element={<InventoryFormPage />} />
                 <Route path="/users" element={<UsersPage />} />
                 <Route path="/users/new" element={<UserFormPage />} />

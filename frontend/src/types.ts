@@ -336,8 +336,23 @@ export type Inventory = {
   item_id: string
   item_name: string
   unit: string
+  date: string | null
   quantity: string
   note: string | null
+}
+
+export type StockCardRow = {
+  id: string
+  date: string
+  item_id: string
+  item_name: string
+  unit: string
+  purchase_quantity: string | null
+  sold_quantity: string | null
+  adjust_quantity: string | null
+  remaining_quantity: string
+  source: 'opening' | 'purchase' | 'sale' | 'adjustment'
+  adjustment_id: string | null
 }
 
 export type DirectoryUser = {
