@@ -164,6 +164,7 @@ it('lists inventory by item name', function () {
 
     expect($rows->keys()->all())->toBe(['Rice', 'Sugar'])
         ->and($rows['Rice']['attributes']['quantity'])->toBe('10.5')
+        ->and($rows['Rice']['attributes']['current_quantity'])->toBe('10.5')
         ->and($rows['Rice']['attributes']['unit'])->toBe('sack')
         ->and($rows['Rice']['attributes']['note'])->toBe('Sacks')
         ->and($rows['Sugar']['attributes']['quantity'])->toBe('2')

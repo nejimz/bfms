@@ -338,6 +338,7 @@ export type Inventory = {
   unit: string
   date: string | null
   quantity: string
+  current_quantity: string
   note: string | null
 }
 
@@ -349,9 +350,10 @@ export type StockCardRow = {
   unit: string
   purchase_quantity: string | null
   sold_quantity: string | null
+  operation_quantity: string | null
   adjust_quantity: string | null
   remaining_quantity: string
-  source: 'opening' | 'purchase' | 'sale' | 'adjustment'
+  source: 'opening' | 'purchase' | 'sale' | 'operation' | 'adjustment'
   adjustment_id: string | null
 }
 

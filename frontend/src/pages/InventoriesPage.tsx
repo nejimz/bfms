@@ -29,12 +29,9 @@ function formatOn(value: string | null): string | null {
 
 function detail(row: Inventory): string | null {
   const date = formatOn(row.date)
+  const parts = [date, `Starting ${row.quantity}`, row.note].filter((part) => part)
 
-  if (date && row.note) {
-    return `${date} · ${row.note}`
-  }
-
-  return date ?? row.note
+  return parts.length > 0 ? parts.join(' · ') : null
 }
 
 function InventoryRow({ row, editable }: { row: Inventory; editable: boolean }) {
@@ -49,7 +46,7 @@ function InventoryRow({ row, editable }: { row: Inventory; editable: boolean }) 
         {meta && <p className="item-meta">{meta}</p>}
       </div>
       <p className="category-count">
-        {row.quantity} {row.unit}
+        {row.current_quantity} {row.unit}
       </p>
       {editable && <span className="category-edit">Edit</span>}
     </>
@@ -88,7 +85,9 @@ export function InventoriesPage() {
         <div>
           <p className="eyebrow">Directory</p>
           <h1>Inventory</h1>
-          <p className="hint">The starting quantity on hand, in that item's unit, before purchases and sales.</p>
+          <p className="hint">
+            On hand after posted purchase expenses, sales, and operation expenses. The date is the starting quantity.
+          </p>
           {inventories.isSuccess && rows.length > 0 && (
             <p className="category-tally">
               <strong>{rows.length}</strong> {rows.length === 1 ? 'item' : 'items'}

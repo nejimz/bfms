@@ -20,11 +20,6 @@ const classificationChildren: MenuItem[] = [
   { to: '/categories', label: 'Categories', icon: 'categories' },
 ]
 
-const itemChildren: MenuItem[] = [
-  { to: '/inventories', label: 'Inventory', icon: 'inventory' },
-  { to: '/inventories/stock-card', label: 'Stock card', icon: 'inventory' },
-]
-
 const businessDirectoryLinks: MenuItem[] = [
   { to: '/classifications', label: 'Classifications', icon: 'classifications' },
   { to: '/locations', label: 'Locations', icon: 'locations' },
@@ -47,6 +42,11 @@ const moduleLinks: MenuItem[] = chartAccountModuleList.map((module) => ({
   icon: 'entry',
 }))
 
+const inventoryLinks: MenuItem[] = [
+  { to: '/inventories', label: 'Inventory', icon: 'inventory' },
+  { to: '/inventories/stock-card', label: 'Stock card', icon: 'inventory' },
+]
+
 const dashboardLink: MenuItem = { to: '/dashboard', label: 'Dashboard', icon: 'dashboard' }
 const incomeExpenseLink: MenuItem = { to: '/income-expense', label: 'Income & Expenses', icon: 'chart' }
 const yearlySummaryLink: MenuItem = { to: '/yearly-summary', label: 'Yearly Summary', icon: 'summary' }
@@ -63,7 +63,7 @@ const linksAfterSettings: MenuItem[] = [
 ]
 
 function settingsRouteActive(pathname: string): boolean {
-  return [...settingsLinks, ...classificationChildren, ...itemChildren].some(
+  return [...settingsLinks, ...classificationChildren].some(
     (link) => pathname === link.to || pathname.startsWith(`${link.to}/`),
   )
 }
@@ -105,19 +105,6 @@ function SettingsMenu() {
               return null
             }
 
-            if (link.to === '/items') {
-              return (
-                <div className="nav-group" key={link.to}>
-                  <MenuLink item={link} />
-                  <div className="nav-sub" id="item-menu">
-                    {itemChildren.map((child) => (
-                      <MenuLink key={child.to} item={child} />
-                    ))}
-                  </div>
-                </div>
-              )
-            }
-
             if (link.to !== businessesLink.to) {
               return <MenuLink key={link.to} item={link} />
             }
@@ -153,8 +140,19 @@ function SettingsMenu() {
 }
 
 function MenuLink({ item }: { item: MenuItem }) {
+  const { pathname } = useLocation()
+  const inventoryForm = item.to === '/inventories'
+    && pathname.startsWith('/inventories/')
+    && !pathname.startsWith('/inventories/stock-card')
+
   return (
-    <NavLink to={item.to}>
+    <NavLink
+      to={item.to}
+      end={item.to === '/inventories'}
+      className={item.to === '/inventories'
+        ? ({ isActive }) => (isActive || inventoryForm ? 'active' : undefined)
+        : undefined}
+    >
       <NavIcon name={item.icon} />
       {item.label}
     </NavLink>
@@ -377,6 +375,9 @@ export function Layout() {
             </>
           )}
           {user?.company && moduleLinks.map((link) => (
+            <MenuLink key={link.to} item={link} />
+          ))}
+          {user?.role === 'admin' && inventoryLinks.map((link) => (
             <MenuLink key={link.to} item={link} />
           ))}
         </nav>

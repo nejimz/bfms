@@ -165,8 +165,8 @@ export function StockCardPage() {
           <p className="eyebrow">Directory</p>
           <h1>Stock card</h1>
           <p className="hint">
-            Starting quantity, posted purchases, and posted sales from every business. An adjustment corrects the count.
-            Remaining is the running balance.
+            Starting quantity, then posted purchase expenses, sales, and operation expenses from every business. An
+            adjustment corrects the count. Remaining is the running balance.
           </p>
         </div>
         <Link className="button-link" to="/inventories">
@@ -193,7 +193,7 @@ export function StockCardPage() {
       {card.isSuccess && rows.length === 0 && (
         <div className="category-empty panel">
           <strong>No stock movements yet</strong>
-          <p>Add a starting quantity under Inventory, or record an adjustment.</p>
+          <p>Add a starting quantity under Inventory, post a purchase, sale, or operation expense, or record an adjustment.</p>
         </div>
       )}
 
@@ -206,6 +206,7 @@ export function StockCardPage() {
                 <th>Item</th>
                 <th className="amount">Purchase qty</th>
                 <th className="amount">Sold qty</th>
+                <th className="amount">Operation qty</th>
                 <th className="amount">Adjust qty</th>
                 <th className="amount">Remaining</th>
                 {editable && <th />}
@@ -221,6 +222,7 @@ export function StockCardPage() {
                   </td>
                   <td className="num">{qty(row.purchase_quantity)}</td>
                   <td className="num">{qty(row.sold_quantity)}</td>
+                  <td className="num">{qty(row.operation_quantity)}</td>
                   <td className="num">{qty(row.adjust_quantity)}</td>
                   <td className="num">{row.remaining_quantity}</td>
                   {editable && (

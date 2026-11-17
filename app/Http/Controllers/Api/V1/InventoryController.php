@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Domain\Activity\ActivityLogger;
+use App\Domain\Inventory\StockCardReport;
 use App\Enums\ActivityAction;
 use App\Enums\ActivityModule;
 use App\Http\Controllers\Controller;
@@ -15,10 +16,11 @@ use Symfony\Component\HttpFoundation\Response;
 
 class InventoryController extends Controller
 {
-    public function index(): JsonResponse
+    public function index(StockCardReport $stockCard): JsonResponse
     {
         $this->authorize('viewAny', Inventory::class);
 
+        $balances = $stockCard->balances();
         $inventories = Inventory::query()
             ->select('inventories.*')
             ->join('items', 'items.id', '=', 'inventories.item_id')
@@ -28,22 +30,22 @@ class InventoryController extends Controller
             ->get();
 
         return response()->json([
-            'data' => $inventories->map(fn (Inventory $inventory): array => $this->resource($inventory))->values(),
+            'data' => $inventories->map(fn (Inventory $inventory): array => $this->resource($inventory, $balances))->values(),
         ]);
     }
 
-    public function store(StoreInventoryRequest $request, ActivityLogger $activity): JsonResponse
+    public function store(StoreInventoryRequest $request, ActivityLogger $activity, StockCardReport $stockCard): JsonResponse
     {
         $inventory = Inventory::query()->create($request->validated());
         $inventory->load('item');
         $activity->record($request->user(), ActivityModule::Inventory, ActivityAction::Added, $inventory->recordName());
 
         return response()->json([
-            'data' => $this->resource($inventory),
+            'data' => $this->resource($inventory, $stockCard->balances()),
         ], 201);
     }
 
-    public function update(UpdateInventoryRequest $request, Inventory $inventory, ActivityLogger $activity): JsonResponse
+    public function update(UpdateInventoryRequest $request, Inventory $inventory, ActivityLogger $activity, StockCardReport $stockCard): JsonResponse
     {
         $before = $this->snapshot($inventory, $activity);
         $inventory->update($request->validated());
@@ -55,7 +57,7 @@ class InventoryController extends Controller
         }
 
         return response()->json([
-            'data' => $this->resource($inventory),
+            'data' => $this->resource($inventory, $stockCard->balances()),
         ]);
     }
 
@@ -86,9 +88,10 @@ class InventoryController extends Controller
     }
 
     /**
+     * @param  array<int, string>  $balances
      * @return array<string, mixed>
      */
-    private function resource(Inventory $inventory): array
+    private function resource(Inventory $inventory, array $balances): array
     {
         $inventory->loadMissing('item');
 
@@ -101,6 +104,7 @@ class InventoryController extends Controller
                 'unit' => $inventory->item?->unit,
                 'date' => $inventory->date?->toDateString(),
                 'quantity' => $inventory->quantityLabel(),
+                'current_quantity' => $balances[$inventory->item_id] ?? $inventory->quantityLabel(),
                 'note' => $inventory->note,
             ],
         ];

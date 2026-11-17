@@ -12,11 +12,13 @@ class StockCardReport
 {
     private const PURCHASE_CODE = '5100';
 
+    private const OPERATION_CODE = '5000';
+
     private const SALES_CODE = '4000';
 
     /**
-     * Posted purchases and sales from every business, the starting quantity, and adjustments.
-     * Remaining is the running balance for that item.
+     * Posted purchase expenses, sales, and operation expenses from every business,
+     * the starting quantity, and adjustments. Remaining is the running balance for that item.
      *
      * @return array{
      *     data: list<array{
@@ -27,6 +29,7 @@ class StockCardReport
      *         unit: string,
      *         purchase_quantity: string|null,
      *         sold_quantity: string|null,
+     *         operation_quantity: string|null,
      *         adjust_quantity: string|null,
      *         remaining_quantity: string,
      *         source: string,
@@ -59,6 +62,7 @@ class StockCardReport
                 'unit' => $movement['unit'],
                 'purchase_quantity' => $movement['kind'] === 'purchase' ? $label : null,
                 'sold_quantity' => $movement['kind'] === 'sale' ? $label : null,
+                'operation_quantity' => $movement['kind'] === 'operation' ? $label : null,
                 'adjust_quantity' => in_array($movement['kind'], ['opening', 'adjustment'], true) ? $label : null,
                 'remaining_quantity' => InventoryAdjustment::label($balances[$itemKey]),
                 'source' => $movement['kind'],
@@ -67,6 +71,22 @@ class StockCardReport
         }
 
         return ['data' => $rows];
+    }
+
+    /**
+     * The latest remaining quantity for each item on the stock card.
+     *
+     * @return array<int, string>
+     */
+    public function balances(): array
+    {
+        $balances = [];
+
+        foreach ($this->build(null)['data'] as $row) {
+            $balances[(int) $row['item_id']] = $row['remaining_quantity'];
+        }
+
+        return $balances;
     }
 
     /**
@@ -108,7 +128,7 @@ class StockCardReport
 
             $movements[] = $this->movement(
                 'adjustment',
-                3,
+                4,
                 $adjustment->id,
                 $adjustment->date->toDateString(),
                 $adjustment->item,
@@ -122,7 +142,7 @@ class StockCardReport
             ->join('accounts', 'accounts.id', '=', 'chart_account_entries.account_id')
             ->join('items', 'items.id', '=', 'chart_account_entry_lines.item_id')
             ->where('chart_account_entries.status', ChartAccountEntryStatus::Posted->value)
-            ->whereIn('accounts.code', [self::PURCHASE_CODE, self::SALES_CODE])
+            ->whereIn('accounts.code', [self::PURCHASE_CODE, self::OPERATION_CODE, self::SALES_CODE])
             ->whereNotNull('chart_account_entry_lines.item_id')
             ->when($itemId !== null, fn ($query) => $query->where('chart_account_entry_lines.item_id', $itemId))
             ->orderBy('chart_account_entry_lines.id')
@@ -138,11 +158,15 @@ class StockCardReport
             ]);
 
         foreach ($lines as $line) {
-            $purchase = (string) $line->code === self::PURCHASE_CODE;
+            [$kind, $rank] = match ((string) $line->code) {
+                self::PURCHASE_CODE => ['purchase', 1],
+                self::SALES_CODE => ['sale', 2],
+                default => ['operation', 3],
+            };
 
             $movements[] = [
-                'kind' => $purchase ? 'purchase' : 'sale',
-                'rank' => $purchase ? 1 : 2,
+                'kind' => $kind,
+                'rank' => $rank,
                 'sort_id' => (int) $line->id,
                 'date' => substr((string) $line->date, 0, 10),
                 'item_id' => (int) $line->item_id,
@@ -174,7 +198,7 @@ class StockCardReport
 
     private function apply(string $balance, string $kind, string $quantity): string
     {
-        if ($kind === 'sale') {
+        if ($kind === 'sale' || $kind === 'operation') {
             return bcsub($balance, $quantity, 3);
         }
 

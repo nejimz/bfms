@@ -110,7 +110,7 @@ it('builds a stock card from the starting quantity, purchases, sales, and adjust
         ->assertJsonPath('data.3.remaining_quantity', '113');
 });
 
-it('keeps drafts, operation expenses, and the current business from hiding other stock', function () {
+it('counts posted operation expenses from every business and ignores drafts', function () {
     $current = Company::factory()->create();
     $other = Company::factory()->create();
     $admin = stockCardAdmin($current);
@@ -127,10 +127,23 @@ it('keeps drafts, operation expenses, and the current business from hiding other
 
     $this->actingAs($admin)->getJson('/api/v1/reports/stock-card')
         ->assertOk()
-        ->assertJsonCount(2, 'data')
-        ->assertJsonPath('data.1.date', '2026-01-04')
-        ->assertJsonPath('data.1.sold_quantity', '3')
-        ->assertJsonPath('data.1.remaining_quantity', '7');
+        ->assertJsonCount(3, 'data')
+        ->assertJsonPath('data.1.date', '2026-01-03')
+        ->assertJsonPath('data.1.purchase_quantity', null)
+        ->assertJsonPath('data.1.sold_quantity', null)
+        ->assertJsonPath('data.1.operation_quantity', '6')
+        ->assertJsonPath('data.1.adjust_quantity', null)
+        ->assertJsonPath('data.1.remaining_quantity', '4')
+        ->assertJsonPath('data.1.source', 'operation')
+        ->assertJsonPath('data.2.date', '2026-01-04')
+        ->assertJsonPath('data.2.sold_quantity', '3')
+        ->assertJsonPath('data.2.operation_quantity', null)
+        ->assertJsonPath('data.2.remaining_quantity', '1');
+
+    $this->actingAs($admin)->getJson('/api/v1/inventories')
+        ->assertOk()
+        ->assertJsonPath('data.0.attributes.quantity', '10')
+        ->assertJsonPath('data.0.attributes.current_quantity', '1');
 });
 
 it('records an adjustment and removes it from the stock card', function () {
