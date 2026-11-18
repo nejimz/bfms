@@ -109,14 +109,6 @@ a { color: var(--green-dark); }
   background: #fff;
   flex: none;
 }
-.login-banner {
-  display: block;
-  width: 100%;
-  max-height: 16rem;
-  object-fit: cover;
-  border-radius: 16px;
-  margin-bottom: 1.25rem;
-}
 .login-brand { margin-bottom: 1rem; color: var(--ink); }
 .login-brand .brand-mark { border-color: var(--line); }
 .login-brand small { color: var(--muted); }
@@ -1172,16 +1164,154 @@ label .form-error { font-size: 0.85rem; }
 
 .login {
   min-height: 100vh;
+  min-height: 100dvh;
   display: grid;
-  grid-template-columns: 1.2fr 0.8fr;
-  gap: 3rem;
+  grid-template-columns: minmax(0, 1fr) minmax(22rem, 26rem);
+  gap: clamp(2rem, 4vw, 4rem);
   align-items: center;
-  padding: 4rem;
+  padding: 2.5rem 5vw 2.5rem 16vw;
+  background-color: #c9b48a;
+  background-size: cover;
+  background-position: left center;
+  background-repeat: no-repeat;
 }
-.login-copy { max-width: 36rem; }
-.login-copy p { font-size: 1.05rem; }
-.login-form { display: grid; gap: 0.9rem; }
+.login-copy {
+  width: min(40rem, 100%);
+  justify-self: end;
+  padding: 1.35rem 1.45rem 1.1rem;
+  border-radius: 20px;
+  color: #10261c;
+  background: rgba(255, 250, 242, 0.88);
+  box-shadow: 0 14px 36px rgba(24, 36, 20, 0.16);
+  backdrop-filter: blur(8px);
+}
+.login-pills { display: flex; gap: 0.4rem; margin-bottom: 0.9rem; }
+.login-pills span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.7rem;
+  padding: 0.1rem 0.7rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.9);
+  color: #173024;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+.login-pill-solid { background: #1c7a46 !important; color: white !important; }
+.login-copy h1 {
+  max-width: 100%;
+  color: #0e291c;
+  font-size: clamp(1.85rem, 2.5vw, 2.7rem);
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+}
+.login-copy p {
+  max-width: 38rem;
+  margin: 0.7rem 0 0;
+  color: #163024;
+  font-size: 0.98rem;
+  line-height: 1.45;
+}
+.login-stroke { display: block; width: 9.5rem; height: 1.4rem; margin-top: 0.35rem; }
+.login-card {
+  display: grid;
+  gap: 0.8rem;
+  width: 100%;
+  padding: 1.7rem 1.55rem 1.35rem;
+  border-radius: 22px;
+  background: rgba(247, 246, 241, 0.96);
+  box-shadow: 0 18px 40px rgba(32, 48, 28, 0.16);
+}
+.login-card-brand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-bottom: 0.35rem;
+  text-align: left;
+}
+.login-card-brand img, .login-leaf { width: 3.3rem; height: 3.3rem; object-fit: contain; flex: none; }
+.login-card-brand strong {
+  display: block;
+  color: #143524;
+  font-family: Palatino, "Iowan Old Style", Georgia, serif;
+  font-size: 1.55rem;
+  font-weight: 600;
+  line-height: 1.1;
+}
+.login-card-brand p {
+  margin: 0.2rem 0 0;
+  color: #1f7a45;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.login-card h2 { color: #173024; font-size: 1.55rem; }
+.login-field { position: relative; display: block; }
+.login-field svg {
+  position: absolute;
+  top: 50%;
+  left: 0.85rem;
+  width: 1.05rem;
+  height: 1.05rem;
+  transform: translateY(-50%);
+  fill: none;
+  stroke: #8b857c;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.login-field input { padding-left: 2.5rem; padding-right: 2.6rem; background: white; }
+.login-reveal {
+  position: absolute;
+  top: 50%;
+  right: 0.35rem;
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  transform: translateY(-50%);
+}
+.login-reveal svg {
+  position: static;
+  transform: none;
+  width: 1.1rem;
+  height: 1.1rem;
+}
+.login-submit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  min-height: 3rem;
+  margin-top: 0.35rem;
+  border-radius: 12px;
+  background: #1c7a46;
+  border-color: #1c7a46;
+  font-size: 1.05rem;
+}
+.login-submit svg {
+  width: 1.05rem;
+  height: 1.05rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
 .lines select, .lines input { min-width: 7rem; }
+
+@media (max-width: 1100px) {
+  .login {
+    grid-template-columns: minmax(0, 1fr) min(21rem, 46vw);
+    gap: 1.25rem;
+    padding: 1.5rem 1.25rem;
+  }
+}
 
 @media (max-width: 800px) {
   .shell {
@@ -1216,7 +1346,17 @@ label .form-error { font-size: 0.85rem; }
   .session .session-link { margin-top: 0; padding: 0.4rem 0.6rem; }
   .content, .login { padding: 1.25rem; }
   .content { padding-bottom: max(1.25rem, env(safe-area-inset-bottom)); }
-  .login { grid-template-columns: 1fr; gap: 1.5rem; }
+  .login {
+    grid-template-columns: 1fr;
+    align-items: center;
+    align-content: center;
+    gap: 1.5rem;
+    padding: 1.25rem;
+    padding-bottom: max(1.25rem, env(safe-area-inset-bottom));
+  }
+  .login { justify-items: stretch; }
+  .login-copy { width: 100%; justify-self: stretch; }
+  .login-copy h1 { font-size: 1.85rem; white-space: normal; }
   .inline-form, .journal-head, .entry-fields, .entry-composer, .column-filters { grid-template-columns: 1fr; }
   .dashboard-filters label { width: 100%; }
   .year-switch { flex: 1 1 100%; width: auto; max-width: 100%; min-width: 0; margin-top: 0.35rem; }

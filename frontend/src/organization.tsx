@@ -86,17 +86,6 @@ function iconType(url: string): string {
   return 'image/png'
 }
 
-export function LoginBanner() {
-  const organization = useOrganization()
-  const bannerUrl = organization.data?.banner_url
-
-  if (!bannerUrl) {
-    return null
-  }
-
-  return <img className="login-banner" src={bannerUrl} alt="" />
-}
-
 export function OrganizationEffects() {
   const organization = useOrganization()
   const name = organization.data?.name

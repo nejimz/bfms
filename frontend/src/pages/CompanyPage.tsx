@@ -102,7 +102,7 @@ export function CompanyPage() {
           <h1>Company</h1>
           <p className="hint">
             The name and logo appear in the sidebar, on the login page, and on reports. The icon is the browser tab.
-            The banner is the wide image on the login page.
+            The banner fills the login page background.
           </p>
         </div>
       </header>
@@ -149,7 +149,7 @@ export function CompanyPage() {
           <PictureField
             label="Banner"
             noun="banner"
-            hint="Optional. Shown above the company name on the login page. JPG, PNG, or WebP. 2 MB or smaller."
+            hint="Optional. Fills the login page background. Leave this empty to keep the farm photograph. JPG, PNG, or WebP. 2 MB or smaller."
             error={errors.banner}
             savedUrl={organization.data?.banner_url ?? null}
             picture={banner}
